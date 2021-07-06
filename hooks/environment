@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# The `pre-command` hook will run just before your build command runs
+
+# Note that as the script is sourced not run directly, the shebang line will be ignored
+# See https://buildkite.com/docs/agent/v3/hooks#creating-hook-scripts
+
+set -e
+
+HOOKS_ROOT=$( dirname "${BASH_SOURCE[0]}" )
+PLUGIN_ROOT=$( dirname "$HOOKS_ROOT" )
+PLUGIN_BIN="$PLUGIN_ROOT/bin"
+
+export PATH="$PATH:$PLUGIN_BIN"
+
+echo "~~~ :file_cabinet: Loaded Caching Plugin"

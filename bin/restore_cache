@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+
+CACHE_KEY=$1
+
+if [ -z "$CACHE_BUCKET_NAME" ]; then
+	echo "⛔Unable to save file to cache – no \$CACHE_BUCKET_NAME is set"
+	return 1
+fi
+
+if aws s3api head-object --bucket "$CACHE_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
+	echo "Restoring cache entry $CACHE_KEY"
+
+	echo "	Downloading"
+	aws s3 cp "s3://a8c-ci-cache/$CACHE_KEY" "$CACHE_KEY" --quiet
+
+	echo "	Decompressing"
+	tar -xf "$CACHE_KEY"
+
+	echo "	Cleaning Up"
+	rm "$CACHE_KEY"
+else
+	echo "No cache entry found"
+fi

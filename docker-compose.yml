@@ -1,0 +1,10 @@
+services:
+  tests:
+    image: buildkite/plugin-tester
+    volumes:
+      - ".:/plugin:ro"
+  lint:
+    image: buildkite/plugin-linter
+    command: ['--id', 'automattic/bash-cache']
+    volumes:
+      - ".:/plugin:ro"

@@ -1,0 +1,53 @@
+#!/bin/bash
+
+set -e
+
+CACHE_FILE=$1
+CACHE_KEY=$2
+
+if [ -z "$CACHE_FILE" ]; then
+	echo "You must pass the file or directory you want to be cached"
+	return 1
+fi
+
+# We can automatically derive a cache key if one isn't provided
+if [ -z "$CACHE_KEY" ]; then
+	echo "No cache key provided – automatically deriving one:"
+
+	# if the $CACHE_FILE is a directory, derived the key from the hash of all files within it
+	if [[ -d $CACHE_FILE ]]; then
+		CACHE_KEY=$(hash_directory "$CACHE_FILE")
+		echo "	'$CACHE_FILE' is a directory with the hash $CACHE_KEY"
+
+	# if the $CACHE_FILE is a regular file, derive the key from the file's hash
+	elif [[ -f $CACHE_FILE ]]; then  
+		CACHE_KEY=$(hash_file "$CACHE_FILE")
+		echo "	'$CACHE_FILE' is a file with the hash $CACHE_KEY"
+	fi
+fi
+
+if [ -z "$CACHE_BUCKET_NAME" ]; then
+	if [ -z "$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET" ]; then
+		printenv | grep buildkite
+		echo "Reading bucket name from 'BUILDKITE_PLUGIN_BASH_CACHE_BUCKET'"
+		CACHE_BUCKET_NAME="$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET"
+	else
+		echo "⛔Unable to save file to cache – no \$CACHE_BUCKET_NAME is set"
+		return 1
+	fi
+fi
+
+if ! aws s3api head-object --bucket "$CACHE_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
+	echo "No existing cache entry for $CACHE_KEY – storing in cache"
+
+	echo "	Compressing"
+	tar -czf "$CACHE_KEY" "$CACHE_FILE"
+
+	echo "	Uploading"
+	aws s3 cp "$CACHE_KEY" "s3://$CACHE_BUCKET_NAME/$CACHE_KEY" --quiet
+
+	echo "	Cleaning Up"
+	rm "$CACHE_KEY"
+else
+	echo "This file is already cached – skipping upload"
+fi

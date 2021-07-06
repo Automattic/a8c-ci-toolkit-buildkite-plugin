@@ -1,0 +1,15 @@
+steps:
+  - label: ":shell: Lint (Shellcheck)"
+    plugins:
+      shellcheck#v1.1.2:
+        files: hooks/**
+
+  - label: ":sparkles: Lint (Buildkite Plugin Linter)"
+    plugins:
+      plugin-linter#v2.0.0:
+        id: automattic/bash-cache
+
+  - label: ":docker: Test"
+    plugins:
+      docker-compose#v3.7.0:
+        run: tests

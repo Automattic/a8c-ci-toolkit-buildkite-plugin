@@ -1,0 +1,9 @@
+name: Bash Cache
+description: Caching operations inside your build script
+author: https://github.com/automattic
+requirements: ['awscli']
+configuration:
+  properties:
+    bucket:
+      type: string
+  additionalProperties: false

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e
+
+DIRECTORY_PATH=$1
+
+if [ -z "$1" ]; then
+	echo "You must pass a directory name to hash"
+	return 1
+fi
+
+# - Find all files in the given directory
+# - Run `sha256sum` on each file found – the `+` flag does it in parallel for a huge speed boost.
+# - Sort the files by filename for deterministic hashing
+# - Take the hash of all of the output hashes (and file paths)
+find "$DIRECTORY_PATH" -type f -exec shasum -a 256 "{}" \+ | sort -k 2 | shasum -a 256 | cut -f1 -d " "
