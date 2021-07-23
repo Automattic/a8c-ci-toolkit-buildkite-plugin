@@ -37,6 +37,10 @@ if [ -z "$CACHE_BUCKET_NAME" ]; then
 	fi
 fi
 
+if [ $3 == '--force' ]; then
+	echo "Deleting entry prior to upload"
+fi
+
 if ! aws s3api head-object --bucket "$CACHE_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
 	echo "No existing cache entry for $CACHE_KEY – storing in cache"
 
