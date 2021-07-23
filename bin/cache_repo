@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+AWS_BUCKET=$1
+
+DATE=$(date +"%Y-%m-%d")
+
+mkdir -p /tmp/$DATE
+
+# Download the repo
+git clone --mirror $BUILDKITE_REPO "/tmp/$DATE/$BUILDKITE_PIPELINE_SLUG.git"
+
+# Create the tarball
+tar -C "/tmp/$DATE" -cvf $DATE.git.tar $BUILDKITE_PIPELINE_SLUG.git
+
+# Copy the file to S3
+aws s3 cp $DATE.git.tar s3://$AWS_BUCKET/$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_SLUG/$DATE.git.tar
