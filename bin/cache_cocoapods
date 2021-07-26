@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Follow the typical pod installation process
 install_cocoapods
 
