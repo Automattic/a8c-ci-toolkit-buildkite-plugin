@@ -38,7 +38,7 @@ if [ -z "$CACHE_BUCKET_NAME" ]; then
 fi
 
 # Use with caution – in general it's not a good idea to overwrite a cache entry
-if [ $3 == '--force' ]; then
+if [[ $3 == '--force' ]]; then
 	echo "Deleting the existing cache key"
 	aws s3 rm "s3://a8c-ci-cache/$CACHE_KEY"
 fi
