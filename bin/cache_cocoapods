@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e
+
+# Follow the typical pod installation process...
+install_cocoapods
+
+# ...then overwrite the cache for future jobs to use
+save_cache ~/.cocoapods "$BUILDKITE_PIPELINE_SLUG-specs-repos" --force
+save_cache ~/Library/Caches/CocoaPods/ "$BUILDKITE_PIPELINE_SLUG-global-pod-cache" --force

@@ -6,7 +6,7 @@ CACHE_KEY=$1
 
 if [ -z "$CACHE_BUCKET_NAME" ]; then
 	echo "⛔Unable to save file to cache – no \$CACHE_BUCKET_NAME is set"
-	return 1
+	exit 0
 fi
 
 if aws s3api head-object --bucket "$CACHE_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
@@ -21,5 +21,5 @@ if aws s3api head-object --bucket "$CACHE_BUCKET_NAME" --key "$CACHE_KEY" > /dev
 	echo "	Cleaning Up"
 	rm "$CACHE_KEY"
 else
-	echo "No cache entry found"
+	echo "No cache entry found for '$CACHE_KEY'"
 fi
