@@ -7,7 +7,7 @@ CACHE_KEY=$2
 
 if [ -z "$CACHE_FILE" ]; then
 	echo "You must pass the file or directory you want to be cached"
-	return 1
+	exit 1
 fi
 
 # We can automatically derive a cache key if one isn't provided
@@ -33,7 +33,7 @@ if [ -z "$CACHE_BUCKET_NAME" ]; then
 		CACHE_BUCKET_NAME="$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET"
 	else
 		echo "⛔Unable to save file to cache – no \$CACHE_BUCKET_NAME is set"
-		return 1
+		exit 1
 	fi
 fi
 
