@@ -1,0 +1,11 @@
+#!/bin/bash -eu
+
+PODFILE_SHA1=$(ruby -e "require 'yaml';puts YAML.load_file('Podfile.lock')['PODFILE CHECKSUM']")
+RESULT=$(echo "$PODFILE_SHA1 *Podfile" | shasum -c)
+
+if [[ $RESULT != "Podfile: OK" ]]; then 
+	echo "Error: Podfile.lock is not in sync – please run \`bundle exec pod install\` and commit your changes"
+	exit 1
+fi
+
+echo "Podfile.lock is in sync"

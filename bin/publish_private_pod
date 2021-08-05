@@ -1,0 +1,25 @@
+#!/bin/bash -eu
+
+PODSPEC_PATH=$1
+PRIVATE_SPECS_REPO=$2
+DEPLOY_KEY=$3
+
+echo "$DEPLOY_KEY" > ~/.ssh/pod_repo_push_deploy_key
+chmod 0600 ~/.ssh/pod_repo_push_deploy_key
+
+HASH=$(cat ~/.ssh/pod_repo_push_deploy_key | md5)
+H256=$(ssh-keygen -l -f ~/.ssh/pod_repo_push_deploy_key)
+echo "Key MD5: $HASH"
+echo "Key sha256: $H256"
+
+# Remove all existing keys, and replace them with the deploy key
+ssh-add -D
+ssh-add ~/.ssh/pod_repo_push_deploy_key
+ssh-add -l
+
+# For some reason this fixes a failure in `lib lint`
+# https://github.com/Automattic/buildkite-ci/issues/7
+xcrun simctl list >> /dev/null
+
+bundle exec pod repo push $PRIVATE_SPECS_REPO $PODSPEC_PATH
+
