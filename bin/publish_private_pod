@@ -11,4 +11,8 @@ echo $DEPLOY_KEY > ~/.ssh/pod_repo_push_deploy_key.pub
 
 export GIT_SSH_COMMAND='ssh -i ~/.ssh/pod_repo_push_deploy_key.pub -o IdentitiesOnly=yes -o UserKnownHostsFile=~/.ssh/known_hosts'
 
+# For some reason this fixes a failure in `lib lint`
+# https://github.com/Automattic/buildkite-ci/issues/7
+xcrun simctl list >> /dev/null
+
 bundle exec pod repo push $SPECS_REPO --verbose $PODSPEC_PATH

@@ -10,4 +10,8 @@ if [ ! -z "$BUILDKITE_TAG" ] && [ "$BUILDKITE_TAG" != "$POD_VERSION" ]; then
 	exit 1
 fi
 
+# For some reason this fixes a failure in `lib lint`
+# https://github.com/Automattic/buildkite-ci/issues/7
+xcrun simctl list >> /dev/null
+
 bundle exec pod trunk push --verbose $PODSPEC_PATH
