@@ -2,7 +2,7 @@
 
 if [ -z "$1" ]; then
 	echo "You must pass a filename to hash"
-	return 1
+	exit 1
 fi
 
 shasum -a 256 "$1" | cut -f1 -d " "

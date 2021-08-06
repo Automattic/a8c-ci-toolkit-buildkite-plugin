@@ -4,7 +4,7 @@ DIRECTORY_PATH=$1
 
 if [ -z "$1" ]; then
 	echo "You must pass a directory name to hash"
-	return 1
+	exit 1
 fi
 
 # - Find all files in the given directory
