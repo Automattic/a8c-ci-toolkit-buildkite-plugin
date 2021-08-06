@@ -1,6 +1,4 @@
-#!/bin/bash
-
-set -e
+#!/bin/bash -eu
 
 if [ -z "$1" ]; then
 	echo "You must pass a filename to hash"
