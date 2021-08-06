@@ -1,6 +1,4 @@
-#!/bin/bash
-
-set -eu
+#!/bin/bash -eu
 
 # We always need to run `bundle install` first, otherwise we can't compare
 bundle install

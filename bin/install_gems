@@ -1,6 +1,4 @@
-#!/bin/bash
-
-set -e
+#!/bin/bash -eu
 
 ARCHITECTURE=$(uname -m)
 CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$ARCHITECTURE-ruby$(cat .ruby-version)-$(hash_file Gemfile.lock)"

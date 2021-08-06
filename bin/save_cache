@@ -1,6 +1,4 @@
-#!/bin/bash
-
-set -e
+#!/bin/bash -eu
 
 CACHE_FILE=$1
 CACHE_KEY=$2
@@ -26,7 +24,8 @@ if [ -z "$CACHE_KEY" ]; then
 	fi
 fi
 
-if [ -z "$CACHE_BUCKET_NAME" ]; then
+S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
+if [ -z "$S3_BUCKET_NAME" ]; then
 	if [ -z "$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET" ]; then
 		printenv | grep buildkite
 		echo "Reading bucket name from 'BUILDKITE_PLUGIN_BASH_CACHE_BUCKET'"
@@ -37,8 +36,11 @@ if [ -z "$CACHE_BUCKET_NAME" ]; then
 	fi
 fi
 
+echo "Using $CACHE_BUCKET_NAME as cache bucket"
+
 # Use with caution – in general it's not a good idea to overwrite a cache entry
-if [[ $3 == '--force' ]]; then
+SHOULD_FORCE=${3-false}
+if [[ "$SHOULD_FORCE" == '--force' ]]; then
 	echo "Deleting the existing cache key"
 	aws s3 rm "s3://a8c-ci-cache/$CACHE_KEY"
 fi

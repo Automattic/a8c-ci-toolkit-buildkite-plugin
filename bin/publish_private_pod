@@ -4,15 +4,16 @@ PODSPEC_PATH=$1
 PRIVATE_SPECS_REPO=$2
 DEPLOY_KEY=$3
 
-mkdir -p ~/.ssh
-(umask 077; touch ~/.ssh/pod_repo_push_deploy_key.pub)
-chmod 0600 ~/.ssh/pod_repo_push_deploy_key.pub
-echo $DEPLOY_KEY > ~/.ssh/pod_repo_push_deploy_key.pub
+echo "$DEPLOY_KEY" > ~/.ssh/pod_repo_push_deploy_key
+chmod 0600 ~/.ssh/pod_repo_push_deploy_key
 
-export GIT_SSH_COMMAND='ssh -i ~/.ssh/pod_repo_push_deploy_key.pub -o IdentitiesOnly=yes -o UserKnownHostsFile=~/.ssh/known_hosts'
+# Remove all existing keys, and replace them with the deploy key
+ssh-add -D
+ssh-add ~/.ssh/pod_repo_push_deploy_key
+ssh-add -l
 
 # For some reason this fixes a failure in `lib lint`
 # https://github.com/Automattic/buildkite-ci/issues/7
 xcrun simctl list >> /dev/null
 
-bundle exec pod repo push $SPECS_REPO --verbose $PODSPEC_PATH
+bundle exec pod repo push $PRIVATE_SPECS_REPO $PODSPEC_PATH
