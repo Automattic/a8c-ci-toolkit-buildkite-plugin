@@ -1,7 +1,7 @@
 #!/bin/bash -eu
 
 echo "--- :rubygems: Setting up Gems"
-bundle install
+install_gems
 
 echo "--- :rubygems: Checking Gemfile.lock"
 validate_gemfile_lock
@@ -9,7 +9,9 @@ validate_gemfile_lock
 echo "--- :rubocop: Running Rubocop"
 bundle exec rubocop
 
-echo "--- :cocoapods: Checking Podfile.lock"
-validate_podfile_lock
+if [ -f "Podfile.lock" ]; then
+	echo "--- :cocoapods: Checking Podfile.lock"
+	validate_podfile_lock
+fi
 
 # TODO: Add swiftlint

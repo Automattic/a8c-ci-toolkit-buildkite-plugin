@@ -6,8 +6,10 @@ LANE_NAME="${1:-test}"
 echo "--- :rubygems: Setting up Gems"
 install_gems
 
-echo "--- :cocoapods: Setting up Pods"
-install_cocoapods
+if [ -f "Podfile.lock" ]; then
+	echo "--- :cocoapods: Setting up Pods"
+	install_cocoapods
+fi
 
 echo "--- :test_tube: Building and Running Tests"
 
