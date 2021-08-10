@@ -10,4 +10,9 @@ echo "--- :cocoapods: Setting up Pods"
 install_cocoapods
 
 echo "--- :test_tube: Building and Running Tests"
+
+# For some reason this fixes a failure in `lib lint`
+# https://github.com/Automattic/buildkite-ci/issues/7
+xcrun simctl list >> /dev/null
+
 bundle exec fastlane $LANE_NAME
