@@ -1,0 +1,13 @@
+#!/bin/bash -eu
+
+# Allow the fastlane lane name to be passed as the first argument, but default to `test`
+LANE_NAME="${1:-test}"
+
+echo "--- :rubygems: Setting up Gems"
+install_gems
+
+echo "--- :cocoapods: Setting up Pods"
+install_cocoapods
+
+echo "--- :test_tube: Building and Running Tests"
+bundle exec fastlane $LANE_NAME
