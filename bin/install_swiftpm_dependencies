@@ -1,0 +1,12 @@
+#!/bin/bash -eu
+
+sudo defaults write com.apple.dt.Xcode IDEPackageSupportUseBuiltinSCM YES
+
+# Trust all GitHub.com and BitBucket.org keys – this allows checking out dependencies via SSH
+for ip in $(dig @8.8.8.8 bitbucket.org +short); do ssh-keyscan bitbucket.org,$ip; ssh-keyscan $ip; done 2>/dev/null >> ~/.ssh/known_hosts || true
+echo ":bitbucket: Added BitBucket IP Addresses to known_hosts"
+
+for ip in $(dig @8.8.8.8 github.com +short); do ssh-keyscan github.com,$ip; ssh-keyscan $ip; done 2>/dev/null >> ~/.ssh/known_hosts || true
+echo ":github: Added GitHub IP Addresses to known_hosts"
+
+xcodebuild -resolvePackageDependencies
