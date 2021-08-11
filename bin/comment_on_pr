@@ -1,0 +1,10 @@
+#!/bin/bash -eu
+
+PR_MESSAGE_FILE=$1
+
+if ! command -v gh &> /dev/null; then
+	brew install gh
+fi
+
+gh auth login
+gh pr comment --body-file $PR_MESSAGE_FILE

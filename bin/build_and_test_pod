@@ -11,6 +11,13 @@ if [ -f "Podfile.lock" ]; then
 	install_cocoapods
 fi
 
+if [ -f "Example/Podfile.lock" ]; then
+	cd Example
+	echo "--- :cocoapods: Setting up Pods"
+	install_cocoapods
+	cd -
+fi
+
 echo "--- :test_tube: Building and Running Tests"
 
 # For some reason this fixes a failure in `lib lint`
