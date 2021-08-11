@@ -1,7 +1,9 @@
 #!/bin/bash -eu
 
 ARCHITECTURE=$(uname -m)
-CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$ARCHITECTURE-ruby$(cat .ruby-version)-$(hash_file Gemfile.lock)"
+RUBY_VERSION=$(cat .ruby-version)
+GEMFILE_HASH=$(hash_file Gemfile.lock)
+CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$ARCHITECTURE-ruby$RUBY_VERSION-$GEMFILE_HASH"
 
 restore_cache $CACHEKEY
 bundle install
