@@ -1,10 +1,63 @@
 #!/bin/bash -eu
 
-PR_MESSAGE_FILE=$1
-
-if ! command -v gh &> /dev/null; then
-	brew install gh
+if ! command -v jq &> /dev/null; then
+	echo "Unable to run \`comment_on_pr\` – the \`jq\` binary is missing"
+	exit 1
 fi
 
-gh auth login
-gh pr comment --body-file $PR_MESSAGE_FILE
+if ! command -v openssl &> /dev/null; then
+	echo "Unable to run \`comment_on_pr\` – the \`openssl\` binary is missing"
+	exit 2
+fi
+
+if [ "$BUILDKITE_PULL_REQUEST" = 'false' ]; then
+	echo "Skipping \`comment_on_pr\` because there's no PR associated with this build"
+	exit 0
+fi
+
+# This doesn't need to be particularly secure, but it does need to be random – if there is no replacement token
+# provided via the command line, we'll use a random one to keep the rest of this script simple
+DEFAULT_TOKEN=$(openssl rand -hex 64)
+
+BODY=$1
+GITHUB_TOKEN=$2
+
+REPLACEMENT_TOKEN="${3:-$DEFAULT_TOKEN}"
+FULL_REPLACEMENT_TOKEN="<!--$REPLACEMENT_TOKEN-->"
+
+REPO="${4:-$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_SLUG}"
+PR_NUMBER="${5:-$BUILDKITE_PULL_REQUEST}"
+
+JSON_BODY=$(jq --null-input \
+	--arg body "$FULL_REPLACEMENT_TOKEN$BODY" \
+	'{"body": $body}'
+)
+
+#
+# Get the commentID for an existing comment with the replacement token
+#
+COMMENT_LIST=$(curl -s \
+	 "https://api.github.com/repos/$REPO/issues/$PR_NUMBER/comments" \
+	 -H 'Accept: application/vnd.github.v3+json' \
+	 -H 'Content-Type: application/json; charset=utf-8' \
+	 -u "$GITHUB_TOKEN:$GITHUB_TOKEN"
+)
+
+COMMENT_ID_TO_REPLACE=$(echo $COMMENT_LIST | jq ".[] | select(.body | test(\"$FULL_REPLACEMENT_TOKEN\")) | .id")
+
+# Given the commentID, either create or replace the comment
+if [ -z "$COMMENT_ID_TO_REPLACE" ]; then
+	curl -s -X "POST" "https://api.github.com/repos/$REPO/issues/$PR_NUMBER/comments" \
+	 -H 'Accept: application/vnd.github.v3+json' \
+	 -H 'Content-Type: application/json; charset=utf-8' \
+	 -u "$GITHUB_TOKEN:$GITHUB_TOKEN" \
+	 -d "$JSON_BODY" \
+	 --output /dev/null
+else
+	curl -s -X "POST" "https://api.github.com/repos/$REPO/issues/comments/$COMMENT_ID_TO_REPLACE" \
+	 -H 'Accept: application/vnd.github.v3+json' \
+	 -H 'Content-Type: application/json; charset=utf-8' \
+	 -u "$GITHUB_TOKEN:$GITHUB_TOKEN" \
+	 -d "$JSON_BODY" \
+	 --output /dev/null
+fi
