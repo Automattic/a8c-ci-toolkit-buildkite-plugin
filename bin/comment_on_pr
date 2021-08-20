@@ -1,10 +1,14 @@
 #!/bin/bash -eu
 
 PR_MESSAGE_FILE=$1
+GITHUB_TOKEN=$2
 
 if ! command -v gh &> /dev/null; then
 	brew install gh
 fi
 
-gh auth login
+FILENAME="/tmp/github-token-$BUILDKITE_BUILD_ID"
+echo $GITHUB_TOKEN > $FILENAME
+
+gh auth login --with-token $FILENAME
 gh pr comment --body-file $PR_MESSAGE_FILE
