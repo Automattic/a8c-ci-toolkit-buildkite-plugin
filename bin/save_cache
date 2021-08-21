@@ -42,7 +42,7 @@ echo "Using $CACHE_BUCKET_NAME as cache bucket"
 SHOULD_FORCE=${3-false}
 if [[ "$SHOULD_FORCE" == '--force' ]]; then
 	echo "Deleting the existing cache key"
-	aws s3 rm "s3://a8c-ci-cache/$CACHE_KEY"
+	aws s3 rm "s3://$CACHE_BUCKET_NAME/$CACHE_KEY"
 fi
 
 if ! aws s3api head-object --bucket "$CACHE_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
