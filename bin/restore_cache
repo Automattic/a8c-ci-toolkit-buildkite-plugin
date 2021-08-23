@@ -11,7 +11,7 @@ if aws s3api head-object --bucket "$CACHE_BUCKET_NAME" --key "$CACHE_KEY" > /dev
 	echo "Restoring cache entry $CACHE_KEY"
 
 	echo "	Downloading"
-	aws s3 cp "s3://a8c-ci-cache/$CACHE_KEY" "$CACHE_KEY" --quiet
+	aws s3 cp "s3://$CACHE_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet
 
 	echo "	Decompressing"
 	tar -xf "$CACHE_KEY"
