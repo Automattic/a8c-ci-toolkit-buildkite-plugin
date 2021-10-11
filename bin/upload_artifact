@@ -1,0 +1,40 @@
+#!/bin/bash -eu
+
+# Usage
+# store_artifact $file_path
+#
+# $file_path is the path to a file on disk. It'll automatically be combined with the current build ID to differentiate between
+# the same file in different jobs so that it can be correctly re-downloaded within the same job.
+
+ARTIFACT_PATH=$1
+
+if [ -z "$ARTIFACT_PATH" ]; then
+	echo "You must pass the file you want to be stored"
+	exit 1
+fi
+
+if [ ! -f "$ARTIFACT_PATH" ]; then
+	echo "No file found at $ARTIFACT_PATH"
+	exit 2
+fi
+
+BUCKET=${ARTIFACTS_S3_BUCKET-}
+
+if [ -z "$BUCKET" ]; then
+	echo "You must pass set the \`ARTIFACTS_S3_BUCKET\` environment variable with the S3 bucket you'd like to use"
+	exit 3
+fi
+
+BASENAME=$(basename $ARTIFACT_PATH)
+KEY="$BUILDKITE_BUILD_ID/$BASENAME"
+
+# If the bucket has transfer acceleration enabled, use it!
+ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket $BUCKET | jq '.Status' -r || true)
+
+if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
+	echo "Uploading with transfer acceleration"
+	aws s3 cp $ARTIFACT_PATH "s3://$BUCKET/$KEY" --endpoint-url https://s3-accelerate.amazonaws.com
+else
+	aws s3 cp $ARTIFACT_PATH "s3://$BUCKET/$KEY"
+fi
+
