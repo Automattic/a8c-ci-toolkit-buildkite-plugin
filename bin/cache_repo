@@ -4,6 +4,8 @@ AWS_BUCKET=$1
 
 DATE=$(date +"%Y-%m-%d")
 
+# Create the directory (and ensure it's empty)
+rm -rf "/tmp/$DATE"
 mkdir -p "/tmp/$DATE"
 
 # Download the repo
