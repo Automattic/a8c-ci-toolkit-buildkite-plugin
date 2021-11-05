@@ -12,8 +12,11 @@ ssh-add -D
 ssh-add ~/.ssh/pod_repo_push_deploy_key
 ssh-add -l
 
+# Add the host of the spec repo (typically github.com) to the known_hosts to be sure we can clone it via ssh
+add_host_to_ssh_known_hosts "$PRIVATE_SPECS_REPO"
+
 # For some reason this fixes a failure in `lib lint`
 # https://github.com/Automattic/buildkite-ci/issues/7
 xcrun simctl list >> /dev/null
 
-bundle exec pod repo push $PRIVATE_SPECS_REPO $PODSPEC_PATH
+bundle exec pod repo push "$PRIVATE_SPECS_REPO" "$PODSPEC_PATH"

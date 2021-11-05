@@ -1,0 +1,10 @@
+#!/bin/bash -eu
+
+# Parameter can be just a host name, or a full http, https or git URL.
+URL="${1:?You need to provide an URL as first parameter}"
+
+# Use a RegEx to extract the $HOST. Match the optional `http://`, `https://` or `git@` at the start, then capture everything after that up to the next `/` or `:`.
+[[ $URL =~ ^(https?://|git@)?([^/:]+) ]] && HOST=${BASH_REMATCH[2]}
+
+echo "Adding ${HOST} to '~/.ssh/known_hosts'..."
+for ip in $(dig @8.8.8.8 "${HOST}" +short); do ssh-keyscan "${HOST}",$ip; ssh-keyscan $ip; done 2>/dev/null >> ~/.ssh/known_hosts || true
