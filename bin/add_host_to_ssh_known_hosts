@@ -1,7 +1,7 @@
 #!/bin/bash -eu
 
-# Parameter can be just a host name, or a full http, https or git URL. Defaults to `github.com`.
-URL=${1:-github.com}
+# Parameter can be just a host name, or a full http, https or git URL.
+URL="${1:?You need to provide an URL as first parameter}"
 
 # Use a RegEx to extract the $HOST. Match the optional `http://`, `https://` or `git@` at the start, then capture everything after that up to the next `/` or `:`.
 [[ $URL =~ ^(https?://|git@)?([^/:]+) ]] && HOST=${BASH_REMATCH[2]}
