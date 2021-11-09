@@ -1,0 +1,12 @@
+#!/bin/bash -eu
+
+NEW_SSH_KEY=$1
+NEW_SSH_KEY_NAME=$2
+
+# Create key in ~/.ssh dir
+echo "$NEW_SSH_KEY" > ~/.ssh/"$NEW_SSH_KEY_NAME"
+chmod 0600 ~/.ssh/"$NEW_SSH_KEY_NAME"
+
+# Add new key to Agent
+ssh-add ~/.ssh/"$NEW_SSH_KEY_NAME"
+ssh-add -l
