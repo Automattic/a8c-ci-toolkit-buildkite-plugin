@@ -8,5 +8,7 @@ echo "$NEW_SSH_KEY" > ~/.ssh/"$NEW_SSH_KEY_NAME"
 chmod 0600 ~/.ssh/"$NEW_SSH_KEY_NAME"
 
 # Add new key to Agent
+echo "Deleting keys and adding new key"
+ssh-add -D
 ssh-add ~/.ssh/"$NEW_SSH_KEY_NAME"
 ssh-add -l
