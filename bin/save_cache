@@ -52,7 +52,15 @@ if ! aws s3api head-object --bucket "$CACHE_BUCKET_NAME" --key "$CACHE_KEY" > /d
 	tar -czf "$CACHE_KEY" "$CACHE_FILE"
 
 	echo "	Uploading"
-	aws s3 cp "$CACHE_KEY" "s3://$CACHE_BUCKET_NAME/$CACHE_KEY" --quiet
+	# If the bucket has transfer acceleration enabled, use it!
+	ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket $S3_BUCKET_NAME | jq '.Status' -r || true)
+
+	if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
+		echo "Uploading with transfer acceleration"
+		aws s3 cp "$CACHE_KEY" "s3://$CACHE_BUCKET_NAME/$CACHE_KEY" --quiet --endpoint-url https://s3-accelerate.amazonaws.com
+	else
+		aws s3 cp "$CACHE_KEY" "s3://$CACHE_BUCKET_NAME/$CACHE_KEY" --quiet
+	fi
 
 	echo "	Cleaning Up"
 	rm "$CACHE_KEY"
