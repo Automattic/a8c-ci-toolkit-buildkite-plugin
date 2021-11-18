@@ -2,12 +2,19 @@
 
 CACHE_KEY=$1
 
-if [ -z "$CACHE_BUCKET_NAME" ]; then
-	echo "⛔Unable to save file to cache – no \$CACHE_BUCKET_NAME is set"
-	exit 0
+S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
+if [ -z "$S3_BUCKET_NAME" ]; then
+	if [ -z "$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET" ]; then
+		printenv | grep buildkite
+		echo "Reading bucket name from 'BUILDKITE_PLUGIN_BASH_CACHE_BUCKET'"
+		CACHE_BUCKET_NAME="$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET"
+	else
+		echo "⛔Unable to restore file from cache – no \$CACHE_BUCKET_NAME is set"
+		exit 1
+	fi
 fi
 
-if aws s3api head-object --bucket "$CACHE_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
+if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
 	echo "Restoring cache entry $CACHE_KEY"
 
 	echo "	Downloading"
@@ -16,9 +23,9 @@ if aws s3api head-object --bucket "$CACHE_BUCKET_NAME" --key "$CACHE_KEY" > /dev
 
 	if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
 		echo "Downloading with transfer acceleration"
-		aws s3 cp "s3://$CACHE_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet --endpoint-url https://s3-accelerate.amazonaws.com
+		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet --endpoint-url https://s3-accelerate.amazonaws.com
 	else
-		aws s3 cp "s3://$CACHE_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet
+		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet
 	fi
 
 	echo "	Decompressing"
