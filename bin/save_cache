@@ -36,23 +36,31 @@ if [ -z "$S3_BUCKET_NAME" ]; then
 	fi
 fi
 
-echo "Using $CACHE_BUCKET_NAME as cache bucket"
+echo "Using $S3_BUCKET_NAME as cache bucket"
 
 # Use with caution – in general it's not a good idea to overwrite a cache entry
 SHOULD_FORCE=${3-false}
 if [[ "$SHOULD_FORCE" == '--force' ]]; then
 	echo "Deleting the existing cache key"
-	aws s3 rm "s3://$CACHE_BUCKET_NAME/$CACHE_KEY"
+	aws s3 rm "s3://$S3_BUCKET_NAME/$CACHE_KEY"
 fi
 
-if ! aws s3api head-object --bucket "$CACHE_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
+if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
 	echo "No existing cache entry for $CACHE_KEY – storing in cache"
 
 	echo "	Compressing"
 	tar -czf "$CACHE_KEY" "$CACHE_FILE"
 
 	echo "	Uploading"
-	aws s3 cp "$CACHE_KEY" "s3://$CACHE_BUCKET_NAME/$CACHE_KEY" --quiet
+	# If the bucket has transfer acceleration enabled, use it!
+	ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket $S3_BUCKET_NAME | jq '.Status' -r || true)
+
+	if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
+		echo "Uploading with transfer acceleration"
+		aws s3 cp "$CACHE_KEY" "s3://$S3_BUCKET_NAME/$CACHE_KEY" --quiet --endpoint-url https://s3-accelerate.amazonaws.com
+	else
+		aws s3 cp "$CACHE_KEY" "s3://$S3_BUCKET_NAME/$CACHE_KEY" --quiet
+	fi
 
 	echo "	Cleaning Up"
 	rm "$CACHE_KEY"
