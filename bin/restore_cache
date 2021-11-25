@@ -5,14 +5,15 @@ CACHE_KEY=$1
 S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
 if [ -z "$S3_BUCKET_NAME" ]; then
 	if [ -z "$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET" ]; then
-		printenv | grep buildkite
-		echo "Reading bucket name from 'BUILDKITE_PLUGIN_BASH_CACHE_BUCKET'"
-		CACHE_BUCKET_NAME="$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET"
-	else
 		echo "⛔Unable to restore file from cache – no \$CACHE_BUCKET_NAME is set"
 		exit 1
+	else
+		echo "Reading bucket name from 'BUILDKITE_PLUGIN_BASH_CACHE_BUCKET'"
+		S3_BUCKET_NAME="$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET"
 	fi
 fi
+
+echo "Using $S3_BUCKET_NAME as cache bucket"
 
 if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
 	echo "Restoring cache entry $CACHE_KEY"
