@@ -32,7 +32,6 @@ if [ -z "$S3_BUCKET_NAME" ]; then
 	else
 		echo "Reading bucket name from 'BUILDKITE_PLUGIN_BASH_CACHE_BUCKET'"
 		S3_BUCKET_NAME="$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET"
-		echo "Using $S3_BUCKET_NAME as S3 Bucket"
 	fi
 fi
 
