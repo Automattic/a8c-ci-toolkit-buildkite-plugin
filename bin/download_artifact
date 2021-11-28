@@ -28,12 +28,12 @@ OUTPUT_PATH=${2-.}
 KEY="$BUILDKITE_BUILD_ID/$ARTIFACT_FILE_NAME"
 
 # If the bucket has transfer acceleration enabled, use it!
-ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket $BUCKET | jq '.Status' -r || true)
+ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$BUCKET" | jq '.Status' -r || true)
 
 if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
 	echo "Downloading with transfer acceleration"
-	aws s3 cp "s3://$BUCKET/$KEY" $OUTPUT_PATH  --endpoint-url https://s3-accelerate.amazonaws.com
+	aws s3 cp "s3://$BUCKET/$KEY" "$OUTPUT_PATH"  --endpoint-url https://s3-accelerate.amazonaws.com
 else
-	aws s3 cp "s3://$BUCKET/$KEY" $OUTPUT_PATH 
+	aws s3 cp "s3://$BUCKET/$KEY" "$OUTPUT_PATH"
 fi
 

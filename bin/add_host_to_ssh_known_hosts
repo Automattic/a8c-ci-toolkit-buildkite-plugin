@@ -7,4 +7,4 @@ URL="${1:?You need to provide an URL as first parameter}"
 [[ $URL =~ ^(https?://|git@)?([^/:]+) ]] && HOST=${BASH_REMATCH[2]}
 
 echo "Adding ${HOST} to '~/.ssh/known_hosts'..."
-for ip in $(dig @8.8.8.8 "${HOST}" +short); do ssh-keyscan "${HOST}",$ip; ssh-keyscan $ip; done 2>/dev/null >> ~/.ssh/known_hosts || true
+for ip in $(dig @8.8.8.8 "${HOST}" +short); do ssh-keyscan "${HOST}","$ip"; ssh-keyscan "$ip"; done 2>/dev/null >> ~/.ssh/known_hosts || true

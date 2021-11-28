@@ -24,4 +24,4 @@ echo "--- :test_tube: Building and Running Tests"
 # https://github.com/Automattic/buildkite-ci/issues/7
 xcrun simctl list >> /dev/null
 
-bundle exec fastlane $LANE_NAME
+bundle exec fastlane "$LANE_NAME"
