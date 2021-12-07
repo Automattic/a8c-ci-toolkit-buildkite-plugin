@@ -3,9 +3,9 @@
 # We always need to run `bundle install` first, otherwise we can't compare
 bundle install
 
-if [ -n "$(git status | grep modified | grep Gemfile.lock)" ]; then 
+if git status | grep modified | grep -q Gemfile.lock; then 
 	echo "Error: Gemfile.lock is not in sync – please run \`bundle install\` and commit your changes"
 	exit 1
-fi 
+fi
 
 echo "Gemfile.lock is in sync"
