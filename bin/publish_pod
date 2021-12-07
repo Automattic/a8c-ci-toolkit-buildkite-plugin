@@ -2,7 +2,7 @@
 
 PODSPEC_PATH=$1
 
-POD_NAME=$(bundle exec pod ipc spec "$PODSPEC_PATH" | jq -r '.name')
+# POD_NAME=$(bundle exec pod ipc spec "$PODSPEC_PATH" | jq -r '.name')
 POD_VERSION=$(bundle exec pod ipc spec "$PODSPEC_PATH" | jq -r '.version')
 
 if [ ! -z "$BUILDKITE_TAG" ] && [ "$BUILDKITE_TAG" != "$POD_VERSION" ]; then
