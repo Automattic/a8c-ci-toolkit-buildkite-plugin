@@ -9,11 +9,11 @@ rm -rf "/tmp/$DATE"
 mkdir -p "/tmp/$DATE"
 
 # Download the repo
-git clone --mirror $BUILDKITE_REPO "/tmp/$DATE/$BUILDKITE_PIPELINE_SLUG.git"
+git clone --mirror "$BUILDKITE_REPO" "/tmp/$DATE/$BUILDKITE_PIPELINE_SLUG.git"
 
 # Create the tarball
 TAR_NAME=$DATE.git.tar
-tar -C "/tmp/$DATE" -cvf $TAR_NAME $BUILDKITE_PIPELINE_SLUG.git
+tar -C "/tmp/$DATE" -cvf "$TAR_NAME" "$BUILDKITE_PIPELINE_SLUG".git
 
 # Copy the file to S3
-aws s3 cp $TAR_NAME s3://$AWS_BUCKET/$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_SLUG/$TAR_NAME
+aws s3 cp "$TAR_NAME" "s3://${AWS_BUCKET}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${TAR_NAME}"

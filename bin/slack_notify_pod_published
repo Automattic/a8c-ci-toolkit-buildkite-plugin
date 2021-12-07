@@ -3,8 +3,8 @@
 PODSPEC_PATH=$1
 SLACK_WEBHOOK=$2
 
-POD_NAME=$(bundle exec pod ipc spec $PODSPEC_PATH | jq -r '.name')
-POD_VERSION=$(bundle exec pod ipc spec $PODSPEC_PATH | jq -r '.version')
+POD_NAME=$(bundle exec pod ipc spec "$PODSPEC_PATH" | jq -r '.name')
+POD_VERSION=$(bundle exec pod ipc spec "$PODSPEC_PATH" | jq -r '.version')
 
 MESSAGE=":tada: ${POD_NAME} ${POD_VERSION} successfully published to CocoaPods trunk!\nIt will take a few minutes for this version to be deployed to the CocoaPods CDN."
-curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${MESSAGE}\"}" $SLACK_WEBHOOK
+curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${MESSAGE}\"}" "$SLACK_WEBHOOK"

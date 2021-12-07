@@ -10,7 +10,7 @@ PODFILE_HASH=$(hash_file Podfile.lock)
 LOCAL_CACHE_KEY="$BUILDKITE_PIPELINE_SLUG-local-pod-cache-$PODFILE_HASH"
 
 # Restore the local `Pods` directory based on the `Podfile.lock` contents
-restore_cache $LOCAL_CACHE_KEY
+restore_cache "$LOCAL_CACHE_KEY"
 
 # If the `pod check` plugin is installed, use it to determine whether or not to install Pods at all
 # If it's not installed (or if it fails), we'll try to install Pods. 
@@ -22,4 +22,4 @@ else
 fi
 
 # If this is the first time we've seen this particular hash of `Podfile.lock`, create a cache entry for future use
-save_cache Pods $LOCAL_CACHE_KEY
+save_cache Pods "$LOCAL_CACHE_KEY"

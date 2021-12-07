@@ -24,4 +24,14 @@ echo "--- :test_tube: Building and Running Tests"
 # https://github.com/Automattic/buildkite-ci/issues/7
 xcrun simctl list >> /dev/null
 
+# FIXME: Missing quotation of $LANE_NAME
+#
+# The fact that $LANE_NAME is not quoted here means that if we pass something
+# like a quoted 'foo bar' as the sole parameter of this script, this will in
+# fact end up calling 'fastlane foo bar' (with 2 parameters to fastlane)
+#
+# We should instead use something like "$@" – which expands to each paramater passed
+# to the script, automatically individually quoted. This would be a breaking change
+# though, so should only be done when we're ready to do a major version bump and
+# update all call sites relying on this.
 bundle exec fastlane $LANE_NAME

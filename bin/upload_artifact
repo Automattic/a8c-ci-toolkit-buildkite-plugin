@@ -25,16 +25,16 @@ if [ -z "$BUCKET" ]; then
 	exit 3
 fi
 
-BASENAME=$(basename $ARTIFACT_PATH)
+BASENAME=$(basename "$ARTIFACT_PATH")
 KEY="$BUILDKITE_BUILD_ID/$BASENAME"
 
 # If the bucket has transfer acceleration enabled, use it!
-ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket $BUCKET | jq '.Status' -r || true)
+ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$BUCKET" | jq '.Status' -r || true)
 
 if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
 	echo "Uploading with transfer acceleration"
-	aws s3 cp $ARTIFACT_PATH "s3://$BUCKET/$KEY" --endpoint-url https://s3-accelerate.amazonaws.com
+	aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$KEY" --endpoint-url https://s3-accelerate.amazonaws.com
 else
-	aws s3 cp $ARTIFACT_PATH "s3://$BUCKET/$KEY"
+	aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$KEY"
 fi
 

@@ -8,7 +8,7 @@ if ! command -v gh &> /dev/null; then
 fi
 
 FILENAME="/tmp/github-token-$BUILDKITE_BUILD_ID"
-echo $GITHUB_TOKEN > $FILENAME
+echo "$GITHUB_TOKEN" > "$FILENAME"
 
-gh auth login --with-token < $FILENAME
-gh pr comment --body-file $PR_MESSAGE_FILE
+gh auth login --with-token < "$FILENAME"
+gh pr comment --body-file "$PR_MESSAGE_FILE"
