@@ -2,7 +2,7 @@ steps:
   - label: ":shell: Lint (Shellcheck)"
     plugins:
       shellcheck#v1.1.2:
-        files: hooks/**
+        files: ["hooks/**", "bin/**"]
 
   - label: ":sparkles: Lint (Buildkite Plugin Linter)"
     plugins:
