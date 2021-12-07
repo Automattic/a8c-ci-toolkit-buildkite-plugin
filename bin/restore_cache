@@ -20,7 +20,7 @@ if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/nu
 
 	echo "	Downloading"
 	# If the bucket has transfer acceleration enabled, use it!
-	ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket $S3_BUCKET_NAME | jq '.Status' -r || true)
+	ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$S3_BUCKET_NAME" | jq '.Status' -r || true)
 
 	if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
 		echo "Downloading with transfer acceleration"
