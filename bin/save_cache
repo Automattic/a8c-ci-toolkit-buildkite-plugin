@@ -27,12 +27,11 @@ fi
 S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
 if [ -z "$S3_BUCKET_NAME" ]; then
 	if [ -z "$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET" ]; then
-		printenv | grep buildkite
-		echo "Reading bucket name from 'BUILDKITE_PLUGIN_BASH_CACHE_BUCKET'"
-		CACHE_BUCKET_NAME="$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET"
-	else
 		echo "⛔Unable to save file to cache – no \$CACHE_BUCKET_NAME is set"
 		exit 1
+	else
+		echo "Reading bucket name from 'BUILDKITE_PLUGIN_BASH_CACHE_BUCKET'"
+		S3_BUCKET_NAME="$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET"
 	fi
 fi
 
@@ -53,7 +52,7 @@ if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/
 
 	echo "	Uploading"
 	# If the bucket has transfer acceleration enabled, use it!
-	ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket $S3_BUCKET_NAME | jq '.Status' -r || true)
+	ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$S3_BUCKET_NAME" | jq '.Status' -r || true)
 
 	if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
 		echo "Uploading with transfer acceleration"
