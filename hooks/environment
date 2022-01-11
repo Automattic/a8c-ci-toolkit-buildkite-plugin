@@ -7,11 +7,33 @@
 
 set -e
 
+# The `hooks` directory within this plugin
 HOOKS_ROOT=$( dirname "${BASH_SOURCE[0]}" )
-PLUGIN_ROOT=$( dirname "$HOOKS_ROOT" )
-PLUGIN_BIN="$PLUGIN_ROOT/bin"
 
-ln -s $PLUGIN_BIN "$PLUGIN_ROOT/library_plugin_binaries"
+# The root directory of this plugin
+PLUGIN_ROOT=$( dirname "$HOOKS_ROOT" )
+
+# The directory name for this plugin
+PLUGIN_BASENAME=$( basename $PLUGIN_ROOT )
+
+# The parent directory of this plugin
+PLUGIN_DIR=$( dirname $PLUGIN_ROOT )
+
+# The simplified path name to use for this plugin
+BASH_CACHE_DIR=$( "$PLUGIN_DIR/bash-cache" )
+
+# The path to the `bin` directory in this plugin
+PLUGIN_BIN="$BASH_CACHE_DIR/bin"
+
+echo "~~~ :file_cabinet: Loading Caching Plugin"
+
+echo "Copying $PLUGIN_ROOT to $BASH_CACHE_DIR"
+
+#cp -v $PLUGIN_ROOT $BASH_CACHE_DIR
+
+echo "Plugin now available at $BASH_CACHE_DIR"
+
 export PATH="$PATH:$PLUGIN_BIN"
+export BASH_CACHE_PATH="$BASH_CACHE_DIR"
 
 echo "~~~ :file_cabinet: Loaded Caching Plugin"
