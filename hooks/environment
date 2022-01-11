@@ -11,7 +11,7 @@ HOOKS_ROOT=$( dirname "${BASH_SOURCE[0]}" )
 PLUGIN_ROOT=$( dirname "$HOOKS_ROOT" )
 PLUGIN_BIN="$PLUGIN_ROOT/bin"
 
-ln -s $PLUGIN_BIN library_plugin_binaries
+ln -s $PLUGIN_BIN "$PLUGIN_ROOT/library_plugin_binaries"
 export PATH="$PATH:$PLUGIN_BIN"
 
 echo "~~~ :file_cabinet: Loaded Caching Plugin"
