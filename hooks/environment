@@ -7,25 +7,39 @@
 
 set -e
 
+echo "~~~ :file_cabinet: Loading Caching Plugin"
+
 # The `hooks` directory within this plugin
 HOOKS_ROOT=$( dirname "${BASH_SOURCE[0]}" )
+
+echo "HOOKS_ROOT: $HOOKS_ROOT"
 
 # The root directory of this plugin
 PLUGIN_ROOT=$( dirname "$HOOKS_ROOT" )
 
+echo "PLUGIN_ROOT: $PLUGIN_ROOT"
+
 # The directory name for this plugin
 PLUGIN_BASENAME=$( basename $PLUGIN_ROOT )
+
+echo "PLUGIN_BASENAME: $PLUGIN_BASENAME"
 
 # The parent directory of this plugin
 PLUGIN_DIR=$( dirname $PLUGIN_ROOT )
 
+echo "PLUGIN_DIR: $PLUGIN_DIR"
+
 # The simplified path name to use for this plugin
 BASH_CACHE_DIR=$( "$PLUGIN_DIR/bash-cache" )
+
+echo "BASH_CACHE_DIR: $BASH_CACHE_DIR"
 
 # The path to the `bin` directory in this plugin
 PLUGIN_BIN="$BASH_CACHE_DIR/bin"
 
-echo "~~~ :file_cabinet: Loading Caching Plugin"
+echo "PLUGIN_BIN: $PLUGIN_BIN"
+
+echo "~~~ DOING THINGS"
 
 echo "Copying $PLUGIN_ROOT to $BASH_CACHE_DIR"
 
