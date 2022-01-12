@@ -39,15 +39,13 @@ PLUGIN_BIN="$BASH_CACHE_DIR/bin"
 
 echo "PLUGIN_BIN: $PLUGIN_BIN"
 
-echo "~~~ DOING THINGS"
-
 echo "Copying $PLUGIN_ROOT to $BASH_CACHE_DIR"
 
-#cp -v $PLUGIN_ROOT $BASH_CACHE_DIR
+cp -rv $PLUGIN_ROOT $BASH_CACHE_DIR
 
 echo "Plugin now available at $BASH_CACHE_DIR"
 
 export PATH="$PATH:$PLUGIN_BIN"
 export BASH_CACHE_PATH="$BASH_CACHE_DIR"
 
-echo "~~~ :file_cabinet: Loaded Caching Plugin"
+echo "Sucessfully Loaded Caching Plugin"
