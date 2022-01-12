@@ -30,7 +30,7 @@ PLUGIN_DIR=$( dirname $PLUGIN_ROOT )
 echo "PLUGIN_DIR: $PLUGIN_DIR"
 
 # The simplified path name to use for this plugin
-BASH_CACHE_DIR=$( "$PLUGIN_DIR/bash-cache" )
+BASH_CACHE_DIR="$PLUGIN_DIR/bash-cache"
 
 echo "BASH_CACHE_DIR: $BASH_CACHE_DIR"
 
