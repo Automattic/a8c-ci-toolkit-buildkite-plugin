@@ -5,4 +5,4 @@ if [ -z "$1" ]; then
 	exit 1
 fi
 
-shasum -a 256 "$1" | cut -f1 -d " "
+sha256sum "$1" | cut -f1 -d " "
