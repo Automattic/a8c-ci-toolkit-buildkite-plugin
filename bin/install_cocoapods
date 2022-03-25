@@ -23,13 +23,21 @@ fi
 
 # Check that `Podfile.lock` was unchanged by `pod install`. If it was, it means
 # the lockfile might have been inadvertently changed.
+
+# `shasum` is available only on macOS
+if command -v shasum &> /dev/null; then
+  sha_command='shasum -a 256'
+else
+  sha_command='sha256sum'
+fi
+
 function lockfile_error () {
   echo "Podfile.lock was changed by 'pod install'. Please run 'pod install' and try again."
 }
 trap lockfile_error ERR
 
 echo "Checking that Podfile.lock was not modified by 'pod install'"
-echo "${PODFILE_HASH} Podfile.lock" | sha256sum --check --status
+echo "${PODFILE_HASH} Podfile.lock" | $sha_command --check --status
 
 # Remove trap for the lockfile error now that we've done the check.
 trap - ERR
