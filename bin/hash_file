@@ -1,8 +1,12 @@
-#!/bin/bash -eu
+#!/bin/bash -e
 
 if [ -z "$1" ]; then
 	echo "You must pass a filename to hash"
 	exit 1
 fi
+
+# Calling this here otherwise the `-z "$1"` above would have failed without
+# printing the error message if `$1` was unbound.
+set -u
 
 sha256sum "$1" | cut -f1 -d " "
