@@ -1,0 +1,7 @@
+#!/bin/bash
+
+PARAMS=(--sha1=$BUILDKITE_COMMIT)
+[[ -n "$BUILDKITE_TAG" ]] && PARAMS+=(--tag-name=$BUILDKITE_TAG)
+[[ -n "$BUILDKITE_BRANCH" ]] && PARAMS+=(--branch-name=$BUILDKITE_BRANCH)
+[[ -n "$BUILDKITE_PULL_REQUEST" && "$BUILDKITE_PULL_REQUEST" != "false" ]] && PARAMS+=(--pull-request-number=$BUILDKITE_PULL_REQUEST)
+echo "${PARAMS[@]}"
