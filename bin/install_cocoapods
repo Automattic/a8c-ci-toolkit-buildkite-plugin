@@ -21,5 +21,18 @@ else
 	bundle exec pod install || bundle exec pod install --repo-update --verbose
 fi
 
+# Check that `Podfile.lock` was unchanged by `pod install`. If it was, it means
+# the lockfile might have been inadvertently changed.
+function lockfile_error () {
+  echo "Podfile.lock was changed by 'pod install'. Please run 'pod install' and try again."
+}
+trap lockfile_error ERR
+
+echo "Checking that Podfile.lock was not modified by 'pod install'"
+echo "${PODFILE_HASH} Podfile.lock" | sha256sum --check --status
+
+# Remove trap for the lockfile error now that we've done the check.
+trap - ERR
+
 # If this is the first time we've seen this particular hash of `Podfile.lock`, create a cache entry for future use
 save_cache Pods "$LOCAL_CACHE_KEY"
