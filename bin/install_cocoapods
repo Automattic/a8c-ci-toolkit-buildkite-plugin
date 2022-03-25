@@ -13,7 +13,7 @@ LOCAL_CACHE_KEY="$BUILDKITE_PIPELINE_SLUG-local-pod-cache-$PODFILE_HASH"
 restore_cache "$LOCAL_CACHE_KEY"
 
 # If the `pod check` plugin is installed, use it to determine whether or not to install Pods at all
-# If it's not installed (or if it fails), we'll try to install Pods. 
+# If it's not installed (or if it fails), we'll try to install Pods.
 # If that fails, it may be due to an out-of-date repo. We can use `--repo-update` to try to resolve this automatically.
 if bundle exec pod plugins installed | grep -q check; then
 	bundle exec pod check || bundle exec pod install || bundle exec pod install --repo-update --verbose
