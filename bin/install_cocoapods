@@ -37,7 +37,8 @@ function lockfile_error () {
 trap lockfile_error ERR
 
 echo "Checking that Podfile.lock was not modified by 'pod install'"
-echo "${PODFILE_HASH} Podfile.lock" | $sha_command --check --status
+# Notice the two spaces as per shasum/sha256sum output
+echo "${PODFILE_HASH}  Podfile.lock" | $sha_command --check --status
 
 # Remove trap for the lockfile error now that we've done the check.
 trap - ERR
