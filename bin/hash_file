@@ -18,4 +18,4 @@ fi
 
 # Both `shasum` and `sha256sum` will print the hash and the file name (`$1`).
 # We only care about the hash, so we use `cut` to extract it.
-$sha_command $1 | cut -f1 -d " "
+$sha_command "$1" | cut -f1 -d " "
