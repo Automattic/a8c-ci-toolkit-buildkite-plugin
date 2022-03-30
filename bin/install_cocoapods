@@ -32,7 +32,9 @@ else
 fi
 
 function lockfile_error () {
-  echo "Podfile.lock was changed by 'pod install'. Please run 'pod install' and try again."
+  message='`Podfile.lock` was changed by `bundle exec pod install`. Please run `bundle exec pod install` locally with a clean cache and commit the result.'
+  echo $message
+  buildkite-agent annotate "$message" --style 'error' --context 'ctx-error'
 }
 trap lockfile_error ERR
 
