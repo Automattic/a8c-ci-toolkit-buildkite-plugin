@@ -5,8 +5,8 @@ if [ -z "$1" ]; then
 	exit 1
 fi
 
-# Calling this here otherwise the `-z "$1"` above would have failed without
-# printing the error message if `$1` was unbound.
+# Calling `set -u` here instead of the shebang otherwise the `-z "$1"` above
+# would fail without printing the error message if `$1` was unbound.
 set -u
 
 # `shasum` is available on only macOS
