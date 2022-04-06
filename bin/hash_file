@@ -1,13 +1,9 @@
-#!/bin/bash -e
+#!/bin/bash -eu
 
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
 	echo "You must pass a filename to hash"
 	exit 1
 fi
-
-# Calling `set -u` here instead of the shebang otherwise the `-z "$1"` above
-# would fail without printing the error message if `$1` was unbound.
-set -u
 
 # `shasum` is available on only macOS
 if command -v shasum &> /dev/null; then
