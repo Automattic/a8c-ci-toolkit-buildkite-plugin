@@ -5,7 +5,7 @@ NEW_SSH_KEY_NAME=$2
 
 # Create key in ~/.ssh dir
 NEW_SSH_KEY_PATH="$HOME"/.ssh/"$NEW_SSH_KEY_NAME"
-echo "$NEW_SSH_KEY" > "$NEW_SSH_KEY_PATH"
+echo -e "$NEW_SSH_KEY" > "$NEW_SSH_KEY_PATH"
 chmod 0600 "$NEW_SSH_KEY_PATH"
 
 # Add new key to Agent
