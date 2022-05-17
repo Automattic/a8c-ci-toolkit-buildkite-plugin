@@ -1,0 +1,13 @@
+#!/bin/bash -eu
+
+# The key is shared with `bin/save_gradle_dependency_cache`
+GRADLE_DEPENDENCY_CACHE_KEY="GRADLE_DEPENDENCY_CACHE"
+
+echo "Restoring Gradle dependency cache..."
+
+# `save_cache` & `restore_cache` scripts only work if they are called from the same directory
+pushd "$GRADLE_RO_DEP_CACHE_BASE_FOLDER"
+restore_cache "$GRADLE_DEPENDENCY_CACHE_KEY"
+popd
+
+echo "---"
