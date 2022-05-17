@@ -1,6 +1,6 @@
 #!/bin/bash -eu
 
-# The key is shared with bin/restore_gradle_dependency_cache
+# The key is shared with `bin/save_gradle_dependency_cache`
 GRADLE_DEPENDENCY_CACHE_KEY="GRADLE_DEPENDENCY_CACHE"
 
 echo "Restoring Gradle dependency cache..."
