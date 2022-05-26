@@ -13,10 +13,13 @@ cp -r ~/.gradle/caches/modules-2 "$GRADLE_RO_DEP_CACHE" \
     && find "$GRADLE_RO_DEP_CACHE" -name "*.lock" -type f -delete \
     && find "$GRADLE_RO_DEP_CACHE" -name "gc.properties" -type f -delete
 
+DEP_CACHE_BASE_FOLDER=$(dirname "$GRADLE_RO_DEP_CACHE")
+DEP_CACHE_FOLDER_NAME=$(basename "$GRADLE_RO_DEP_CACHE")
+
 # `save_cache` & `restore_cache` scripts only work if they are called from the same directory
-pushd "$GRADLE_RO_DEP_CACHE_BASE_FOLDER"
+pushd "$DEP_CACHE_BASE_FOLDER"
 # For now we are using a single key - we might expand on this later by using dependency catalog version
-save_cache "$GRADLE_RO_DEP_CACHE_FOLDER_NAME" "$GRADLE_DEPENDENCY_CACHE_KEY" --force
+save_cache "$DEP_CACHE_FOLDER_NAME" "$GRADLE_DEPENDENCY_CACHE_KEY" --force
 popd
 
 echo "---"
