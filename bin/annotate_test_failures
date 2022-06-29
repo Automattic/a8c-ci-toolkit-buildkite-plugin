@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 #
 # Usage:
-#   annotate-test-failures [junit-file-path]
+#   annotate_test_failures [junit-file-path]
 #
 require 'rexml/document'
 
