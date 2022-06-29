@@ -3,7 +3,7 @@ steps:
     plugins:
       shellcheck#v1.2.0:
         files: ["hooks/**", "bin/**"]
-        options: ["-e", SC1071"] # Ignore scripts that are not written in bash (especially ruby scripts)
+        options: ["--exclude=SC1071"] # Ignore scripts that are not written in bash (especially ruby scripts)
 
   - label: ":sparkles: Lint (Buildkite Plugin Linter)"
     plugins:
