@@ -32,12 +32,12 @@ REXML::XPath.each(xmldoc, '//testcase[failure]') do |testcase|
 end
 
 if failures.empty?
-  puts "No test failure found. Removing any previous `#{title}` Buildkite annotation."
+  puts "No test failure found. Removing any previous `#{title}` Buildkite annotation if any."
   system('buildkite-agent', 'annotation', 'remove', '--context', title)
+  exit 0 # We don't want to fail if the `annotation remove` command failed because there was no previous annotation
 else
   puts "Found #{failures.count} test failure(s). Reporting them as a `#{title}` Buildkite annotation."
   markdown = "\#\#\#\# #{title}: #{failures.length} failure(s)\n\n" + failures.join("\n")
   system('buildkite-agent', 'annotate', markdown, '--style', 'error', '--context', title)
+  exit $?.exitstatus
 end
-
-exit $?.exitstatus
