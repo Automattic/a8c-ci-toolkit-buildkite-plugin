@@ -26,5 +26,8 @@ REXML::XPath.each(xmldoc, '//testcase[failure]') do |testcase|
   ENTRY
 end
 
+puts "Reporting #{failures.count} failure(s) using `buildkite-agent annotate`"
 markdown = "\#\#\#\# #{title}: #{failures.length} failure(s)\n\n" + failures.join("\n")
 system('buildkite-agent', 'annotate', markdown, '--style', 'error', '--context', title)
+
+exit $?.exitstatus
