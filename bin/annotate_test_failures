@@ -8,6 +8,11 @@ require 'rexml/document'
 junit_path = ARGV.first || File.join('build', 'results', 'report.junit')
 title = ENV.fetch('BUILDKITE_LABEL', 'Tests')
 
+unless File.exist?(junit_path)
+  puts "JUnit file not found: #{junit_path}."
+  exit 0
+end
+
 file = File.open(junit_path)
 xmldoc = REXML::Document.new(file)
 
