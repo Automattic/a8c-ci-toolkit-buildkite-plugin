@@ -5,7 +5,7 @@
 #
 require 'rexml/document'
 
-junit_path = ARGV.first || File.join('build/results/report.junit')
+junit_path = ARGV.first || File.join('build', 'results', 'report.junit')
 title = ENV.fetch('BUILDKITE_LABEL', 'Tests')
 
 file = File.open(junit_path)
@@ -13,17 +13,17 @@ xmldoc = REXML::Document.new(file)
 
 failures = []
 REXML::XPath.each(xmldoc, '//testcase[failure]') do |testcase|
-    failure = testcase.elements['failure']
-    failures.append <<~ENTRY
-    <details><summary><tt>#{testcase['name']}</tt> in <tt>#{testcase['classname']}</tt></summary>
-    
-    #{failure['message']}
+  failure = testcase.elements['failure']
+  failures.append <<~ENTRY
+  <details><summary><tt>#{testcase['name']}</tt> in <tt>#{testcase['classname']}</tt></summary>
+  
+  #{failure['message']}
 
-    ```
-    #{failure.text}
-    ```
-    </details>
-    ENTRY
+  ```
+  #{failure.text}
+  ```
+  </details>
+  ENTRY
 end
 
 markdown = "\#\#\#\# #{title}: #{failures.length} failure(s)\n\n" + failures.join("\n")
