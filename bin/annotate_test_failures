@@ -31,8 +31,13 @@ REXML::XPath.each(xmldoc, '//testcase[failure]') do |testcase|
   ENTRY
 end
 
-puts "Reporting #{failures.count} failure(s) using `buildkite-agent annotate`"
-markdown = "\#\#\#\# #{title}: #{failures.length} failure(s)\n\n" + failures.join("\n")
-system('buildkite-agent', 'annotate', markdown, '--style', 'error', '--context', title)
+if failures.empty?
+  puts "No test failure found. Removing any previous `#{title}` Buildkite annotation."
+  system('buildkite-agent', 'annotation', 'remove', '--context', title)
+else
+  puts "Found #{failures.count} test failure(s). Reporting them as a `#{title}` Buildkite annotation."
+  markdown = "\#\#\#\# #{title}: #{failures.length} failure(s)\n\n" + failures.join("\n")
+  system('buildkite-agent', 'annotate', markdown, '--style', 'error', '--context', title)
+end
 
 exit $?.exitstatus
