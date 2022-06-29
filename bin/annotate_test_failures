@@ -1,6 +1,4 @@
 #!/usr/bin/env ruby
-# shellcheck disable=all
-
 #
 # Usage:
 #   annotate-test-failures [junit-file-path]
