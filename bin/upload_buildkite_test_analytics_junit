@@ -1,21 +1,21 @@
 #!/bin/bash -eu
 
 if [ -z "${1: }" ]; then
-	echo "You must pass a path to the file you want to upload to Test Analytics"
-	exit 1
+  echo "You must pass a path to the file you want to upload to Test Analytics"
+  exit 1
 fi
 
 if [ -z "${2: }" ]; then
-	echo "You must pass a Buildkite Analytics Token"
-	exit 1
+  echo "You must pass a Buildkite Analytics Token"
+  exit 1
 fi
 
 FILE_PATH=$1
 ANALYTICS_TOKEN=$2
 
 if [ ! -f "$FILE_PATH" ]; then
-	echo "No file exists at $FILE_PATH. Cancelling Upload"
-	exit 0
+  echo "No file exists at $FILE_PATH. Cancelling Upload"
+  exit 0
 fi
 
 echo "Uploading ${FILE_PATH} to Test Analytics"
