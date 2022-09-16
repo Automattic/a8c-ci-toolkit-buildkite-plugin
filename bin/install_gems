@@ -7,7 +7,9 @@ CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$ARCHITECTURE-ruby$RUBY_VERSION-$GEMFILE_HASH
 
 restore_cache "$CACHEKEY"
 
-# Ensure we're using the latest version of Bundler before running bundle install
+# Ensure we're using the latest version of Bundler before running bundle install.
+#
+# See https://github.com/Automattic/bash-cache-buildkite-plugin/issues/16  for more details on why this is recommended.
 gem install bundler
 bundle install
 
