@@ -23,10 +23,19 @@ REXML::XPath.each(xmldoc, '//testcase[failure]') do |testcase|
   failures.append <<~ENTRY
   <details><summary><tt>#{testcase['name']}</tt> in <tt>#{testcase['classname']}</tt></summary>
   
-  #{failure['message']}
-
+  # Format for `trainer` JUnit files
+  if #{failure.text}.empty?
+  
+  # Format for `xcpretty` JUnit files
+  else
+    failureText = #{failure.text}
+    failureMessage = #{failure['message']}
+  end
+  
+  failureMessage
+  
   ```
-  #{failure.text}
+  failureText
   ```
   </details>
   ENTRY
