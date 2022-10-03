@@ -1,9 +1,6 @@
-NODE_VERSION=$1
+#!/bin/bash
 
-if [ -z "$1" ]; then
-	echo "You must specify a Node.js version"
-	exit 1
-fi
+# This script expects a valid .nvmrc at the project's root
 
-nvm install $NODE_VERSION
-nvm use $NODE_VERSION
+nvm install
+nvm use
