@@ -1,0 +1,9 @@
+NODE_VERSION=$1
+
+if [ -z "$1" ]; then
+	echo "You must specify a Node.js version"
+	exit 1
+fi
+
+nvm install $NODE_VERSION
+nvm use $NODE_VERSION
