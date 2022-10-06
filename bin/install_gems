@@ -7,10 +7,25 @@ CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$ARCHITECTURE-ruby$RUBY_VERSION-$GEMFILE_HASH
 
 restore_cache "$CACHEKEY"
 
+# Dump some info about the Ruby environment, more details about why we do this below.
+dump_ruby_env_info
+
 # Ensure we're using the latest version of Bundler before running bundle install.
 #
-# See https://github.com/Automattic/bash-cache-buildkite-plugin/issues/16  for more details on why this is recommended.
+# See https://github.com/Automattic/bash-cache-buildkite-plugin/issues/16 for more details on why this is recommended.
 gem install bundler
+# Even after adding the call above, we get occasional failure due to Bundler version issues.
+#
+# To learn more about the issue:
+#
+# 1. Dump information
+# 2. Run `rbenv rehash`, which is recommended after install executables
+dump_ruby_env_info
+rbenv rehash
+
+# Dump info again to see if anything changed after rehashing
+dump_ruby_env_info
+
 bundle install
 
 # If this is the first time we've seen this particular cache key, save it for the future
