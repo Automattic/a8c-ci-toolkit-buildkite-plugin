@@ -1,6 +1,6 @@
 #!/bin/bash -eu
 
-echo "--- :ruby: Ruby environment info dump"
+echo "--- :ruby: Ruby environment info dump ${1:-}"
 set -x
 which ruby
 ruby --version
