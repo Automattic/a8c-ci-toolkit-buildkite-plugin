@@ -13,6 +13,7 @@ restore_cache "$CACHEKEY"
 # This should prevent runtime issues where Ruby "gets confused" on which Bundler version to use.
 # See https://github.com/Automattic/bash-cache-buildkite-plugin/issues/16 for more details.
 GEMFILE_LOCK_BUNDLER_VERSION=$(sed -n -e '/BUNDLED WITH/{n;s/ *//p;}' Gemfile.lock)
+# The command will fail if the `--version` parameter is empty; we can omit checking for that ourselves.
 gem install bundler --version "$GEMFILE_LOCK_BUNDLER_VERSION"
 
 dump_ruby_env_info "after running gem install bundler version $GEMFILE_LOCK_BUNDLER_VERSION"
