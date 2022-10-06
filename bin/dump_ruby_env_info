@@ -1,0 +1,14 @@
+#!/bin/bash -eu
+
+echo "--- :ruby: Ruby environment info dump"
+set -x
+which ruby
+ruby --version
+
+which gem
+gem --version
+
+which bundle
+gem list bundler
+bundle version
+set -x
