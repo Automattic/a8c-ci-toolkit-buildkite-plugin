@@ -14,9 +14,8 @@ dump_ruby_env_info 'after running restore_cache'
 # Ensure we're using the latest version of Bundler before running bundle install.
 #
 # See https://github.com/Automattic/bash-cache-buildkite-plugin/issues/16 for more details on why this is recommended.
-gem uninstall bundler
-gem install bundler
-dump_ruby_env_info 'after running gem install bundler'
+gem install bundler:"$( (tail -1 | sed 's/ *//g') < Gemfile.lock)"
+dump_ruby_env_info 'after running gem install bundler with constrained version'
 
 bundle install
 
