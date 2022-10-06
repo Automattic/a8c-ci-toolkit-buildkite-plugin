@@ -9,8 +9,6 @@ CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$ARCHITECTURE-ruby$RUBY_VERSION-$GEMFILE_HASH
 
 restore_cache "$CACHEKEY"
 
-dump_ruby_env_info 'after running restore_cache'
-
 # Install the same Bundler version as the one in the Gemfile.lock.
 # This should prevent runtime issues where Ruby "gets confused" on which Bundler version to use.
 # See https://github.com/Automattic/bash-cache-buildkite-plugin/issues/16 for more details.
