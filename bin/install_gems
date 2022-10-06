@@ -1,14 +1,13 @@
 #!/bin/bash -eu
 
+dump_ruby_env_info "before running $(basename "$0")"
+
 ARCHITECTURE=$(uname -m)
 RUBY_VERSION=$(cat .ruby-version)
 GEMFILE_HASH=$(hash_file Gemfile.lock)
 CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$ARCHITECTURE-ruby$RUBY_VERSION-$GEMFILE_HASH"
 
 restore_cache "$CACHEKEY"
-
-# Dump some info about the Ruby environment, more details about why we do this below.
-dump_ruby_env_info
 
 # Ensure we're using the latest version of Bundler before running bundle install.
 #
