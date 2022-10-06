@@ -19,11 +19,11 @@ gem install bundler
 #
 # 1. Dump information
 # 2. Run `rbenv rehash`, which is recommended after install executables
-dump_ruby_env_info
+dump_ruby_env_info 'before rbenv rehash'
 rbenv rehash
 
 # Dump info again to see if anything changed after rehashing
-dump_ruby_env_info
+dump_ruby_env_info 'after rbenv rehash'
 
 bundle install
 
