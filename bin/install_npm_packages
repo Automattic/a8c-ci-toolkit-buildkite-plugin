@@ -4,6 +4,9 @@
 if [ ! -f package.json ]; then
     echo "No valid package.json file found"
     exit 1
+elif [ ! -f package-lock.json ]; then
+    echo "No valid package-lock.json file found"
+    exit 1
 fi
 
 ARCHITECTURE=$(uname -m)
