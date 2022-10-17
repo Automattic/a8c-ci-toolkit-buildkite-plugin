@@ -1,0 +1,23 @@
+#!/bin/bash -eu
+
+echo "--- :ruby: Ruby environment info dump ${1:-}"
+
+if [[ -f .ruby-version ]]; then
+  cat .ruby-version
+else
+  echo 'Could not find .ruby-version in current folder'
+fi
+
+set -x # debug mode: print the commands we call
+
+which ruby
+ruby --version
+
+which gem
+gem --version
+
+which bundle
+gem list bundler
+bundle version
+
+set +x # exit debug mode
