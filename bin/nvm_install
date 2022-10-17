@@ -1,0 +1,10 @@
+#!/bin/bash -eu
+
+# This script expects a valid .nvmrc at the project's root
+if [ ! -f .nvmrc ]; then
+    echo "No valid .nvmrc file found"
+    exit 1
+fi
+
+nvm install
+nvm use
