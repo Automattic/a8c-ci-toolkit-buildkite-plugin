@@ -1,7 +1,5 @@
 #!/bin/bash -eu
 
-dump_ruby_env_info "before running $(basename "$0")"
-
 ARCHITECTURE=$(uname -m)
 RUBY_VERSION=$(cat .ruby-version)
 GEMFILE_HASH=$(hash_file Gemfile.lock)
@@ -15,8 +13,6 @@ restore_cache "$CACHEKEY"
 GEMFILE_LOCK_BUNDLER_VERSION=$(sed -n -e '/BUNDLED WITH/{n;s/ *//p;}' Gemfile.lock)
 # The command will fail if the `--version` parameter is empty; we can omit checking for that ourselves.
 gem install bundler --version "$GEMFILE_LOCK_BUNDLER_VERSION"
-
-dump_ruby_env_info "after running gem install bundler version $GEMFILE_LOCK_BUNDLER_VERSION"
 
 bundle install
 
