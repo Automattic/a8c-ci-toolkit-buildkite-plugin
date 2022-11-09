@@ -12,5 +12,4 @@ echo "--- :rubygems: Setting up Gems"
 install_gems
 
 echo "--- :test_tube: Building and testing the Swift Package"
-
 bundle exec fastlane "${@:-test}"
