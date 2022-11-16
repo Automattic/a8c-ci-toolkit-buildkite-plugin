@@ -1,0 +1,37 @@
+#!/bin/bash -eu
+
+CHECKSUM_URLS=$(curl -s https://services.gradle.org/versions/all | jq -r ".[].wrapperChecksumUrl? | select(.)")
+
+function validate_checksum() {
+    wrapper_file="$1"
+    validated_with_checksum_from_url=""
+
+    wrapper_checksum=$(sha256sum "$wrapper_file")
+    # Remove the file location from the "wrapper_checksum" result
+    sha256_checksum_to_be_validated="${wrapper_checksum%% *}"
+
+    while IFS= read -r checksum_url; do
+        downloaded_checksum=$(curl -s --location "$checksum_url")
+        if [[ "$sha256_checksum_to_be_validated" == "$downloaded_checksum" ]]; then
+            validated_with_checksum_from_url="$checksum_url"
+            break;
+        fi
+    done <<< "$CHECKSUM_URLS"
+
+    if [[ -z "$validated_with_checksum_from_url" ]]; then
+        echo "Failed to validate '$wrapper_file'"
+        exit 1
+    else
+        echo "'$wrapper_file' is validated with sha256 checksum from '$validated_with_checksum_from_url'"
+    fi
+}
+
+WRAPPER_JARS=$(find . -type f -name "gradle-wrapper.jar")
+if [ -z "${WRAPPER_JARS}" ]; then
+    echo "No gradle-wrapper.jar files found."
+    exit 1
+else
+    while IFS= read -r wrapper_file; do
+        validate_checksum "$wrapper_file"
+    done <<< "$WRAPPER_JARS"
+fi
