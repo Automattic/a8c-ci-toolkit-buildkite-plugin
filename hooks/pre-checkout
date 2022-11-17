@@ -16,7 +16,6 @@ if [ -z "${GIT_REFERENCE_REPO_SOURCE}" ]; then
 fi
 
 if [ "${GIT_REFERENCE_REPO_SOURCE}" == "s3" ]; then
-  echo "Downloading Git Mirror from S3"
   download_repo_mirror_from_s3
 
   # Overwrite the clone flags to use the newly-downloaded reference repo
@@ -25,7 +24,6 @@ if [ "${GIT_REFERENCE_REPO_SOURCE}" == "s3" ]; then
 fi
 
 if [ "${GIT_REFERENCE_REPO_SOURCE}" == "http" ]; then
-  echo "Downloading Git Mirror from HTTP Server"
   download_repo_mirror_from_http
 
   # Overwrite the clone flags to use the newly-downloaded reference repo
