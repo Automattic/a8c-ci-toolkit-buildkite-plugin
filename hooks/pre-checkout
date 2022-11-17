@@ -21,7 +21,6 @@ if [ "${GIT_REFERENCE_REPO_SOURCE}" == "s3" ]; then
 
   # Overwrite the clone flags to use the newly-downloaded reference repo
   export BUILDKITE_GIT_CLONE_FLAGS="-v --reference /tmp/${BUILDKITE_PIPELINE_SLUG}.git"
-  echo $BUILDKITE_GIT_CLONE_FLAGS
   exit 0
 fi
 
