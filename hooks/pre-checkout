@@ -19,9 +19,8 @@ if [ "${GIT_REFERENCE_REPO_SOURCE}" == "s3" ]; then
   echo "Downloading Git Mirror from S3"
   download_repo_mirror_from_s3
 
-  echo "Updating Environment Variables"
   # Overwrite the clone flags to use the newly-downloaded reference repo
-  export BUILDKITE_GIT_CLONE_FLAGS="-v --reference /tmp/$BUILDKITE_PIPELINE_SLUG.git"
+  export BUILDKITE_GIT_CLONE_FLAGS="-v --reference /tmp/${BUILDKITE_PIPELINE_SLUG}.git"
   return
 fi
 
