@@ -13,39 +13,3 @@ PLUGIN_BIN="$PLUGIN_ROOT/bin"
 
 export PATH="$PATH:$PLUGIN_BIN"
 echo "~~~ :file_cabinet: Loaded Caching Plugin"
-
-# Allow the environment to override project settings and disable git mirroring
-if [ -n "${DISABLE_GIT_MIRRORING}" ]; then
-  echo "'DISABLE_GIT_MIRRORING' environment varible is present."
-  if [ "$DISABLE_GIT_MIRRORING" ]; then
-    echo "Git Mirroring is disabled in this context"
-    exit 0
-  fi
-fi
-
-if [ -z "${GIT_REFERENCE_REPO_SOURCE}" ]; then
-  echo "Missing 'GIT_REFERENCE_REPO_SOURCE' environment variable – disabling Git Mirroring"
-  exit 0
-fi
-
-if [ "${GIT_REFERENCE_REPO_SOURCE}" == "s3" ]; then
-  echo "Downloading Git Mirror from S3"
-  download_repo_mirror_from_s3
-
-  echo "Updating Environment Variables"
-  # Overwrite the clone flags to use the newly-downloaded reference repo
-  export BUILDKITE_GIT_CLONE_FLAGS="-v --reference /tmp/$BUILDKITE_PIPELINE_SLUG.git"
-  exit 0
-fi
-
-if [ "${GIT_REFERENCE_REPO_SOURCE}" == "http" ]; then
-  echo "Downloading Git Mirror from HTTP Server"
-  download_repo_mirror_from_http
-
-  # Overwrite the clone flags to use the newly-downloaded reference repo
-  export BUILDKITE_GIT_CLONE_FLAGS="-v --reference /tmp/${BUILDKITE_PIPELINE_SLUG}.git"
-  exit 0
-fi
-
-echo "Missing 'GIT_REFERENCE_REPO_SOURCE' environment variable – disabling Git Mirroring"
-exit 0
