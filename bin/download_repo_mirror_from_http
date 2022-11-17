@@ -17,7 +17,7 @@ needs_new_snapshot() {
   return 1
 }
 
-echo "--- 📦 Restoring cache for ${BUILDKITE_PIPELINE_SLUG} from http://${GIT_MIRROR_S3_BUCKET}"
+echo "~~~ 📦 Restoring cache for ${BUILDKITE_PIPELINE_SLUG} from http://${GIT_MIRROR_S3_BUCKET}"
 get_latest_snapshot
 
 if needs_new_snapshot; then
