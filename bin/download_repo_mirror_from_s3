@@ -1,0 +1,44 @@
+#!/bin/bash -eu
+
+AWS_RETRY_MODE=standard
+AWS_MAX_ATTEMPTS=5
+ARCHIVE_DESTINATION="/tmp/${BUILDKITE_PIPELINE_SLUG}.git.zip"
+
+latest_snapshot=""
+get_latest_snapshot(){
+  latest_snapshot=$( aws --output json s3api list-objects-v2 --bucket="${GIT_MIRROR_S3_BUCKET}" --prefix "${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}" | jq -r ".Contents | .[] | .Key" | sort | tail -n1 )
+}
+
+needs_new_snapshot() {
+  if [ -z "$latest_snapshot" ]; then
+    echo "Latest Snapshot is empty"
+    return 0
+  fi
+
+  return 1
+}
+
+echo "--- 📦 Restoring cache for ${BUILDKITE_PIPELINE_SLUG} from s3://${GIT_REFERENCE_REPO_S3_BUCKET}"
+get_latest_snapshot
+
+if needs_new_snapshot; then
+  echo "No snapshots exist – creating a new one"
+  cache_repo # Assume that this plugin is on the $PATH
+
+  # Overwrite the clone flags to use the reference repo
+  export BUILDKITE_GIT_CLONE_FLAGS="-v --reference /tmp/$BUILDKITE_PIPELINE_SLUG.git"
+  exit 0
+fi
+
+ARCHIVE_URL="s3://${GIT_REFERENCE_REPO_S3_BUCKET}/${latest_snapshot}"
+
+# Clean up beforehand, just in case
+rm -rf "${ARCHIVE_DESTINATION}"
+
+echo "Downloading Mirror from ${ARCHIVE_URL} to ${ARCHIVE_DESTINATION}"
+aws s3 cp "${ARCHIVE_URL}" "${ARCHIVE_DESTINATION}" --no-progress
+echo "Download Complete"
+
+echo "Unarchiving Git Repo at ${ARCHIVE_DESTINATION}"
+unzip -o "${ARCHIVE_DESTINATION}" -d /tmp
+echo "Unarchiving Complete"

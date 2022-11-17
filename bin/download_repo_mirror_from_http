@@ -1,0 +1,45 @@
+#!/bin/bash -eu
+
+ARCHIVE_DESTINATION="/tmp/${BUILDKITE_PIPELINE_SLUG}.git.zip"
+URL="${GIT_MIRROR_HTTP_SERVER}"
+
+latest_snapshot=""
+get_latest_snapshot(){
+  latest_snapshot=$( curl --retry 5 --retry-delay 5 $URL/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/ -H "Accept: application/json" | jq -r '.[] | .name | select(endswith(".git.zip"))' | sort | tail -1 )
+}
+
+needs_new_snapshot() {
+  if [ -z "$latest_snapshot" ]; then
+    echo "Latest Snapshot is empty"
+    return 0
+  fi
+
+  return 1
+}
+
+echo "--- 📦 Restoring cache for ${BUILDKITE_PIPELINE_SLUG} from http://${GIT_MIRROR_S3_BUCKET}"
+get_latest_snapshot
+
+if needs_new_snapshot; then
+  echo "No snapshots exist – creating a new one"
+  cache_repo # Assume that this plugin is on the $PATH
+
+  # Overwrite the clone flags to use the reference repo
+  export BUILDKITE_GIT_CLONE_FLAGS="-v --reference /tmp/$BUILDKITE_PIPELINE_SLUG.git"
+  exit 0
+fi
+
+ARCHIVE_URL="http://${URL}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${latest_snapshot}"
+
+# `curl` is doing a couple of really nice things for us here:
+#
+# - Use `-retry` to auto-retry the download if we're not successful the first time
+# - Use `--time-cond` to automatically evaluate the destination file (if present) and avoid doing
+#   the download at all if we already have the version of the file that's on the server (as determined
+#   by the modification date).
+curl --retry 5 "${ARCHIVE_URL}" --output "${ARCHIVE_DESTINATION}" --time-cond "${ARCHIVE_DESTINATION}"
+echo "Download Complete"
+
+echo "Unarchiving Git Repo at ${ARCHIVE_DESTINATION}"
+unzip -o "${ARCHIVE_DESTINATION}" -d /tmp
+echo "Unarchiving Complete"

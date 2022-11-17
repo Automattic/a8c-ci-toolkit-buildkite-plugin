@@ -1,19 +1,30 @@
 #!/bin/bash -eu
 
-AWS_BUCKET=$1
+AWS_BUCKET=${1:-$GIT_MIRROR_S3_BUCKET}
 
-DATE=$(date +"%Y-%m-%d")
+DATE=$(date +"%Y-%m")
+MIRROR_PATH=/tmp/$BUILDKITE_PIPELINE_SLUG.git
+ZIP_PATH=/tmp/$DATE.git.zip
 
-# Create the directory (and ensure it's empty)
-rm -rf "/tmp/$DATE"
-mkdir -p "/tmp/$DATE"
+# Ensure the destination is empty
+rm -rf "$MIRROR_PATH"
+
+# We need to trust the remote keys in order to clone via SSH
+add_host_to_ssh_known_hosts github.com
+add_host_to_ssh_known_hosts bitbucket.com
 
 # Download the repo
-git clone --mirror "$BUILDKITE_REPO" "/tmp/$DATE/$BUILDKITE_PIPELINE_SLUG.git"
+git clone --mirror "$BUILDKITE_REPO" "$MIRROR_PATH"
 
-# Create the tarball
-TAR_NAME=$DATE.git.tar
-tar -C "/tmp/$DATE" -cvf "$TAR_NAME" "$BUILDKITE_PIPELINE_SLUG".git
+# Zip the Git Mirror using zero compression – Git is pretty efficient space-wise, instead we
+# are trying to make the mirror easier to move around as a unit without spending a lot of time
+# compressing and decompressing.
+pushd /tmp
+zip -r -0 "$ZIP_PATH" ${BUILDKITE_PIPELINE_SLUG}.git
+popd
 
 # Copy the file to S3
-aws s3 cp "$TAR_NAME" "s3://${AWS_BUCKET}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${TAR_NAME}"
+aws s3 cp "$ZIP_PATH" "s3://${AWS_BUCKET}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${DATE}.git.zip"
+
+# Clean up after ourselves
+rm -rf ${MIRROR_PATH} ${ZIP_PATH}
