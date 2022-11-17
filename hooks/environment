@@ -13,6 +13,7 @@ PLUGIN_BIN="$PLUGIN_ROOT/bin"
 
 export PATH="$PATH:$PLUGIN_BIN"
 export BUILDKITE_GIT_CLONE_FLAGS="THIS IS A TEST"
+echo $BUILDKITE_GIT_CLONE_FLAGS
 
 echo "~~~ :file_cabinet: Loaded Caching Plugin"
 
