@@ -1,0 +1,48 @@
+#!/bin/bash -eu
+
+# Attempts to generate the frozen `.strings` file to gets sent to GlotPress
+# after a new release code freeze.
+#
+# If the process fails, annotates the build with the errors.
+
+# The strings generation happens via Fastlane, so we need to install the
+# Ruby gems.
+echo "--- :rubygems: Setting up Gems"
+install_gems
+
+# The strings generation also picks up files from our first party libraries,
+# some of which are installed via CocoaPods
+echo "--- :cocoapods: Setting up Pods"
+install_cocoapods
+
+echo "--- :sleuth_or_spy: Lint Apple Localized Strings Format"
+# A next step improvement is to move the logs management within the release
+# toolkit
+LOGS=logs.txt
+set +e
+set -o pipefail
+bundle exec fastlane generate_strings_file_for_glotpress skip_commit:true | tee $LOGS
+EXIT_CODE=$?
+set -e
+
+if [[ $EXIT_CODE -ne 0 ]]; then
+  # Strings generation finished with errors, extract the errors in an easy-to-find section
+  echo "+++ :x: Strings Generation Failed"
+  ERRORS=errors.txt
+  echo "Found errors when trying to run \`genstrings\` to generate the \`.strings\` files from \`*LocalizedStrings\` calls:" | tee $ERRORS
+  echo '' >> $ERRORS
+  # Print the errors inline.
+  #
+  # Notice the second `sed` call that removes the ANSI escape sequences that
+  # Fastlane uses to color the output.
+  grep -e "\[.*\].*genstrings:" $LOGS \
+    | sed -e 's/\[.*\].*genstrings: error: /- /' \
+    | sed -e $'s/\x1b\[[0-9;]*m//g' \
+    | sort \
+    | uniq \
+    | tee -a $ERRORS
+  # Annotate the build with the errors
+  cat $ERRORS | buildkite-agent annotate --style error --context genstrings
+fi
+
+exit $EXIT_CODE
