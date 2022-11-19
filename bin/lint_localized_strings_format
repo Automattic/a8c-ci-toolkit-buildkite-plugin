@@ -28,8 +28,8 @@ set -e
 if [[ $EXIT_CODE -ne 0 ]]; then
   # Strings generation finished with errors, extract the errors in an easy-to-find section
   echo "+++ :x: Strings Generation Failed"
-  ERRORS=errors.txt
-  printf "Found errors when trying to run \`genstrings\` to generate the \`.strings\` files from \`{NS,App}LocalizedStrings\` calls:\n\n" | tee $ERRORS
+  ERRORS_FILE=errors.txt
+  printf "Found errors when trying to run \`genstrings\` to generate the \`.strings\` files from \`{NS,App}LocalizedStrings\` calls:\n\n" | tee $ERRORS_FILE
   # Print the errors inline.
   #
   # Notice the second `sed` call that removes the ANSI escape sequences that
@@ -45,9 +45,9 @@ if [[ $EXIT_CODE -ne 0 ]]; then
     | sed -e $'s/\x1b\[[0-9;]*m//g' \
     | sort \
     | uniq \
-    | tee -a $ERRORS
+    | tee -a $ERRORS_FILE
   # Annotate the build with the errors
-  cat $ERRORS | buildkite-agent annotate --style error --context genstrings
+  cat $ERRORS_FILE | buildkite-agent annotate --style error --context genstrings
 fi
 
 exit $EXIT_CODE
