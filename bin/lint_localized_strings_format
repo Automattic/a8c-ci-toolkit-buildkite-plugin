@@ -29,7 +29,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
   # Strings generation finished with errors, extract the errors in an easy-to-find section
   echo "+++ :x: Strings Generation Failed"
   ERRORS=errors.txt
-  echo "Found errors when trying to run \`genstrings\` to generate the \`.strings\` files from \`*LocalizedStrings\` calls:" | tee $ERRORS
+  echo "Found errors when trying to run \`genstrings\` to generate the \`.strings\` files from \`{NS,App}LocalizedStrings\` calls:" | tee $ERRORS
   echo '' >> $ERRORS
   # Print the errors inline.
   #
