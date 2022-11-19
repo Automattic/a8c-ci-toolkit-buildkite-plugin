@@ -29,14 +29,19 @@ if [[ $EXIT_CODE -ne 0 ]]; then
   # Strings generation finished with errors, extract the errors in an easy-to-find section
   echo "+++ :x: Strings Generation Failed"
   ERRORS=errors.txt
-  echo "Found errors when trying to run \`genstrings\` to generate the \`.strings\` files from \`{NS,App}LocalizedStrings\` calls:" | tee $ERRORS
-  echo '' >> $ERRORS
+  printf "Found errors when trying to run \`genstrings\` to generate the \`.strings\` files from \`{NS,App}LocalizedStrings\` calls:\n\n" | tee $ERRORS
   # Print the errors inline.
   #
   # Notice the second `sed` call that removes the ANSI escape sequences that
-  # Fastlane uses to color the output.
-  grep -e "\[.*\].*genstrings:" $LOGS \
-    | sed -e 's/\[.*\].*genstrings: error: /- /' \
+  # Fastlane uses to color the output. We need to do this at this point to
+  # account for Fastlane printing the errors multiple times (inline and in the
+  # end of the lane summary) but with different escape sequences. Without it,
+  # we would get multiple hits for the same error.
+  #
+  # See discussion at
+  # https://github.com/wordpress-mobile/WordPress-iOS/pull/19553#discussion_r1017743950
+  cat $LOGS \
+    | sed -ne 's/\[.*\].*genstrings: error: /- /p' \
     | sed -e $'s/\x1b\[[0-9;]*m//g' \
     | sort \
     | uniq \
