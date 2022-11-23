@@ -22,10 +22,10 @@ LOGS=logs.txt
 set +e
 set -o pipefail
 if [[ $# -eq 0 ]]; then
-  bundle exec fastlane generate_strings_file_for_glotpress skip_commit:true | tee $LOGS
-else
-  bundle exec fastlane "$@" | tee $LOGS
+  # If no argument provided, update $@ with default values
+  set -- generate_strings_file_for_glotpress skip_commit:true
 fi
+bundle exec fastlane "$@" | tee $LOGS
 EXIT_CODE=$?
 set -e
 
