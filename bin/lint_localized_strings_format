@@ -21,7 +21,11 @@ echo "--- :sleuth_or_spy: Lint Apple Localized Strings Format"
 LOGS=logs.txt
 set +e
 set -o pipefail
-bundle exec fastlane generate_strings_file_for_glotpress skip_commit:true | tee $LOGS
+if [[ $# -eq 0 ]]; then
+  bundle exec fastlane generate_strings_file_for_glotpress skip_commit:true | tee $LOGS
+else
+  bundle exec fastlane "$@" | tee $LOGS
+fi
 EXIT_CODE=$?
 set -e
 
