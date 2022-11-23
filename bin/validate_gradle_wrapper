@@ -6,9 +6,7 @@ function validate_checksum() {
     wrapper_file="$1"
     validated_with_checksum_from_url=""
 
-    wrapper_checksum=$(sha256sum "$wrapper_file")
-    # Remove the file location from the "wrapper_checksum" result
-    sha256_checksum_to_be_validated="${wrapper_checksum%% *}"
+    sha256_checksum_to_be_validated=$(hash_file "$wrapper_file")
 
     while IFS= read -r checksum_url; do
         downloaded_checksum=$(curl -s --location "$checksum_url")
