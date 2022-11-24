@@ -5,7 +5,7 @@
 
 if [[ ! -f Package.swift ]]; then
     echo "This repo is not a Swift package."
-    exit
+    exit 1
 fi
 
 echo "--- :rubygems: Setting up Gems"
