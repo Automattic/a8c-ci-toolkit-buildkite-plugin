@@ -5,6 +5,10 @@ bundle install
 
 if git status | grep modified | grep -q Gemfile.lock; then
   echo "Error: Gemfile.lock is not in sync – please run \`bundle install\` and commit your changes"
+  echo ''
+  echo 'Gemfile.lock diff:'
+  echo ''
+  git diff Gemfile.lock
   exit 1
 fi
 
