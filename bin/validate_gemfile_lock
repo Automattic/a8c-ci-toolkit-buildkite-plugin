@@ -3,9 +3,13 @@
 # We always need to run `bundle install` first, otherwise we can't compare
 bundle install
 
-if git status | grep modified | grep -q Gemfile.lock; then 
-	echo "Error: Gemfile.lock is not in sync – please run \`bundle install\` and commit your changes"
-	exit 1
+if git status | grep modified | grep -q Gemfile.lock; then
+  echo "Error: Gemfile.lock is not in sync – please run \`bundle install\` and commit your changes"
+  echo ''
+  echo 'Gemfile.lock diff:'
+  echo ''
+  git diff Gemfile.lock
+  exit 1
 fi
 
 echo "Gemfile.lock is in sync"
