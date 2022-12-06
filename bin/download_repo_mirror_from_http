@@ -1,14 +1,14 @@
 #!/bin/bash -eu
 
 ARCHIVE_DESTINATION="/tmp/${BUILDKITE_PIPELINE_SLUG}.git.zip"
-URL="${GIT_MIRROR_HTTP_SERVER}"
+URL="${GIT_REFERENCE_REPO_HTTP_SERVER}"
 
 latest_snapshot=""
 get_latest_snapshot(){
-  latest_snapshot=$( curl --retry 5 --retry-delay 5 $URL/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/ -H "Accept: application/json" | jq -r '.[] | .name | select(endswith(".git.zip"))' | sort | tail -1 )
+  latest_snapshot=$( curl --retry 5 --retry-delay 5 $URL/s3/${GIT_REFERENCE_REPO_S3_BUCKET}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/ -H "Accept: application/json" | jq -r '.[] | .name | select(endswith(".git.zip"))' | sort | tail -1 )
 }
 
-needs_new_snapshot() {
+snapshot_not_found() {
   if [ -z "$latest_snapshot" ]; then
     echo "Latest Snapshot is empty"
     return 0
@@ -17,16 +17,13 @@ needs_new_snapshot() {
   return 1
 }
 
-echo "~~~ 📦 Restoring cache for ${BUILDKITE_PIPELINE_SLUG} from http://${GIT_MIRROR_S3_BUCKET}"
+echo "~~~ 📦 Restoring cache for ${BUILDKITE_PIPELINE_SLUG} from http://${URL}"
 get_latest_snapshot
 
-if needs_new_snapshot; then
-  echo "No snapshots exist – creating a new one"
-  cache_repo # Assume that this plugin is on the $PATH
-
-  # Overwrite the clone flags to use the reference repo
-  export BUILDKITE_GIT_CLONE_FLAGS="-v --reference /tmp/$BUILDKITE_PIPELINE_SLUG.git"
-  exit 0
+# When using HTTP, we're referecing a mirror of an S3 bucket
+if snapshot_not_found; then
+  echo "No snapshots found – skipping mirror download"
+  exit 1 # Yes, we really want `exit` here – we can't do much else here, so might as well abort the hook
 fi
 
 ARCHIVE_URL="http://${URL}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/${latest_snapshot}"

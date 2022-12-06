@@ -6,7 +6,7 @@ ARCHIVE_DESTINATION="/tmp/${BUILDKITE_PIPELINE_SLUG}.git.zip"
 
 latest_snapshot=""
 get_latest_snapshot(){
-  latest_snapshot=$( aws --output json s3api list-objects-v2 --bucket="${GIT_MIRROR_S3_BUCKET}" --prefix "${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}" | jq -r ".Contents | .[] | .Key" | sort | tail -n1 )
+  latest_snapshot=$( aws --output json s3api list-objects-v2 --bucket="${GIT_REFERENCE_REPO_S3_BUCKET}" --prefix "${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}" | jq -r ".Contents | .[] | .Key" | sort | tail -n1 )
 }
 
 needs_new_snapshot() {
