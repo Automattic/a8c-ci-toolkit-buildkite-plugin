@@ -1,5 +1,6 @@
 #!/bin/bash -eu
 
+# shellcheck source=/dev/null
 source "$HOME"/.nvm/nvm.sh
 
 # This script expects a valid .nvmrc at the project's root
