@@ -1,6 +1,6 @@
 #!/bin/bash -eu
 
-source $HOME/.nvm/nvm.sh
+source "$HOME"/.nvm/nvm.sh
 
 # This script expects a valid .nvmrc at the project's root
 if [ ! -f .nvmrc ]; then
