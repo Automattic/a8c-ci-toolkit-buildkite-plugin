@@ -10,4 +10,3 @@ if [ ! -f .nvmrc ]; then
 fi
 
 nvm install
-nvm use
