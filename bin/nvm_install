@@ -1,5 +1,8 @@
 #!/bin/bash -eu
 
+# shellcheck source=/dev/null
+source "$HOME"/.nvm/nvm.sh
+
 # This script expects a valid .nvmrc at the project's root
 if [ ! -f .nvmrc ]; then
     echo "No valid .nvmrc file found"
@@ -7,4 +10,3 @@ if [ ! -f .nvmrc ]; then
 fi
 
 nvm install
-nvm use
