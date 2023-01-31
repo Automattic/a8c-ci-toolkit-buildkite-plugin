@@ -1,0 +1,24 @@
+#!/bin/bash -eu
+
+# Ensure package.json is present
+if [ ! -f package.json ]; then
+    echo "No valid package.json file found"
+    exit 1
+fi
+
+# Ensure package-lock.json is present 
+if [ ! -f package-lock.json ]; then
+    echo "No valid package-lock.json file found"
+    exit 1
+fi
+
+ARCHITECTURE=$(uname -m)
+NODE_VERSION=$(node --version)
+PACKAGE_HASH=$(hash_file package-lock.json)
+CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$ARCHITECTURE-node$NODE_VERSION-$PACKAGE_HASH"
+
+restore_cache "$CACHEKEY"
+
+npm install
+
+save_cache node_modules/ "$CACHEKEY"
