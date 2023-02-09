@@ -5,4 +5,4 @@ PACKAGE_RESOLVED_HASH=$(hash_file $PACKAGE_RESOLVED_LOCATION)
 CACHEKEY="$BUILDKITE_PIPELINE_SLUG-spm-cache-$PACKAGE_RESOLVED_HASH"
 
 # If this is the first time we've seen this particular cache key, save it for the future
-save_cache vendor/spm "$CACHEKEY"
+save_cache "/usr/local/var/buildkite-agent/builds/MV-MKE-X64-*/automattic/$BUILDKITE_PIPELINE_SLUG vendor/spm" "$CACHEKEY"
