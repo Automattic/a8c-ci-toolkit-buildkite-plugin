@@ -1,9 +1,0 @@
-#!/bin/bash -eu
-
-PACKAGE_RESOLVED_LOCATION=$1
-PACKAGE_RESOLVED_HASH=$(hash_file $PACKAGE_RESOLVED_LOCATION)
-CACHEKEY="$BUILDKITE_PIPELINE_SLUG-spm-cache-$PACKAGE_RESOLVED_HASH"
-
-mkdir -p vendor/spm
-cd vendor/spm
-restore_cache "$CACHEKEY"

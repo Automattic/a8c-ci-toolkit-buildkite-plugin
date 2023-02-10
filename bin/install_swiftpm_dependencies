@@ -1,5 +1,15 @@
 #!/bin/bash -eu
 
+PACKAGE_RESOLVED_LOCATION=$1
+PACKAGE_RESOLVED_HASH=$(hash_file $PACKAGE_RESOLVED_LOCATION)
+CACHEKEY="$BUILDKITE_PIPELINE_SLUG-spm-cache-$PACKAGE_RESOLVED_HASH"
+
+# Restore SPM cache if it's available
+mkdir -p vendor/spm
+cd vendor/spm
+restore_cache "$CACHEKEY"
+
+
 sudo defaults write com.apple.dt.Xcode IDEPackageSupportUseBuiltinSCM YES
 
 # Trust all GitHub.com and BitBucket.org keys – this allows checking out dependencies via SSH
@@ -7,3 +17,7 @@ add_host_to_ssh_known_hosts bitbucket.org
 add_host_to_ssh_known_hosts github.com
 
 xcodebuild -resolvePackageDependencies
+
+
+# If this is the first time we've seen this particular cache key, save it for the future
+save_cache vendor/spm "$CACHEKEY"
