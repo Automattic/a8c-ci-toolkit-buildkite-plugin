@@ -24,9 +24,9 @@ if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/nu
 
 	if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
 		echo "Downloading with transfer acceleration"
-		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet --endpoint-url https://s3-accelerate.amazonaws.com
+		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --endpoint-url https://s3-accelerate.amazonaws.com
 	else
-		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet
+		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY"
 	fi
 
 	echo "	Decompressing"
