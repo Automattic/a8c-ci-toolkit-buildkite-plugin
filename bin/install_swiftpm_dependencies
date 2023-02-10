@@ -1,6 +1,17 @@
 #!/bin/bash -eu
 
-PACKAGE_RESOLVED_LOCATION=$1
+WORKSPACE_PACKAGE_RESOLVED_PATH=*.xcworkspace/xcshareddata/swiftpm/Package.resolved
+ROOT_PACKAGE_RESOLVED_PATH=Package.resolved
+
+# Find where Package.resolved is located
+if  [ -f $WORKSPACE_PACKAGE_RESOLVED_PATH ]; then
+	$PACKAGE_RESOLVED_LOCATION=$WORKSPACE_PACKAGE_RESOLVED_PATH
+elif  [ -f $ROOT_PACKAGE_RESOLVED_PATH ]; then
+	$PACKAGE_RESOLVED_LOCATION=$ROOT_PACKAGE_RESOLVED_PATH
+else
+	echo "Unable to find Package.resolved"
+fi
+
 PACKAGE_RESOLVED_HASH=$(hash_file "$PACKAGE_RESOLVED_LOCATION")
 CACHEKEY="$BUILDKITE_PIPELINE_SLUG-spm-cache-$PACKAGE_RESOLVED_HASH"
 
