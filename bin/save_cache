@@ -48,7 +48,7 @@ if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/
 	echo "No existing cache entry for $CACHE_KEY – storing in cache"
 
 	echo "	Compressing"
-	tar -czf "$CACHE_KEY" -C "$CACHE_FILE" .
+	tar --exclude='vendor/spm/checkouts' --exclude='vendor/spm/artifacts' -czf "$CACHE_KEY" -C "$CACHE_FILE" .
 
 	echo "	Uploading"
 	# If the bucket has transfer acceleration enabled, use it!
