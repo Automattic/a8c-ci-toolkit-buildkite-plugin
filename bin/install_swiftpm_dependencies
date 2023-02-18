@@ -28,7 +28,7 @@ sudo defaults write com.apple.dt.Xcode IDEPackageSupportUseBuiltinSCM YES
 add_host_to_ssh_known_hosts bitbucket.org
 add_host_to_ssh_known_hosts github.com
 
-xcodebuild -resolvePackageDependencies
+xcodebuild -resolvePackageDependencies -clonedSourcePackagesDirPath ~/spm
 
 
 # If this is the first time we've seen this particular cache key, save it for the future
