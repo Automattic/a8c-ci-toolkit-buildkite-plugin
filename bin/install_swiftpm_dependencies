@@ -17,8 +17,8 @@ PACKAGE_RESOLVED_HASH=$(hash_file "$PACKAGE_RESOLVED_LOCATION")
 CACHEKEY="$BUILDKITE_PIPELINE_SLUG-spm-cache-$PACKAGE_RESOLVED_HASH"
 
 # Restore SPM cache if it's available
-mkdir -p vendor/spm
-cd vendor/spm
+mkdir -p ~/spm
+cd ~/spm
 restore_cache "$CACHEKEY"
 cd -
 
