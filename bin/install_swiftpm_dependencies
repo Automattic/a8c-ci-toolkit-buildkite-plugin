@@ -32,4 +32,4 @@ xcodebuild -resolvePackageDependencies
 
 
 # If this is the first time we've seen this particular cache key, save it for the future
-save_cache vendor/spm "$CACHEKEY"
+save_cache ~/spm "$CACHEKEY"
