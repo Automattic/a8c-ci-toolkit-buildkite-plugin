@@ -1,7 +1,15 @@
 name: CI Toolkit
 description: A library of commonly used commands for your CI builds.
 author: https://github.com/automattic
-requirements: ["awscli"]
+requirements:
+  - aws
+  - gh
+  - jq
+  - node
+  - nvm
+  - ruby
+  - xcodebuild
+  - xcrun
 configuration:
   properties:
     bucket:
