@@ -1,6 +1,6 @@
 # CI Toolkit Buildkite Plugin
 
-A toolkit for your CI builds.
+A library of commonly used commands for your CI builds.
 
 ## Example
 
