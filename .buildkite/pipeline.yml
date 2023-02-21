@@ -1,4 +1,12 @@
 steps:
+  - label: ":bash: Check Script Permissions"
+    command: |
+      for file in bin/*.sh; do
+        if ! [ -x "$file" ]; then
+          echo "$file is not executable!"
+          exit 1
+        fi
+      done
   - label: ":shell: Lint (Shellcheck)"
     plugins:
       shellcheck#v1.2.0:
