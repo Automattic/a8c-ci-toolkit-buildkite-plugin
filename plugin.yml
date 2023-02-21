@@ -1,7 +1,7 @@
-name: Bash Cache
-description: Caching operations inside your build script
+name: CI Toolkit
+description: A toolkit for your CI builds.
 author: https://github.com/automattic
-requirements: ['awscli']
+requirements: ["awscli"]
 configuration:
   properties:
     bucket:
