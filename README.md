@@ -1,6 +1,6 @@
-# Bash Cache Buildkite Plugin
+# CI Toolkit Buildkite Plugin
 
-A caching plugin that can be invoked from your build script
+A toolkit for your CI builds.
 
 ## Example
 
@@ -16,7 +16,6 @@ my-project/
 
 Add the following to your `pipeline.yml`:
 
-
 ```yml
 steps:
   - command: |
@@ -27,7 +26,7 @@ steps:
       restore_cache $(hash_file package-lock.json)
 
     plugins:
-      - automattic/bash-cache#v1.0.0
+      - automattic/a8c-ci-toolkit#v2.14.0
 ```
 
 ## Configuration
