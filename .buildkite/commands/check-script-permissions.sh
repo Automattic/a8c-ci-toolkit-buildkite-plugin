@@ -1,9 +1,7 @@
 #!/bin/bash -eu
 
-cd bin
-
-for file in *.sh; do
-  echo "$file"
+for file in bin/*; do
+  echo "Checking for +x permission on $file..."
   if ! [ -x "$file" ]; then
     echo "$file is not executable!"
     exit 1
