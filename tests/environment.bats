@@ -9,3 +9,9 @@ load '/usr/local/lib/bats/load.bash'
   done
 }
 
+@test "Ensure all commands in bin/ are executable" {
+  for cmd in "$PWD/bin"/*; do
+    [ -x "$cmd" ]
+  done
+}
+
