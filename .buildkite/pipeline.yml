@@ -1,5 +1,5 @@
 steps:
-  - label: ":bash: Check Script Permissions"
+  - label: ":terminal: Check Script Permissions"
     command: .buildkite/commands/check-script-permissions.sh
 
   - label: ":shell: Lint (Shellcheck)"
