@@ -3,6 +3,7 @@
 cd bin
 
 for file in *.sh; do
+  echo "$file"
   if ! [ -x "$file" ]; then
     echo "$file is not executable!"
     exit 1
