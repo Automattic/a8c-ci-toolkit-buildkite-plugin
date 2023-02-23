@@ -1,25 +1,28 @@
 #!/bin/bash -eu
 
-# WORKSPACE_PACKAGE_RESOLVED_PATH=*.xcworkspace/xcshareddata/swiftpm/Package.resolved
-# ROOT_PACKAGE_RESOLVED_PATH=Package.resolved
+WORKSPACE_PACKAGE_RESOLVED_PATH=(*.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+ROOT_PACKAGE_RESOLVED_PATH=Package.resolved
 
 # Find where Package.resolved is located
-# if  [ -f $WORKSPACE_PACKAGE_RESOLVED_PATH ]; then
-# 	PACKAGE_RESOLVED_LOCATION=$WORKSPACE_PACKAGE_RESOLVED_PATH
-# elif  [ -f $ROOT_PACKAGE_RESOLVED_PATH ]; then
-# 	PACKAGE_RESOLVED_LOCATION=$ROOT_PACKAGE_RESOLVED_PATH
-# else
-# 	echo "Unable to find Package.resolved"
-# fi
+if  [[ -f $WORKSPACE_PACKAGE_RESOLVED_PATH ]]; then
+	BUILD_TYPE="XCODEBUILD"
+	PACKAGE_RESOLVED_LOCATION=$WORKSPACE_PACKAGE_RESOLVED_PATH
+	echo "The project is an Xcode project"
+elif  [[ -f $ROOT_PACKAGE_RESOLVED_PATH ]]; then
+	BUILD_TYPE="SWIFT"
+	PACKAGE_RESOLVED_LOCATION=$ROOT_PACKAGE_RESOLVED_PATH
+	echo "The project is a Swift project"
+else
+	echo "Unable to find Package.resolved"
+fi
 
-PACKAGE_RESOLVED_LOCATION=DayOne.xcworkspace/xcshareddata/swiftpm/Package.resolved
 PACKAGE_RESOLVED_HASH=$(hash_file "$PACKAGE_RESOLVED_LOCATION")
-CACHEKEY="$BUILDKITE_PIPELINE_SLUG-spm-cache-$PACKAGE_RESOLVED_HASH"
+CACHE_KEY="$BUILDKITE_PIPELINE_SLUG-spm-cache-$PACKAGE_RESOLVED_HASH"
 
 # Restore SPM cache if it's available
 mkdir -p ~/spm
 cd ~/spm
-restore_cache "$CACHEKEY"
+restore_cache "$CACHE_KEY"
 cd -
 
 sudo defaults write com.apple.dt.Xcode IDEPackageSupportUseBuiltinSCM YES
@@ -28,8 +31,20 @@ sudo defaults write com.apple.dt.Xcode IDEPackageSupportUseBuiltinSCM YES
 add_host_to_ssh_known_hosts bitbucket.org
 add_host_to_ssh_known_hosts github.com
 
-xcodebuild -resolvePackageDependencies -clonedSourcePackagesDirPath ~/spm
+if [[ "$BUILD_TYPE" == "XCODEBUILD" ]]; then
+	echo "Resolving packages with \`xcodebuild\`"
+	xcodebuild \
+	-resolvePackageDependencies \
+	-clonedSourcePackagesDirPath ~/spm
+elif [[ "$BUILD_TYPE" == "SWIFT" ]]; then
+	echo "Resolving packages with \`swift\`"
+	swift package resolve \
+	--cache-path ~/spm \
+	--verbose
+else 
+	echo "BUILD_TYPE is not set correctly"
+fi
 
 
 # If this is the first time we've seen this particular cache key, save it for the future
-save_cache ~/spm "$CACHEKEY"
+save_cache ~/spm "$CACHE_KEY"
