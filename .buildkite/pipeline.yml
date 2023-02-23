@@ -8,7 +8,7 @@ steps:
   - label: ":sparkles: Lint (Buildkite Plugin Linter)"
     plugins:
       plugin-linter#v2.0.0:
-        id: automattic/bash-cache
+        id: automattic/a8c-ci-toolkit
 
   - label: ":docker: Test"
     plugins:
