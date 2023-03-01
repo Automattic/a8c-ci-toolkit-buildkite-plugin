@@ -28,8 +28,10 @@ CACHE_KEY="$BUILDKITE_PIPELINE_SLUG-spm-cache-$PACKAGE_RESOLVED_HASH"
 mkdir -p ~/spm
 cd ~/spm
 if [[ "$USE_APPLE_ARCHIVE" == '--use_apple_archive' ]]; then
+	echo "Using aa to restore cache"
 	restore_cache "$CACHE_KEY" --use_apple_archive
 else
+	echo "Using tar to restore cache"
 	restore_cache "$CACHE_KEY"
 fi
 cd -
@@ -56,9 +58,11 @@ fi
 
 # If this is the first time we've seen this particular cache key, save it for the future
 if [[ "$USE_APPLE_ARCHIVE" == '--use_apple_archive' ]]; then
+	echo "Using aa to save cache"
 	APPLE_ARCHIVE_OPTIONS="-exclude-path checkouts -exclude-path artifacts"
 	save_cache ~/spm "$CACHE_KEY" false --use_apple_archive "$APPLE_ARCHIVE_OPTIONS"
 else
+	echo "Using tar to save cache"
 	save_cache ~/spm "$CACHE_KEY"
 fi
 
