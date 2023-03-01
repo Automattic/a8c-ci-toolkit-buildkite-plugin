@@ -52,14 +52,7 @@ else
 fi
 
 # If this is the first time we've seen this particular cache key, save it for the future
-if [[ "$(uname)" == 'Darwin' ]]; then
-	echo "INSTALL-SPM - Using aa to save cache"
-	APPLE_ARCHIVE_OPTIONS="-exclude-path checkouts -exclude-path artifacts"
-	echo "$APPLE_ARCHIVE_OPTIONS"
-	save_cache "$SPM_CACHE_LOCATION" "$CACHE_KEY" false "$APPLE_ARCHIVE_OPTIONS"
-else
-	echo "INSTALL-SPM - Using tar to save cache"
-	save_cache $SPM_CACHE_LOCATION "$CACHE_KEY"
-fi
+TAR_OPTIONS="--exclude='vendor/spm/checkouts' --exclude='vendor/spm/artifacts'"
+save_cache $SPM_CACHE_LOCATION "$CACHE_KEY" false "$TAR_OPTIONS"
 
 
