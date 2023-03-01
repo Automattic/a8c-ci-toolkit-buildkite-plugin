@@ -49,7 +49,7 @@ if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/
 
 	echo "	Compressing"
 	TAR_OPTIONS=${4-foo}
-	if [[ ! -z "$TAR_OPTIONS" ]]; then
+	if [[ -n "$TAR_OPTIONS" ]]; then
 		# This is used by actions such as `install_swiftpm_dependencies`
 		# These options	allow the tar to not include the full system path of the
 		# directory that's being archived. For example, this will save only the 
