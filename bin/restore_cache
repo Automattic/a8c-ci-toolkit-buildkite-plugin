@@ -30,10 +30,11 @@ if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/nu
 	fi
 
 	echo "	Decompressing"
-	USE_APPLE_ARCHIVE=${2-false}
-	if [[ "$USE_APPLE_ARCHIVE" == '--use_apple_archive' ]]; then
+	if [[ "$(uname)" == 'Darwin' ]]; then
+		echo "Using aa to extract cache"
 		aa extract -p -i "$CACHE_KEY"
 	else
+		echo "Using tar to extract cache"
 		tar -xf "$CACHE_KEY"
 	fi
 
