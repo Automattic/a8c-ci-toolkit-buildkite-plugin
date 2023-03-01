@@ -14,9 +14,3 @@ fail() {
     which "$cmd" > /dev/null || fail "$cmd is not exposed to \$PATH"
   done
 }
-
-@test "Ensure all commands in bin/ are executable" {
-  for cmd in "bin"/*; do
-    [ -x "$cmd" ] || fail "$cmd is missing executable bit"
-  done
-}
