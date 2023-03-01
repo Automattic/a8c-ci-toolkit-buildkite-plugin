@@ -38,8 +38,8 @@ There are no configuration options for this plugin
 To run the linter and tests:
 
 ```shell
-docker-compose run --rm lint
-docker-compose run --rm tests
+make lint
+make test
 ```
 
 ## Contributing
