@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := default
 
 lint:
-	docker run -it --rm -v `pwd`:/plugin:ro buildkite/plugin-tester
+	docker run -it --rm -v "$PWD":/plugin:ro buildkite/plugin-tester
 
 test:
 	docker run -t --rm -v `pwd`:/plugin buildkite/plugin-tester
