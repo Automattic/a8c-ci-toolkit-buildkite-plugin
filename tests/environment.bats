@@ -14,3 +14,5 @@ fail() {
     which "$cmd" > /dev/null || fail "$cmd is not exposed to \$PATH"
   done
 }
+
+# There are additional Ruby tests in this directory for things that are more easily tested in that context
