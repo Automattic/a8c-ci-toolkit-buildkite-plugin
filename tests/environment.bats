@@ -15,8 +15,4 @@ fail() {
   done
 }
 
-@test "Ensure all commands in bin/ are executable" {
-  for cmd in "bin"/*; do
-    [ -x "$cmd" ] || fail "$cmd is missing executable bit"
-  done
-}
+# There are additional Ruby tests in this directory for things that are more easily tested in that context

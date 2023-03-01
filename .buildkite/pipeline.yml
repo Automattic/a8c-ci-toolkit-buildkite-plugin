@@ -1,16 +1,9 @@
 steps:
   - label: ":shell: Lint (Shellcheck)"
-    plugins:
-      shellcheck#v1.2.0:
-        files: ["hooks/**", "bin/**"]
-        options: ["--exclude=SC1071"] # Ignore scripts that are not written in bash (especially ruby scripts)
+    command: make shellcheck
 
   - label: ":sparkles: Lint (Buildkite Plugin Linter)"
-    plugins:
-      plugin-linter#v2.0.0:
-        id: automattic/a8c-ci-toolkit
+    command: make lint
 
   - label: ":docker: Test"
-    plugins:
-      docker-compose#v3.7.0:
-        run: tests
+    command: make test
