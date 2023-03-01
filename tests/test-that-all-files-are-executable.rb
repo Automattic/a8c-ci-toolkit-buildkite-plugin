@@ -8,7 +8,7 @@ RSpec.configure do |config|
 end
 
 # You might be thinking "why is this in Ruby instead of `environment.bats`?" Good question – for some reason,
-# it seems that running `[ -x ]` under `bats` returns invalid results, and this was more reliable.
+# it seems that running `[ -x ]` under `bats` in Docker on a Mac returns invalid results, and this was more reliable.
 #
 # See: https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/pull/42
 context 'All Commands Should Be Executable' do
