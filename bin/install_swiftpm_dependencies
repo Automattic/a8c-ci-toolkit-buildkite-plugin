@@ -2,6 +2,7 @@
 
 CUSTOM_PACKAGE_RESOLVED_PATH=${1-}
 BUILD_TYPE=${2-}
+SPM_CACHE_LOCATION="~/spm"
 
 WORKSPACE_PACKAGE_RESOLVED_PATH=(*.xcworkspace/xcshareddata/swiftpm/Package.resolved)
 ROOT_PACKAGE_RESOLVED_PATH=Package.resolved
@@ -25,8 +26,8 @@ PACKAGE_RESOLVED_HASH=$(hash_file "$PACKAGE_RESOLVED_LOCATION")
 CACHE_KEY="$BUILDKITE_PIPELINE_SLUG-spm-cache-$PACKAGE_RESOLVED_HASH"
 
 # Restore SPM cache if it's available
-mkdir -p ~/spm
-cd ~/spm
+mkdir -p $SPM_CACHE_LOCATION
+cd $SPM_CACHE_LOCATION
 restore_cache "$CACHE_KEY"
 cd -
 
@@ -40,11 +41,11 @@ if [[ "$BUILD_TYPE" == "XCODEBUILD" ]]; then
 	echo "Resolving packages with \`xcodebuild\`"
 	xcodebuild \
 	-resolvePackageDependencies \
-	-clonedSourcePackagesDirPath ~/spm
+	-clonedSourcePackagesDirPath $SPM_CACHE_LOCATION
 elif [[ "$BUILD_TYPE" == "SWIFT" ]]; then
 	echo "Resolving packages with \`swift\`"
 	swift package resolve \
-	--cache-path ~/spm \
+	--cache-path $SPM_CACHE_LOCATION \
 	--verbose
 else 
 	echo "BUILD_TYPE is not set"
@@ -54,10 +55,11 @@ fi
 if [[ "$(uname)" == 'Darwin' ]]; then
 	echo "INSTALL-SPM - Using aa to save cache"
 	APPLE_ARCHIVE_OPTIONS="-exclude-path checkouts -exclude-path artifacts"
-	save_cache ~/spm "$CACHE_KEY" false "$APPLE_ARCHIVE_OPTIONS"
+	echo "$APPLE_ARCHIVE_OPTIONS"
+	save_cache "$SPM_CACHE_LOCATION" "$CACHE_KEY" false "$APPLE_ARCHIVE_OPTIONS"
 else
 	echo "INSTALL-SPM - Using tar to save cache"
-	save_cache ~/spm "$CACHE_KEY"
+	save_cache $SPM_CACHE_LOCATION "$CACHE_KEY"
 fi
 
 

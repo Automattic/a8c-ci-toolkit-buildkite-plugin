@@ -48,11 +48,18 @@ if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/
 	echo "No existing cache entry for $CACHE_KEY – storing in cache"
 
 	echo "	Compressing"
-	APPLE_ARCHIVE_OPTIONS=${4-}
+	APPLE_ARCHIVE_OPTIONS=${4:-foo}
 	echo "$APPLE_ARCHIVE_OPTIONS"
 	if [[ "$(uname)" == "Darwin" ]]; then
+	echo "$APPLE_ARCHIVE_OPTIONS"
+	echo "$CACHE_FILE"
+	echo "$CACHE_KEY"
 		echo "SAVE-CACHE - Using aa to save cache"
-		aa archive "$APPLE_ARCHIVE_OPTIONS" -d "$CACHE_FILE" -o "$CACHE_KEY"
+		echo $APPLE_ARCHIVE_OPTIONS
+		echo "$CACHE_FILE"
+		echo "$CACHE_KEY"
+		
+		aa archive -d "$CACHE_FILE" -o "$CACHE_KEY" "$APPLE_ARCHIVE_OPTIONS"
 	else
 		echo "SAVE-CACHE - Using tar to save cache"
 		tar -czf "$CACHE_KEY" "$CACHE_FILE"
