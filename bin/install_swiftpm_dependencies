@@ -9,15 +9,15 @@ ROOT_PACKAGE_RESOLVED_PATH=Package.resolved
 
 # Find where Package.resolved is located
 if [[ -n "$CUSTOM_PACKAGE_RESOLVED_PATH" ]]; then
-	PACKAGE_RESOLVED_LOCATION=$CUSTOM_PACKAGE_RESOLVED_PATH
+  PACKAGE_RESOLVED_LOCATION=$CUSTOM_PACKAGE_RESOLVED_PATH
 elif  [[ -f ${WORKSPACE_PACKAGE_RESOLVED_PATH[0]} ]]; then
-	BUILD_TYPE="XCODEBUILD"
-	PACKAGE_RESOLVED_LOCATION=${WORKSPACE_PACKAGE_RESOLVED_PATH[0]}
+  BUILD_TYPE="XCODEBUILD"
+  PACKAGE_RESOLVED_LOCATION=${WORKSPACE_PACKAGE_RESOLVED_PATH[0]}
 elif  [[ -f $ROOT_PACKAGE_RESOLVED_PATH ]]; then
-	BUILD_TYPE="SWIFT"
-	PACKAGE_RESOLVED_LOCATION=$ROOT_PACKAGE_RESOLVED_PATH
+  BUILD_TYPE="SWIFT"
+  PACKAGE_RESOLVED_LOCATION=$ROOT_PACKAGE_RESOLVED_PATH
 else
-	echo "Unable to find Package.resolved"
+  echo "Unable to find Package.resolved"
 fi
 
 PACKAGE_RESOLVED_HASH=$(hash_file "$PACKAGE_RESOLVED_LOCATION")
@@ -38,17 +38,17 @@ add_host_to_ssh_known_hosts github.com
 
 # Based on the project type, resolve the packages using the correct build type
 if [[ "$BUILD_TYPE" == "XCODEBUILD" ]]; then
-	echo "	Resolving packages with \`xcodebuild\`"
-	xcodebuild \
-	-resolvePackageDependencies \
-	-clonedSourcePackagesDirPath "$SPM_CACHE_LOCATION"
+  echo "	Resolving packages with \`xcodebuild\`"
+  xcodebuild \
+  -resolvePackageDependencies \
+  -clonedSourcePackagesDirPath "$SPM_CACHE_LOCATION"
 elif [[ "$BUILD_TYPE" == "SWIFT" ]]; then
-	echo "	Resolving packages with \`swift\`"
-	swift package resolve \
-	--cache-path "$SPM_CACHE_LOCATION" \
-	--verbose
+  echo "	Resolving packages with \`swift\`"
+  swift package resolve \
+  --cache-path "$SPM_CACHE_LOCATION" \
+  --verbose
 else 
-	echo "BUILD_TYPE is not set"
+  echo "BUILD_TYPE is not set"
 fi
 
 # `checkouts` can be removed because the system can quickly generate them 
