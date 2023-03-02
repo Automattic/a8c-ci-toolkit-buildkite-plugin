@@ -58,6 +58,6 @@ rm -rf "$SPM_CACHE_LOCATION/checkouts" "$SPM_CACHE_LOCATION/artifacts"
 
 # If this is the first time we've seen this particular cache key, save it for the future
 echo "	Saving SPM Cache"
-save_cache "$SPM_CACHE_LOCATION" "$CACHE_KEY" false --use_alternate_tar_config
+save_cache "$SPM_CACHE_LOCATION" "$CACHE_KEY" false --use_relative_path_in_tar
 
 
