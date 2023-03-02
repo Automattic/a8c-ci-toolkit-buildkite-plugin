@@ -38,12 +38,12 @@ add_host_to_ssh_known_hosts github.com
 
 # Based on the project type, resolve the packages using the correct build type
 if [[ "$BUILD_TYPE" == "XCODEBUILD" ]]; then
-	echo "Resolving packages with \`xcodebuild\`"
+	echo "	Resolving packages with \`xcodebuild\`"
 	xcodebuild \
 	-resolvePackageDependencies \
 	-clonedSourcePackagesDirPath "$SPM_CACHE_LOCATION"
 elif [[ "$BUILD_TYPE" == "SWIFT" ]]; then
-	echo "Resolving packages with \`swift\`"
+	echo "	Resolving packages with \`swift\`"
 	swift package resolve \
 	--cache-path "$SPM_CACHE_LOCATION" \
 	--verbose
@@ -51,15 +51,17 @@ else
 	echo "BUILD_TYPE is not set"
 fi
 
-# `checkouts` can be excluded because the system can quickly generate them 
+# `checkouts` can be removed because the system can quickly generate them 
 # instead of needing to download them in the cache each time.
 # 
-# `artifacts` should be excluded because it causes issues when downloading 
+# `artifacts` should be removed because it causes issues when downloading 
 # certain packages to have the artifacts already present after extracting 
 # cache
-TAR_OPTIONS="--exclude=./checkouts --exclude=./artifacts"
+echo "	Cleaning up cache files before saving cache"
+rm -rf "$SPM_CACHE_LOCATION/checkouts" "$SPM_CACHE_LOCATION/artifacts"
 
 # If this is the first time we've seen this particular cache key, save it for the future
-save_cache "$SPM_CACHE_LOCATION" "$CACHE_KEY" false "$TAR_OPTIONS"
+echo "	Saving SPM Cache"
+save_cache "$SPM_CACHE_LOCATION" "$CACHE_KEY" false --use_alternate_tar_config
 
 

@@ -48,14 +48,14 @@ if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/
 	echo "No existing cache entry for $CACHE_KEY – storing in cache"
 
 	echo "	Compressing"
-	TAR_OPTIONS=${4-foo}
-	if [[ -n "$TAR_OPTIONS" ]]; then
+	TAR_CONFIG=${4-}
+	if [[ "$TAR_CONFIG" == '--use_alternate_tar_config' ]]; then
 		# This is used by actions such as `install_swiftpm_dependencies`
-		# These options	allow the tar to not include the full system path of the
+		# This configuration allows the tar to not include the full system path of the
 		# directory that's being archived. For example, this will save only the 
 		# "DIRECTORY_BEING_ARCHIVED" in `/User/builder/DIRECTORY_BEING_ARCHIVED` 
 		# instead of also creating `/User/builder` when extracting the archive
-		tar $TAR_OPTIONS -czf "$CACHE_KEY" -C "$CACHE_FILE" .		
+		tar -czf "$CACHE_KEY" -C "$CACHE_FILE" .		
 	else
 		tar -czf "$CACHE_KEY" "$CACHE_FILE"
 	fi
