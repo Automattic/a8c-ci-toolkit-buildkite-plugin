@@ -11,10 +11,10 @@ end
 # it seems that running `[ -x ]` under `bats` in Docker on a Mac returns invalid results, and this was more reliable.
 #
 # See: https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/pull/42
-context 'All Commands Should Be Executable' do
-  Dir.children('bin').map { |f| File.new(File.join('bin', f)) }.each do |file|
-    it file.path do
-      expect(file.stat.executable?).to be true
+context 'all commands should be executable' do
+  Dir.glob('bin/*').each do |path|
+    it path do
+      expect(File.stat(path)).to be_executable, "File `#{path}` is not executable"
     end
   end
 end
