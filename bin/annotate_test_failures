@@ -17,28 +17,46 @@ end
 file = File.open(junit_path)
 xmldoc = REXML::Document.new(file)
 
+# Here's how report.junit XML files look like for failure vs success:
+#
+# <testcase classname='WordPressTest.MediaServiceTests' name='testDeletingLocalMediaThatDoesntExistInCoreData'>
+#   <failure message='Asynchronous wait failed: Exceeded timeout of 0.1 seconds, with unfulfilled expectations: &quot;The delete call succeeds even if the media object isn&apos;t saved.&quot;.'>&lt;unknown&gt;:0</failure>
+# </testcase>
+# <testcase classname='WordPressTest.MediaServiceTests' name='testDeletingLocalMediaThatDoesntExistInCoreData' time='0.145'/>
+#
 failures = []
 REXML::XPath.each(xmldoc, '//testcase[failure]') do |testcase|
-  failure = testcase.elements['failure']
-  failures.append <<~ENTRY
-  <details><summary><tt>#{testcase['name']}</tt> in <tt>#{testcase['classname']}</tt></summary>
-  
-  #{failure['message']}
+  test_class = testcase['classname']
+  test_name = testcase['name']
+  failure_node = testcase.elements['failure']
+  failure_message = failure_node['message']
 
-  ```
-  #{failure.text}
-  ```
-  </details>
-  ENTRY
+  # Find all nodes that are about the same test, to detect false positives
+  # (in case there were multiple retries of the same flaky test with the last one ultimately passing)
+  retries = testcase.parent.get_elements("testcase[@classname='#{testcase['classname']}' and @name='#{testcase['name']}']")
+  if retries.last.elements['failure']
+    failures.append <<~ENTRY
+      <details><summary><tt>#{test_name}</tt> in <tt>#{test_class}</tt></summary>
+      #{failure_message}
+  
+      ```
+      #{failure_node.text}
+      ```
+      </details>
+    ENTRY
+  else
+    puts "- Note: Flaky test \`#{test_class}`.`#{test_name}`: #{failure_message}"
+  end
 end
 
 if failures.empty?
-  puts "No test failure found. Removing any previous `#{title}` Buildkite annotation if any."
+  puts "No test failure found (after eliminating intermediate failed retries). Removing any previous `#{title}` Buildkite annotation if any."
   system('buildkite-agent', 'annotation', 'remove', '--context', title)
   exit 0 # We don't want to fail if the `annotation remove` command failed because there was no previous annotation
 else
-  puts "Found #{failures.count} test failure(s). Reporting them as a `#{title}` Buildkite annotation."
+  puts "Ultimately found #{failures.count} real test failure(s). Reporting them as a `#{title}` Buildkite annotation."
   markdown = "\#\#\#\# #{title}: #{failures.length} failure(s)\n\n" + failures.join("\n")
+  puts markdown
   system('buildkite-agent', 'annotate', markdown, '--style', 'error', '--context', title)
   exit $?.exitstatus
 end
