@@ -18,6 +18,7 @@ elif  [[ -f "$ROOT_PACKAGE_RESOLVED_PATH" ]]; then
   PACKAGE_RESOLVED_LOCATION="$ROOT_PACKAGE_RESOLVED_PATH"
 else
   echo "Unable to find Package.resolved"
+  exit 1
 fi
 
 PACKAGE_RESOLVED_HASH=$(hash_file "$PACKAGE_RESOLVED_LOCATION")
@@ -44,7 +45,8 @@ elif [[ "$BUILD_TYPE" == "SWIFT" ]]; then
   echo "	Resolving packages with \`swift\`"
   swift package resolve
 else 
-  echo "BUILD_TYPE is not set"
+  echo "BUILD_TYPE must be set"
+  exit 1
 fi
 
 # `checkouts` can be removed because the system can quickly generate them 
