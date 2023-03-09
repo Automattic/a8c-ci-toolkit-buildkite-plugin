@@ -48,7 +48,17 @@ if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/
 	echo "No existing cache entry for $CACHE_KEY – storing in cache"
 
 	echo "	Compressing"
-	tar -czf "$CACHE_KEY" "$CACHE_FILE"
+	TAR_CONFIG=${4-}
+	if [[ "$TAR_CONFIG" == '--use_relative_path_in_tar' ]]; then
+		# This is used by actions such as `install_swiftpm_dependencies`
+		# This configuration allows the tar to not include the full system path of the
+		# directory that's being archived. For example, this will save only the 
+		# "DIRECTORY_BEING_ARCHIVED" in `/User/builder/DIRECTORY_BEING_ARCHIVED` 
+		# instead of also creating `/User/builder` when extracting the archive
+		tar -czf "$CACHE_KEY" -C "$CACHE_FILE" .		
+	else
+		tar -czf "$CACHE_KEY" "$CACHE_FILE"
+	fi
 
 	echo "	Uploading"
 	# If the bucket has transfer acceleration enabled, use it!

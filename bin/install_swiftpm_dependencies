@@ -1,9 +1,65 @@
 #!/bin/bash -eu
 
+CUSTOM_PACKAGE_RESOLVED_PATH=${1-}
+BUILD_TYPE=${2-}
+SPM_CACHE_LOCATION="$HOME/Library/Caches/org.swift.swiftpm"
+
+WORKSPACE_PACKAGE_RESOLVED_PATH=(*.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+ROOT_PACKAGE_RESOLVED_PATH=Package.resolved
+
+# Find where Package.resolved is located
+if [[ -n "$CUSTOM_PACKAGE_RESOLVED_PATH" ]]; then
+  PACKAGE_RESOLVED_LOCATION="$CUSTOM_PACKAGE_RESOLVED_PATH"
+elif  [[ -f "${WORKSPACE_PACKAGE_RESOLVED_PATH[0]}" ]]; then
+  BUILD_TYPE="XCODEBUILD"
+  PACKAGE_RESOLVED_LOCATION="${WORKSPACE_PACKAGE_RESOLVED_PATH[0]}"
+elif  [[ -f "$ROOT_PACKAGE_RESOLVED_PATH" ]]; then
+  BUILD_TYPE="SWIFT"
+  PACKAGE_RESOLVED_LOCATION="$ROOT_PACKAGE_RESOLVED_PATH"
+else
+  echo "Unable to find Package.resolved"
+  exit 1
+fi
+
+PACKAGE_RESOLVED_HASH=$(hash_file "$PACKAGE_RESOLVED_LOCATION")
+CACHE_KEY="${BUILDKITE_PIPELINE_SLUG}-spm-cache-${PACKAGE_RESOLVED_HASH}"
+
+# Restore SPM cache if it's available
+mkdir -p "$SPM_CACHE_LOCATION"
+cd "$SPM_CACHE_LOCATION"
+restore_cache "$CACHE_KEY"
+cd -
+
+# This will let Xcode use the system SSH config for downloading packages
 sudo defaults write com.apple.dt.Xcode IDEPackageSupportUseBuiltinSCM YES
 
 # Trust all GitHub.com and BitBucket.org keys – this allows checking out dependencies via SSH
 add_host_to_ssh_known_hosts bitbucket.org
 add_host_to_ssh_known_hosts github.com
 
-xcodebuild -resolvePackageDependencies
+# Based on the project type, resolve the packages using the correct build type
+if [[ "$BUILD_TYPE" == "XCODEBUILD" ]]; then
+  echo "	Resolving packages with \`xcodebuild\`"
+  xcodebuild -resolvePackageDependencies
+elif [[ "$BUILD_TYPE" == "SWIFT" ]]; then
+  echo "	Resolving packages with \`swift\`"
+  swift package resolve
+else 
+  echo "BUILD_TYPE must be set"
+  exit 1
+fi
+
+# `checkouts` can be removed because the system can quickly generate them 
+# instead of needing to download them in the cache each time.
+# 
+# `artifacts` should be removed because it causes issues when downloading 
+# certain packages to have the artifacts already present after extracting 
+# cache
+echo "	Cleaning up cache files before saving cache"
+rm -rf "$SPM_CACHE_LOCATION/checkouts" "$SPM_CACHE_LOCATION/artifacts"
+
+# If this is the first time we've seen this particular cache key, save it for the future
+echo "	Saving SPM Cache"
+save_cache "$SPM_CACHE_LOCATION" "$CACHE_KEY" false --use_relative_path_in_tar
+
+
