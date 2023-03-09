@@ -2,26 +2,17 @@
 
 load '/usr/local/lib/bats/load.bash'
 
-@test "Exposes 'hash_file' command" {
-  source "$PWD/hooks/environment"
-  which hash_file > /dev/null
-  return $?
+fail() {
+  echo "Failure: $1"
+  exit 1
 }
 
-@test "Exposes 'hash_directory' command" {
+@test "Exposes all commands in bin/" {
   source "$PWD/hooks/environment"
-  which hash_directory > /dev/null
-  return $?
+  for f in "bin"/*; do
+    cmd=$(basename "$f")
+    which "$cmd" > /dev/null || fail "$cmd is not exposed to \$PATH"
+  done
 }
 
-@test "Exposes 'save_cache' command" {
-  source "$PWD/hooks/environment"
-  which save_cache > /dev/null
-  return $?
-}
-
-@test "Exposes 'restore_cache' command" {
-  source "$PWD/hooks/environment"
-  which restore_cache > /dev/null
-  return $?
-}
+# There are additional Ruby tests in this directory for things that are more easily tested in that context

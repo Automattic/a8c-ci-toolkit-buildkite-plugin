@@ -5,6 +5,6 @@ services:
       - ".:/plugin:ro"
   lint:
     image: buildkite/plugin-linter
-    command: ['--id', 'automattic/bash-cache']
+    command: ["--id", "automattic/a8c-ci-toolkit"]
     volumes:
       - ".:/plugin:ro"
