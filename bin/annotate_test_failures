@@ -5,6 +5,10 @@
 #
 require 'rexml/document'
 
+###################
+# Parse arguments
+###################
+
 junit_path = ARGV.first || File.join('build', 'results', 'report.junit')
 title = ENV.fetch('BUILDKITE_LABEL', 'Tests')
 
@@ -14,31 +18,102 @@ unless File.exist?(junit_path)
   exit 0
 end
 
+###################
+# Helper methods
+###################
+
+# Here's how report.junit XML files look like for failure vs success:
+#
+# <testcase classname='WordPressTest.MediaServiceTests' name='testDeletingLocalMediaThatDoesntExistInCoreData'>
+#   <failure message='Asynchronous wait failed: Exceeded timeout of 0.1 seconds, with unfulfilled expectations: &quot;The delete call succeeds even if the media object isn&apos;t saved.&quot;.'>&lt;unknown&gt;:0</failure>
+# </testcase>
+# <testcase classname='WordPressTest.MediaServiceTests' name='testDeletingLocalMediaThatDoesntExistInCoreData' time='0.145'/>
+#
+class TestFailure
+  attr_reader :classname, :name, :message, :details
+  attr_accessor :count
+
+  def initialize(node)
+    @classname = node['classname']
+    @name = node['name']
+    failure_node = node.elements['failure']
+    @message = failure_node['message']
+    @details = failure_node.text
+    @count = 1
+  end
+
+  def to_s
+    times = @count > 1 ? " (#{@count} times)" : ''
+    <<~ENTRY
+      <details><summary><tt>#{@name}</tt> in <tt>#{@classname}</tt>#{times}</summary>
+      #{@message}
+
+      ```
+      #{@details}
+      ```
+      </details>
+    ENTRY
+  end
+
+  def key
+    "#{@classname}.#{@name}"
+  end
+
+  def ultimately_succeeds?(parent_node:)
+    all_same_test_nodes = parent_node.get_elements("testcase[@classname='#{@classname}' and @name='#{@name}']")
+    !all_same_test_nodes.last.elements['failure'] # If last node found for that test doesn't have a <failure> child, then test ultimately succeeded.
+  end
+
+  def ==(other)
+    @classname == other.classname && @name == other.name && @message == other.message && @details == other.details
+  end
+end
+
+# Add a test_failure into a given array, or increment its count if it already exists
+#
+def record(test_failure, into:)
+  existing = into.find { |f| f == test_failure }
+  if existing.nil?
+    into.append(test_failure)
+  else
+    existing.count += 1
+  end
+end
+
+# Given a list of failures for a given step and state, update the corresponding annotation
+#
+def update_annotation(title, list, style, state)
+  annotation_context = "#{title} (#{state})"
+  if list.empty?
+    puts "No test #{state}. Removing any previous `#{annotation_context}` Buildkite annotation if any.\n\n"
+    system('buildkite-agent', 'annotation', 'remove', '--context', annotation_context)
+  else
+    tests_count = list.map(&:key).uniq.count # Count the number of tests that failed, even if some tests might have multiple assertion failures
+    puts "#{tests_count} test(s) #{state} (#{list.count} distinct assertion failures in total). Reporting them as a `#{annotation_context}` Buildkite #{style} annotation.\n\n"
+    markdown = "\#\#\#\# #{title}: #{tests_count} tests #{state} (#{list.count} distinct assertion failure(s) in total)\n\n" + list.map(&:to_s).join("\n")
+    puts markdown
+    system('buildkite-agent', 'annotate', markdown, '--style', style, '--context', annotation_context)
+  end
+end
+
+###################
+# Main
+###################
+
 file = File.open(junit_path)
 xmldoc = REXML::Document.new(file)
 
 failures = []
-REXML::XPath.each(xmldoc, '//testcase[failure]') do |testcase|
-  failure = testcase.elements['failure']
-  failures.append <<~ENTRY
-  <details><summary><tt>#{testcase['name']}</tt> in <tt>#{testcase['classname']}</tt></summary>
-  
-  #{failure['message']}
+flakies = []
+REXML::XPath.each(xmldoc, '//testcase[failure]') do |node|
+  test_failure = TestFailure.new(node)
 
-  ```
-  #{failure.text}
-  ```
-  </details>
-  ENTRY
+  if test_failure.ultimately_succeeds?(parent_node: node.parent)
+    record(test_failure, into: flakies)
+  else
+    record(test_failure, into: failures)
+  end
 end
 
-if failures.empty?
-  puts "No test failure found. Removing any previous `#{title}` Buildkite annotation if any."
-  system('buildkite-agent', 'annotation', 'remove', '--context', title)
-  exit 0 # We don't want to fail if the `annotation remove` command failed because there was no previous annotation
-else
-  puts "Found #{failures.count} test failure(s). Reporting them as a `#{title}` Buildkite annotation."
-  markdown = "\#\#\#\# #{title}: #{failures.length} failure(s)\n\n" + failures.join("\n")
-  system('buildkite-agent', 'annotate', markdown, '--style', 'error', '--context', title)
-  exit $?.exitstatus
-end
+update_annotation(title, failures, 'error', 'have failed')
+update_annotation(title, flakies, 'warning', 'were flaky')
