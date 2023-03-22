@@ -26,7 +26,7 @@ steps:
       restore_cache $(hash_file package-lock.json)
 
     plugins:
-      - automattic/a8c-ci-toolkit#v2.14.0
+      - automattic/a8c-ci-toolkit#2.15.0
 ```
 
 ## Configuration
