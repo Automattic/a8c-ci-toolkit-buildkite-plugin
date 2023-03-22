@@ -29,6 +29,8 @@ steps:
       - automattic/a8c-ci-toolkit#2.15.0
 ```
 
+Don't forget to verify what [the latest release](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/releases/tag/2.15.0) is and use that value instead of `2.15.0`.
+
 ## Configuration
 
 There are no configuration options for this plugin
