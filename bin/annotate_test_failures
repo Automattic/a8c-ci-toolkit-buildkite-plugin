@@ -4,6 +4,7 @@
 #   annotate_test_failures [junit-file-path]
 #
 require 'rexml/document'
+require 'shellwords'
 
 ###################
 # Parse arguments
@@ -86,7 +87,7 @@ def update_annotation(title, list, style, state)
   annotation_context = "#{title} (#{state})"
   if list.empty?
     puts "No test #{state}. Removing any previous `#{annotation_context}` Buildkite annotation if any.\n\n"
-    system('buildkite-agent', 'annotation', 'remove', '--context', annotation_context)
+    system("buildkite-agent annotation remove --context #{annotation_context.shellescape} 2>/dev/null || true")
   else
     tests_count = list.map(&:key).uniq.count # Count the number of tests that failed, even if some tests might have multiple assertion failures
     puts "#{tests_count} test(s) #{state} (#{list.count} distinct assertion failures in total). Reporting them as a `#{annotation_context}` Buildkite #{style} annotation.\n\n"

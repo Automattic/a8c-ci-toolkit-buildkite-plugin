@@ -42,8 +42,8 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- Prevent `annotate_test_failures` to print a misleading red error message when trying to remove previous annotation. [#50]
 
 ### Internal Changes
 
-- Added this changelog file [#49]
+- Added this changelog file. [#49]
