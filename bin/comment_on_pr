@@ -1,14 +1,33 @@
 #!/bin/bash -eu
 
-PR_MESSAGE_FILE=$1
-GITHUB_TOKEN=$2
+# This script is used to comment on a pull request, and must be run in a buldkite PR step.
+#
+# It takes two arguments:
+# 1. The comment to post, or the path to a file containing the comment
+# 2. The GitHub token to use to post the comment
 
-if ! command -v gh &> /dev/null; then
-	brew install gh
+# Check dependencies and print their versions for diagnosis purposes
+jq --version
+curl --version
+
+if [[ -f "$1" ]]; then
+    PR_COMMENT=$(cat "$1")
+else
+    PR_COMMENT="$1"
 fi
 
-FILENAME="/tmp/github-token-$BUILDKITE_BUILD_ID"
-echo "$GITHUB_TOKEN" > "$FILENAME"
+GITHUB_TOKEN=$2
 
-gh auth login --with-token < "$FILENAME"
-gh pr comment --body-file "$PR_MESSAGE_FILE"
+GITHUB_URL="${BUILDKITE_PULL_REQUEST_REPO%.git}"
+GITHUB_USER=$(basename "$(dirname "$GITHUB_URL")")
+GITHUB_REPO=$(basename "$GITHUB_URL")
+
+JSON_PAYLOAD=$(jq --null-input --arg body "$PR_COMMENT" '{body: $body}')
+
+curl -s -X POST \
+    --fail-with-body \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/vnd.github+json" \
+    -d "${JSON_PAYLOAD}" \
+    "https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/issues/${BUILDKITE_PULL_REQUEST}/comments"
