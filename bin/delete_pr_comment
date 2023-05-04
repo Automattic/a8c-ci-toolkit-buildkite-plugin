@@ -6,8 +6,14 @@
 #   delete_pr_comment --github-token <token> --containing "part of a comment"
 
 # Check dependencies and print their versions for diagnosis purposes
-jq --version
-curl --version
+cat <<EOF
+> jq --version
+$(jq --version)
+
+> curl --version
+$(curl --version)
+
+EOF
 
 # Parse command line arguments
 while [[ "$#" -gt 0 ]]; do
