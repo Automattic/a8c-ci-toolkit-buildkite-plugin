@@ -35,6 +35,11 @@ function require_option() {
 require_option '--containing' "$COMMENT_CONTAINING"
 require_option '--github-token' "$GITHUB_TOKEN"
 
+if [[ "$COMMENT_CONTAINING" != "<!--"*"-->" ]]; then
+    echo "Error: for safety reasons, the '--containing' argument must be a markdown comment: '<!-- comment -->'"
+    exit 1
+fi
+
 GITHUB_URL="${BUILDKITE_PULL_REQUEST_REPO%.git}"
 GITHUB_USER=$(basename "$(dirname "$GITHUB_URL")")
 GITHUB_REPO=$(basename "$GITHUB_URL")
