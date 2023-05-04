@@ -1,6 +1,6 @@
 #!/bin/bash -eu
 
-# This script is used to delete comments on a pull request, and must be run in a buldkite PR step.
+# This script is used to delete comments on a pull request, and must be run in a Buildkite PR step.
 #
 # Example:
 #   delete_pr_comment --github-token <token> --containing "part of a comment"
