@@ -7,8 +7,19 @@
 # 2. The GitHub token to use to post the comment
 
 # Check dependencies and print their versions for diagnosis purposes
-jq --version
-curl --version
+cat <<EOF
+> jq --version
+$(jq --version)
+
+> curl --version
+$(curl --version)
+
+EOF
+
+if [[ "${BUILDKITE_PULL_REQUEST:-invalid}" == "invalid" ]]; then
+    echo "Error: this tool can only be called from a Buildkite PR job"
+    exit 1
+fi
 
 if [[ -f "$1" ]]; then
     PR_COMMENT=$(cat "$1")
