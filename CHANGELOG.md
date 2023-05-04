@@ -47,4 +47,4 @@ _None._
 ### Internal Changes
 
 - Added this changelog file. [#49]
-- Re-implement the `comment_on_pr` script. [#51]
+- Re-implement the `comment_on_pr` utility to use `curl` instead of `gh`. [#51]
