@@ -63,10 +63,9 @@ case "$#" in
     *) echo "Error: invalid comment argument"; exit 1 ;;
 esac
 
-GITHUB_URL="${BUILDKITE_PULL_REQUEST_REPO%.git}"
-GITHUB_USER=$(basename "$(dirname "$GITHUB_URL")")
-GITHUB_REPO=$(basename "$GITHUB_URL")
-issues_endpoint="https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/issues"
+github_user=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO%.git}")")
+github_repo=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
+issues_endpoint="https://api.github.com/repos/${github_user}/${github_repo}/issues"
 
 # Find the existing PR comment
 if [[ -n "$opt_comment_id" ]]; then
