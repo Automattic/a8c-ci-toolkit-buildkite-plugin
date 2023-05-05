@@ -48,3 +48,4 @@ _None._
 
 - Added this changelog file. [#49]
 - Re-implement the `comment_on_pr` utility to use `curl` instead of `gh`. [#51]
+- Extend the `comment_on_pr` utility to update or delete the existing comment. [#51]
