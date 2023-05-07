@@ -75,6 +75,11 @@ curl -s --fail -o /dev/null \
 
 # Find the existing PR comment
 if [[ -n "$opt_comment_id" ]]; then
+    if ! [[ "$opt_comment_id" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo "Error: comment id can only contain alphanumeric characters, dashes and underscores"
+        exit 1
+    fi
+
     # Do not change this variable value, it's used to identify the comments posted by this utility.
     comment_body_id="<!-- DO NOT REMOVE ci-toolkit-comment-identifier: $opt_comment_id -->"
     existing_comment_id="$(curl -s \
