@@ -47,6 +47,10 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 case "$#" in
+    0)
+        arg_pr_comment=""
+        arg_github_token=${GITHUB_TOKEN}
+        ;;
     1)
         arg_pr_comment=""
         arg_github_token=$1
