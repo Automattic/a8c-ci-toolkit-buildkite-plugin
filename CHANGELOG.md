@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- Add a new script: `delete_pr_comment --github-token <token> --containing '<!-- identifier -->'`. [#52]
+_None._
 
 ### Bug Fixes
 
