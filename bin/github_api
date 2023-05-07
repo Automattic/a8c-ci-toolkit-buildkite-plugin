@@ -1,0 +1,40 @@
+#!/bin/bash -eu
+
+# Similar to `gh api <endpoint>`, this utility makes API calls to GitHub.
+#
+# ENVIRONMENT VARIABLES:
+#   GITHUB_TOKEN: Required. The GitHub token to use for authentication.
+#   GH_HOST: Optional. The GitHub host to use. We'll figure out the host from env vars if not set.
+#
+# Usage:
+#   github_api <endpoint> [curl-options]
+#
+# Example:
+#   github_api user # Send API request and print JSON response
+#   github_api user --head # Make a HEAD request and print response headers
+
+if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+    echo "Missing environment variable GITHUB_TOKEN"
+    exit 1
+fi
+
+github_endpoint="$1"
+shift
+
+github_host=${GH_HOST:-}
+if [[ -z "${github_host}" ]]; then
+    if [[ -n "${BUILDKITE_PULL_REQUEST_REPO:-}" ]]; then
+        github_host=$(echo "$BUILDKITE_PULL_REQUEST_REPO" | awk -F[/:] '{print $4}')
+    else
+        github_host=github.com
+    fi
+fi
+
+if [[ "$github_host" == "github.com" ]]; then
+    url="https://api.github.com/$github_endpoint"
+else
+    url="https://${github_host}/api/v3/$github_endpoint"
+fi
+
+curl -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" -s "$@" "$url"
+exit $?
