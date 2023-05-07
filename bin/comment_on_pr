@@ -67,6 +67,12 @@ github_user=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO%.git}")")
 github_repo=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
 issues_endpoint="https://api.github.com/repos/${github_user}/${github_repo}/issues"
 
+curl -s --fail -o /dev/null \
+    -H "Authorization: token ${arg_github_token}" \
+    -H "Accept: application/vnd.github+json" \
+    "$issues_endpoint/${BUILDKITE_PULL_REQUEST}/comments" \
+    || (echo "The GitHub token is invalid" && exit 1)
+
 # Find the existing PR comment
 if [[ -n "$opt_comment_id" ]]; then
     # Do not change this variable value, it's used to identify the comments posted by this utility.
