@@ -39,7 +39,7 @@ fi
 # Default options
 opt_comment_id=""
 opt_if_exist="update"
-opt_github_token="${GITHUB_TOKEN-:}"
+opt_github_token="${GITHUB_TOKEN:-}"
 
 # If there are two arguments and they don't start with an option, then we assume
 # this utility is called in the deprecated way: comment_on_pr <comment> <github-token>
@@ -74,7 +74,7 @@ else
                 arg_pr_comment="$1"
             fi
             ;;
-        *) echo "Error: invalid comment argument"; exit 1 ;;
+        *) echo "Error: too many arguments"; exit 1 ;;
     esac
 fi
 
@@ -129,7 +129,6 @@ if [[ -n "$existing_comment_id" && "$opt_if_exist" == "update" ]]; then
         --fail-with-body -X PATCH \
         -H "Content-Type: application/json" \
         -d "${json_payload}"
-
 elif [[ -n "$arg_pr_comment" ]]; then
     echo "Post a new comment"
     github_api "$issues_endpoint/${BUILDKITE_PULL_REQUEST}/comments" \
