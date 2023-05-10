@@ -84,8 +84,10 @@ github_user=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO%.git}")")
 github_repo=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
 issues_endpoint="repos/${github_user}/${github_repo}/issues"
 
-github_api "$issues_endpoint/${BUILDKITE_PULL_REQUEST}/comments" --fail -o /dev/null \
-    || (echo "The GitHub token is invalid" && exit 1)
+all_pr_comments=$(
+    github_api "$issues_endpoint/${BUILDKITE_PULL_REQUEST}/comments" --fail \
+    || (>&2 echo "Error: The GitHub token is invalid" && exit 1)
+)
 
 # Find the existing PR comment
 if [[ -n "$opt_comment_id" ]]; then
@@ -96,7 +98,7 @@ if [[ -n "$opt_comment_id" ]]; then
 
     # Do not change this variable value, it's used to identify the comments posted by this utility.
     comment_body_id="<!-- DO NOT REMOVE ci-toolkit-comment-identifier: $opt_comment_id -->"
-    existing_comment_id="$(github_api "$issues_endpoint/${BUILDKITE_PULL_REQUEST}/comments" \
+    existing_comment_id="$(echo "$all_pr_comments" \
         | jq ".[] | select(.body | contains(\"$comment_body_id\")) | .id")"
 
     # When comment id is provided without a comment body, delete the existing comment.
