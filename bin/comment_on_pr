@@ -31,7 +31,7 @@ $(curl --version)
 
 EOF
 
-if [[ "${BUILDKITE_PULL_REQUEST:-invalid}" == "invalid" ]]; then
+if [[ ! "${BUILDKITE_PULL_REQUEST:-invalid}" =~ ^[0-9]+$ ]]; then
     echo "Error: this tool can only be called from a Buildkite PR job"
     exit 1
 fi
