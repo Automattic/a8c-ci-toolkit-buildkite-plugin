@@ -7,12 +7,13 @@
 #
 # Examples:
 #
-#    # Post a new comment which can be uniqly identifiered by the given comment id,
+#    # Post a new comment which can be uniquely identified by the given comment id,
 #    # or update the existing comment that's associated with the given comment id.
-#    # You can choose to delete the existing comment if it exists by passing `--if-exist delete`.
+#    # By default, the existing comment will be updated. You can choose to delete
+#    # the existing comment by passing `--if-exist delete`.
 #    comment_on_pr --id comment-id [--if-exist update|delete] "This is a comment"
 #
-#    # Delete the comment associated with the given comment id
+#    # Delete the comment associated with the given comment id by passing an empty comment
 #    comment_on_pr --id comment-id [--if-exist delete]
 #
 #    # Deprecated: Post a new comment to the PR
