@@ -4,7 +4,7 @@
 #
 # ENVIRONMENT VARIABLES:
 #   GITHUB_TOKEN: Required. The GitHub token to use for authentication.
-#   GH_HOST: Optional. The GitHub host to use. We'll figure out the host from env vars if not set.
+#   GH_HOST: Optional. The GitHub host to use. We'll figure out the host from `BUILDKITE_*` env vars if not set.
 #
 # Usage:
 #   github_api <endpoint> [curl-options]
