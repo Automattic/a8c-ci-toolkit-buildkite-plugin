@@ -5,6 +5,7 @@ if [ -z "${1:-}" ]; then
   exit 1
 else
   CACHE_PATH=$1
+  shift
 fi
 
 if [ ! -f "$CACHE_PATH" ] && [ ! -d "$CACHE_FILE" ]; then
@@ -12,12 +13,50 @@ if [ ! -f "$CACHE_PATH" ] && [ ! -d "$CACHE_FILE" ]; then
   exit 1
 fi
 
-if [ -z "${2:-}" ]; then
+if [ -z "${1:-}" ]; then
   echo "You must pass the key to use to identify the cache."
   exit 1
 else
   CACHE_KEY=$1
+  shift
 fi
+
+# Defaults options, will be overridden by getopts if necessary.
+SHOULD_FORCE=false
+SHOULD_USE_RELATIVE_PATH_IN_TAR=false
+
+while getopts ":fr-" opt; do
+  case "${opt}" in
+    f)
+      SHOULD_FORCE=true
+      ;;
+    r)
+      SHOULD_USE_RELATIVE_PATH_IN_TAR=true
+      ;;
+    -)
+      case "${OPTARG}" in
+        force)
+          SHOULD_FORCE=true
+          ;;
+        use_relative_path_in_tar)
+          SHOULD_USE_RELATIVE_PATH_IN_TAR=true
+          ;;
+        *)
+          echo "Invalid option: --${OPTARG}" >&2
+          exit 1
+          ;;
+      esac
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
 
 S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
 if [ -z "$S3_BUCKET_NAME" ]; then
@@ -33,8 +72,7 @@ fi
 echo "Using $S3_BUCKET_NAME as cache bucket"
 
 # Use with caution – in general it's not a good idea to overwrite a cache entry
-SHOULD_FORCE=${3-false}
-if [[ "$SHOULD_FORCE" == '--force' ]]; then
+if [[ "$SHOULD_FORCE" == true ]]; then
 	echo "Deleting the existing cache key"
 	aws s3 rm "s3://$S3_BUCKET_NAME/$CACHE_KEY"
 fi
@@ -43,8 +81,7 @@ if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/
 	echo "No existing cache entry for $CACHE_KEY – storing in cache"
 
 	echo "	Compressing"
-	TAR_CONFIG=${4-}
-	if [[ "$TAR_CONFIG" == '--use_relative_path_in_tar' ]]; then
+	if [[ "$SHOULD_USE_RELATIVE_PATH_IN_TAR" == true ]]; then
 		# This is used by actions such as `install_swiftpm_dependencies`
 		# This configuration allows the tar to not include the full system path of the
 		# directory that's being archived. For example, this will save only the
