@@ -1,0 +1,72 @@
+#!/bin/bash -eu
+
+while getopts ":f:n:b:-" opt; do
+  case "${opt}" in
+    f)
+      ARTIFACT_PATH="${OPTARG}"
+      ;;
+    n)
+      NAME="${OPTARG}"
+      ;;
+    b)
+      BUCKET="${OPTARG}"
+      ;;
+    -)
+      case "${OPTARG}" in
+        file)
+          ARTIFACT_PATH="${OPTARG}"
+          ;;
+        name)
+          NAME="${OPTARG}"
+          ;;
+        bucket)
+          BUCKET="${OPTARG}"
+          ;;
+        *)
+          echo "Invalid option: --${OPTARG}" >&2
+          exit 1
+          ;;
+      esac
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [ -z "$ARTIFACT_PATH" ]; then
+	echo "You must pass the file you want to be stored with the -f or --file option"
+	exit 1
+fi
+
+if [ ! -f "$ARTIFACT_PATH" ]; then
+	echo "No file found at $ARTIFACT_PATH"
+	exit 2
+fi
+
+BUCKET=${ARTIFACTS_S3_BUCKET-}
+
+if [ -z "$BUCKET" ]; then
+	echo "You must either pass an S3 bucket via the -b or --bucket option, or set the \`ARTIFACTS_S3_BUCKET\` environment variable"
+	exit 3
+fi
+
+if [[ -z "$NAME" ]]; then
+  echo "You must set a name for the artifact you want to upload via the -n or --name option"
+  exit 4
+fi
+
+# If the bucket has transfer acceleration enabled, use it!
+ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$BUCKET" | jq '.Status' -r || true)
+
+if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
+	echo "Uploading with transfer acceleration"
+	aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$NAME" --endpoint-url https://s3-accelerate.amazonaws.com
+else
+	aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$NAME"
+fi
