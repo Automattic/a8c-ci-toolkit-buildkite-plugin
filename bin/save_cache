@@ -56,7 +56,7 @@ if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/
 		# directory that's being archived. For example, this will save only the
 		# "DIRECTORY_BEING_ARCHIVED" in `/User/builder/DIRECTORY_BEING_ARCHIVED`
 		# instead of also creating `/User/builder` when extracting the archive
-		tar -czf "$CACHE_KEY" -C "$CACHE_FILE" .
+		tar -czf "$CACHE_KEY" --directory "$CACHE_FILE" .
 	else
 		tar -czf "$CACHE_KEY" "$CACHE_FILE"
 	fi
