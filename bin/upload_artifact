@@ -6,11 +6,11 @@
 # $file_path is the path to a file on disk. It'll automatically be combined with the current build ID to differentiate between
 # the same file in different jobs so that it can be correctly re-downloaded within the same job.
 
-ARTIFACT_PATH=$1
-
-if [ -z "$ARTIFACT_PATH" ]; then
+if [ -z "${1-}" ]; then
 	echo "You must pass the file you want to be stored"
 	exit 1
+else
+	ARTIFACT_PATH=$1
 fi
 
 if [ ! -f "$ARTIFACT_PATH" ]; then
