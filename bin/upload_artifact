@@ -37,4 +37,3 @@ if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
 else
 	aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$KEY"
 fi
-
