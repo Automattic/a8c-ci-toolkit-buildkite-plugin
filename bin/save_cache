@@ -7,6 +7,12 @@ else
   CACHE_FILE=$1
 fi
 
+if [ ! -f "$CACHE_FILE" ] && [ ! -d "$CACHE_FILE" ]; then
+  echo "$CACHE_FILE should be either a file nor a directory"
+  exit 1
+fi
+
+
 CACHE_KEY=$2
 
 # We can automatically derive a cache key if one isn't provided
