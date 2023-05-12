@@ -1,7 +1,7 @@
 #!/bin/bash -eu
 
 # Usage
-# store_artifact $file_path
+# upload_artifact $file_path
 #
 # $file_path is the path to a file on disk. It'll automatically be combined with the current build ID to differentiate between
 # the same file in different jobs so that it can be correctly re-downloaded within the same job.
