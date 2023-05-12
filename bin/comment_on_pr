@@ -84,10 +84,14 @@ github_user=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO%.git}")")
 github_repo=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
 issues_endpoint="repos/${github_user}/${github_repo}/issues"
 
-all_pr_comments=$(
-    github_api "$issues_endpoint/${BUILDKITE_PULL_REQUEST}/comments" --fail \
-    || (>&2 echo "Error: Failed to use the GitHub token to retreive PR comments. Please double check the GitHub token is valid and has permission to read and write PR comments in ${github_user}/${github_repo} repo." && exit 1)
-)
+pr_comments_file=$(mktemp)
+
+if ! github_api "$issues_endpoint/${BUILDKITE_PULL_REQUEST}/comments" --fail-with-body --output "$pr_comments_file";
+then
+    echo "Error: Failed to use the GitHub token to retreive PR comments."
+    [[ -f "$pr_comments_file" ]] && cat "$pr_comments_file"
+    exit 1
+fi
 
 # Find the existing PR comment
 if [[ -n "$opt_comment_id" ]]; then
@@ -98,8 +102,7 @@ if [[ -n "$opt_comment_id" ]]; then
 
     # Do not change this variable value, it's used to identify the comments posted by this utility.
     comment_body_id="<!-- DO NOT REMOVE ci-toolkit-comment-identifier: $opt_comment_id -->"
-    existing_comment_id="$(echo "$all_pr_comments" \
-        | jq ".[] | select(.body | contains(\"$comment_body_id\")) | .id")"
+    existing_comment_id="$(jq --arg comment_body_id "$comment_body_id" '.[] | select(.body | contains($comment_body_id)) | .id' "$pr_comments_file")"
 
     # When comment id is provided without a comment body, delete the existing comment.
     if [[ -z "$arg_pr_comment" ]]; then
