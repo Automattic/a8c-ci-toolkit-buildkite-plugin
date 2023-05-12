@@ -4,11 +4,11 @@ if [ -z "${1:-}" ]; then
 	echo "You must pass the file or directory you want to be cached"
 	exit 1
 else
-  CACHE_FILE=$1
+  CACHE_PATH=$1
 fi
 
-if [ ! -f "$CACHE_FILE" ] && [ ! -d "$CACHE_FILE" ]; then
-  echo "$CACHE_FILE should be either a file nor a directory"
+if [ ! -f "$CACHE_PATH" ] && [ ! -d "$CACHE_FILE" ]; then
+  echo "$CACHE_PATH should be either a file nor a directory"
   exit 1
 fi
 
@@ -19,15 +19,15 @@ CACHE_KEY=$2
 if [ -z "$CACHE_KEY" ]; then
 	echo "No cache key provided – automatically deriving one:"
 
-	# if the $CACHE_FILE is a directory, derived the key from the hash of all files within it
-	if [[ -d $CACHE_FILE ]]; then
-		CACHE_KEY=$(hash_directory "$CACHE_FILE")
-		echo "	'$CACHE_FILE' is a directory with the hash $CACHE_KEY"
+	# if the $CACHE_PATH is a directory, derived the key from the hash of all files within it
+	if [[ -d $CACHE_PATH ]]; then
+		CACHE_KEY=$(hash_directory "$CACHE_PATH")
+		echo "	'$CACHE_PATH' is a directory with the hash $CACHE_KEY"
 
-	# if the $CACHE_FILE is a regular file, derive the key from the file's hash
-	elif [[ -f $CACHE_FILE ]]; then
-		CACHE_KEY=$(hash_file "$CACHE_FILE")
-		echo "	'$CACHE_FILE' is a file with the hash $CACHE_KEY"
+	# if the $CACHE_PATH is a regular file, derive the key from the file's hash
+	elif [[ -f $CACHE_PATH ]]; then
+		CACHE_KEY=$(hash_file "$CACHE_PATH")
+		echo "	'$CACHE_PATH' is a file with the hash $CACHE_KEY"
 	fi
 fi
 
@@ -62,9 +62,9 @@ if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/
 		# directory that's being archived. For example, this will save only the
 		# "DIRECTORY_BEING_ARCHIVED" in `/User/builder/DIRECTORY_BEING_ARCHIVED`
 		# instead of also creating `/User/builder` when extracting the archive
-		tar -czf "$CACHE_KEY" --directory "$CACHE_FILE" .
+		tar -czf "$CACHE_KEY" --directory "$CACHE_PATH" .
 	else
-		tar -czf "$CACHE_KEY" "$CACHE_FILE"
+		tar -czf "$CACHE_KEY" "$CACHE_PATH"
 	fi
 
 	echo "	Uploading"
