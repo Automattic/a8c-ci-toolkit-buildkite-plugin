@@ -1,8 +1,8 @@
 #!/bin/bash -eu
 
 if [ -z "${1:-}" ]; then
-	echo "You must pass the file or directory you want to be cached"
-	exit 1
+  echo "You must pass the file or directory you want to be cached"
+  exit 1
 else
   CACHE_PATH=$1
 fi
@@ -12,23 +12,11 @@ if [ ! -f "$CACHE_PATH" ] && [ ! -d "$CACHE_FILE" ]; then
   exit 1
 fi
 
-
-CACHE_KEY=$2
-
-# We can automatically derive a cache key if one isn't provided
-if [ -z "$CACHE_KEY" ]; then
-	echo "No cache key provided – automatically deriving one:"
-
-	# if the $CACHE_PATH is a directory, derived the key from the hash of all files within it
-	if [[ -d $CACHE_PATH ]]; then
-		CACHE_KEY=$(hash_directory "$CACHE_PATH")
-		echo "	'$CACHE_PATH' is a directory with the hash $CACHE_KEY"
-
-	# if the $CACHE_PATH is a regular file, derive the key from the file's hash
-	elif [[ -f $CACHE_PATH ]]; then
-		CACHE_KEY=$(hash_file "$CACHE_PATH")
-		echo "	'$CACHE_PATH' is a file with the hash $CACHE_KEY"
-	fi
+if [ -z "${2:-}" ]; then
+  echo "You must pass the key to use to identify the cache."
+  exit 1
+else
+  CACHE_KEY=$1
 fi
 
 S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
