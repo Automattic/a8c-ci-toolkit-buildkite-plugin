@@ -1,24 +1,24 @@
 #!/bin/bash -eu
 
 if [ -z "${1:-}" ]; then
-  echo "You must pass the file or directory you want to be cached"
-  exit 1
+	echo "You must pass the file or directory you want to be cached"
+	exit 1
 else
-  CACHE_PATH=$1
-  shift
+	CACHE_PATH=$1
+	shift
 fi
 
 if [ ! -f "$CACHE_PATH" ] && [ ! -d "$CACHE_FILE" ]; then
-  echo "$CACHE_PATH should be either a file nor a directory"
-  exit 1
+	echo "$CACHE_PATH should be either a file nor a directory"
+	exit 1
 fi
 
 if [ -z "${1:-}" ]; then
-  echo "You must pass the key to use to identify the cache."
-  exit 1
+	echo "You must pass the key to use to identify the cache."
+	exit 1
 else
-  CACHE_KEY=$1
-  shift
+	CACHE_KEY=$1
+	shift
 fi
 
 # Defaults options, will be overridden by getopts if necessary.
@@ -26,36 +26,36 @@ SHOULD_FORCE=false
 SHOULD_USE_RELATIVE_PATH_IN_TAR=false
 
 while getopts ":fr-" opt; do
-  case "${opt}" in
-    f)
-      SHOULD_FORCE=true
-      ;;
-    r)
-      SHOULD_USE_RELATIVE_PATH_IN_TAR=true
-      ;;
-    -)
-      case "${OPTARG}" in
-        force)
-          SHOULD_FORCE=true
-          ;;
-        use_relative_path_in_tar)
-          SHOULD_USE_RELATIVE_PATH_IN_TAR=true
-          ;;
-        *)
-          echo "Invalid option: --${OPTARG}" >&2
-          exit 1
-          ;;
-      esac
-      ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
-      exit 1
-      ;;
-    :)
-      echo "Option -$OPTARG requires an argument." >&2
-      exit 1
-      ;;
-  esac
+	case "${opt}" in
+		f)
+			SHOULD_FORCE=true
+			;;
+		r)
+			SHOULD_USE_RELATIVE_PATH_IN_TAR=true
+			;;
+		-)
+			case "${OPTARG}" in
+				force)
+					SHOULD_FORCE=true
+					;;
+				use_relative_path_in_tar)
+					SHOULD_USE_RELATIVE_PATH_IN_TAR=true
+					;;
+				*)
+					echo "Invalid option: --${OPTARG}" >&2
+					exit 1
+					;;
+			esac
+			;;
+		\?)
+			echo "Invalid option: -$OPTARG" >&2
+			exit 1
+			;;
+		:)
+			echo "Option -$OPTARG requires an argument." >&2
+			exit 1
+			;;
+	esac
 done
 
 S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
