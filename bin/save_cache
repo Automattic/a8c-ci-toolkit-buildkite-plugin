@@ -1,12 +1,13 @@
 #!/bin/bash -eu
 
-CACHE_FILE=$1
-CACHE_KEY=$2
-
-if [ -z "$CACHE_FILE" ]; then
+if [ -z "${1:-}" ]; then
 	echo "You must pass the file or directory you want to be cached"
 	exit 1
+else
+  CACHE_FILE=$1
 fi
+
+CACHE_KEY=$2
 
 # We can automatically derive a cache key if one isn't provided
 if [ -z "$CACHE_KEY" ]; then
