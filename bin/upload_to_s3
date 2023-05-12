@@ -1,47 +1,47 @@
 #!/bin/bash -eu
 
-while getopts ":f:n:b:-" opt; do
-  case "${opt}" in
-    f)
-      ARTIFACT_PATH="${OPTARG}"
+function usage {
+  echo "Usage $0 --file=/path/to/file --name=file_name_on_S3 [--bucket=S3_bucket_name]"
+}
+
+# Option parsing logic based upon https://stackoverflow.com/a/28466267/809944
+function exit_with_message() {
+  echo "$*" >&2; exit 1;
+}
+
+function needs_arg() {
+  if [ -z "$OPTARG" ]; then
+    exit_with_message "No argument for --$OPT option. Use format --$OPT=value.";
+  fi
+}
+
+while getopts "f:n:b:-:" OPT; do
+  if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
+    OPT="${OPTARG%%=*}"       # extract long option name
+    OPTARG="${OPTARG#"$OPT"}" # extract long option argument (may be empty)
+    OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
+  fi
+
+  case "$OPT" in
+    f | file)
+      needs_arg; ARTIFACT_PATH="$OPTARG";;
+    b | bucket)
+      needs_arg; BUCKET="$OPTARG";;
+    n | name)
+      needs_arg; NAME="$OPTARG";;
+    ??*) # bad long option
+      usage
+      exit_with_message "Illegal option --$OPT"
       ;;
-    n)
-      NAME="${OPTARG}"
-      ;;
-    b)
-      BUCKET="${OPTARG}"
-      ;;
-    -)
-      case "${OPTARG}" in
-        file)
-          ARTIFACT_PATH="${OPTARG}"
-          ;;
-        name)
-          NAME="${OPTARG}"
-          ;;
-        bucket)
-          BUCKET="${OPTARG}"
-          ;;
-        *)
-          echo "Invalid option: --${OPTARG}" >&2
-          exit 1
-          ;;
-      esac
-      ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
-      exit 1
-      ;;
-    :)
-      echo "Option -$OPTARG requires an argument." >&2
-      exit 1
-      ;;
+    ?) # bad short option
+      usage
+      exit 1;;
   esac
 done
 
-if [ -z "$ARTIFACT_PATH" ]; then
-	echo "You must pass the file you want to be stored with the -f or --file option"
-	exit 1
+if [[ -z ${ARTIFACT_PATH:-} ]] || [[ -z ${NAME:-} ]]; then
+  usage
+  exit 1
 fi
 
 if [ ! -f "$ARTIFACT_PATH" ]; then
@@ -52,13 +52,8 @@ fi
 BUCKET=${ARTIFACTS_S3_BUCKET-}
 
 if [ -z "$BUCKET" ]; then
-	echo "You must either pass an S3 bucket via the -b or --bucket option, or set the \`ARTIFACTS_S3_BUCKET\` environment variable"
+	echo "You must either pass an S3 bucket via the -b or --bucket option, or set the \`ARTIFACTS_S3_BUCKET\` environment variable."
 	exit 3
-fi
-
-if [[ -z "$NAME" ]]; then
-  echo "You must set a name for the artifact you want to upload via the -n or --name option"
-  exit 4
 fi
 
 # If the bucket has transfer acceleration enabled, use it!
