@@ -80,7 +80,7 @@ fi
 
 export GITHUB_TOKEN="$opt_github_token"
 
-github_user=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO%.git}")")
+github_user=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO}")")
 github_repo=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
 issues_endpoint="repos/${github_user}/${github_repo}/issues"
 
