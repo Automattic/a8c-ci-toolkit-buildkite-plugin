@@ -38,7 +38,8 @@ _None._
 
 ### New Features
 
-_None._
+- Add a new `github_api` utlity to make API requests to GitHub.com or Github Enterprise instances. [#51]
+- Extend the `comment_on_pr` utility to update or delete the existing comment. [#51]
 
 ### Bug Fixes
 
@@ -47,3 +48,4 @@ _None._
 ### Internal Changes
 
 - Added this changelog file. [#49]
+- Re-implement the `comment_on_pr` utility to use `curl` instead of `gh`. [#51]

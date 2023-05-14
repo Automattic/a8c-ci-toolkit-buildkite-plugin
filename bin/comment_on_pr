@@ -1,14 +1,146 @@
 #!/bin/bash -eu
 
-PR_MESSAGE_FILE=$1
-GITHUB_TOKEN=$2
+# This script is used to comment on a pull request, and must be run in a buldkite PR step.
+#
+# Usage:
+#    [GITHUB_TOKEN=<token>] comment_on_pr [--id <comment-id>] [--if-exist update|delete] [--github-token <token>] <comment>
+#
+# Examples:
+#
+#    # Post a new comment which can be uniquely identified by the given comment id,
+#    # or update the existing comment that's associated with the given comment id.
+#    # By default, the existing comment will be updated. You can choose to delete
+#    # the existing comment by passing `--if-exist delete`.
+#    comment_on_pr --id comment-id [--if-exist update|delete] "This is a comment"
+#
+#    # Delete the comment associated with the given comment id by passing an empty comment
+#    comment_on_pr --id comment-id [--if-exist delete]
+#
+#    # Deprecated: Post a new comment to the PR
+#    comment_on_pr "This is a comment" <github-token>
+#
+# Please note the comment argument can be a path to a file containing the comment, or a markdown.
 
-if ! command -v gh &> /dev/null; then
-	brew install gh
+# Check dependencies and print their versions for diagnosis purposes
+cat <<EOF
+> jq --version
+$(jq --version)
+
+> curl --version
+$(curl --version)
+
+EOF
+
+if [[ ! "${BUILDKITE_PULL_REQUEST:-invalid}" =~ ^[0-9]+$ ]]; then
+    echo "Error: this tool can only be called from a Buildkite PR job"
+    exit 1
 fi
 
-FILENAME="/tmp/github-token-$BUILDKITE_BUILD_ID"
-echo "$GITHUB_TOKEN" > "$FILENAME"
+# Default options
+opt_comment_id=""
+opt_if_exist="update"
+opt_github_token="${GITHUB_TOKEN:-}"
 
-gh auth login --with-token < "$FILENAME"
-gh pr comment --body-file "$PR_MESSAGE_FILE"
+# If there are two arguments and they don't start with an option, then we assume
+# this utility is called in the deprecated way: comment_on_pr <comment> <github-token>
+if [[ $# == 2 && "$1" != "--"* ]]; then
+    if [[ -f "$1" ]]; then
+        arg_pr_comment=$(cat "$1")
+    else
+        arg_pr_comment="$1"
+    fi
+
+    opt_github_token=$2
+else
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --id) opt_comment_id="$2"; shift ;;
+            --if-exist) opt_if_exist="$2"; shift ;;
+            --github-token) opt_github_token="$2"; shift ;;
+            --*) echo "Unknown option: $1"; exit 1 ;;
+            *) break ;;
+        esac
+        shift
+    done
+
+    case "$#" in
+        0)
+            arg_pr_comment=""
+            ;;
+        1)
+            if [[ -f "$1" ]]; then
+                arg_pr_comment=$(cat "$1")
+            else
+                arg_pr_comment="$1"
+            fi
+            ;;
+        *) echo "Error: too many arguments"; exit 1 ;;
+    esac
+fi
+
+export GITHUB_TOKEN="$opt_github_token"
+
+github_user=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO}")")
+github_repo=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
+issues_endpoint="repos/${github_user}/${github_repo}/issues"
+
+pr_comments_file=$(mktemp)
+
+if ! github_api "$issues_endpoint/${BUILDKITE_PULL_REQUEST}/comments" --fail-with-body --output "$pr_comments_file";
+then
+    echo "Error: Failed to use the GitHub token to retreive PR comments."
+    [[ -f "$pr_comments_file" ]] && cat "$pr_comments_file"
+    exit 1
+fi
+
+# Find the existing PR comment
+if [[ -n "$opt_comment_id" ]]; then
+    if ! [[ "$opt_comment_id" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo "Error: comment id can only contain alphanumeric characters, dashes and underscores"
+        exit 1
+    fi
+
+    # Do not change this variable value, it's used to identify the comments posted by this utility.
+    comment_body_id="<!-- DO NOT REMOVE ci-toolkit-comment-identifier: $opt_comment_id -->"
+    existing_comment_id="$(jq --arg comment_body_id "$comment_body_id" '.[] | select(.body | contains($comment_body_id)) | .id' "$pr_comments_file")"
+
+    # When comment id is provided without a comment body, delete the existing comment.
+    if [[ -z "$arg_pr_comment" ]]; then
+        opt_if_exist="delete"
+    fi
+else
+    comment_body_id=""
+    existing_comment_id=""
+fi
+
+# Delete the existing comment if needed
+if [[ -n "$existing_comment_id" && "$opt_if_exist" == "delete" ]]; then
+    echo "Delete the existing comment containing $existing_comment_id"
+    github_api "$issues_endpoint/comments/$existing_comment_id" \
+        --fail-with-body -X DELETE
+fi
+
+# Construct the comment JSON
+comment_body=$(cat <<EOF
+$comment_body_id
+$arg_pr_comment
+EOF
+)
+json_payload=$(jq -c --null-input --arg body "$comment_body" '{body: $body}')
+
+if [[ -n "$existing_comment_id" && "$opt_if_exist" == "update" ]]; then
+    echo "Update the existing comment: $existing_comment_id"
+    github_api "$issues_endpoint/comments/$existing_comment_id" \
+        --fail-with-body -X PATCH \
+        -H "Content-Type: application/json" \
+        -d "${json_payload}"
+elif [[ -n "$arg_pr_comment" ]]; then
+    echo "Post a new comment"
+    github_api "$issues_endpoint/${BUILDKITE_PULL_REQUEST}/comments" \
+        --fail-with-body -X POST \
+        -H "Content-Type: application/json" \
+        -d "${json_payload}"
+else
+    # No comment body was given in CLI, so no new comment to post
+    echo "No new comment to post"
+fi
