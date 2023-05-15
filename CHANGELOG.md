@@ -38,6 +38,20 @@ _None._
 
 ### New Features
 
+_None._
+
+### Bug Fixes
+
+_None._
+
+### Internal Changes
+
+_None._
+
+## 2.16.0
+
+### New Features
+
 - Add a new `github_api` utlity to make API requests to GitHub.com or Github Enterprise instances. [#51]
 - Extend the `comment_on_pr` utility to update or delete the existing comment. [#51]
 
