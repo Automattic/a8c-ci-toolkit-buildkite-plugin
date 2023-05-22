@@ -5,6 +5,7 @@
 #
 require 'rexml/document'
 require 'shellwords'
+require 'json'
 
 ###################
 # Parse arguments
@@ -81,7 +82,7 @@ def record(test_failure, into:)
   end
 end
 
-# Given a list of failures for a given step and state, update the corresponding annotation
+# Given a list of failures for a given step and state, update the corresponding annotation and return the list of failures in JSON
 #
 def update_annotation(title, list, style, state)
   annotation_context = "#{title} (#{state})"
@@ -93,6 +94,27 @@ def update_annotation(title, list, style, state)
     puts "#{tests_count} test(s) #{state} (#{list.count} distinct assertion failures in total). Reporting them as a `#{annotation_context}` Buildkite #{style} annotation.\n\n"
     markdown = "\#\#\#\# #{title}: #{tests_count} tests #{state} (#{list.count} distinct assertion failure(s) in total)\n\n" + list.map(&:to_s).join("\n")
     puts markdown
+    assertion_failures_count = list.count
+
+    # Only return JSON object for failing tests
+    if state == 'have failed'
+      tests = list.map do |item|
+        {
+          'name' => item.name,
+          'classname' => item.classname,
+          'message' => item.message,
+          'details' => item.details
+        }
+      end
+
+      test_failure_json_data = {
+        'title' => title,
+        'tests_count' => tests_count,
+        'assertion_failures_count' => assertion_failures_count,
+        'tests' => tests
+      }
+      return JSON.generate(test_failure_json_data)
+    end
     system('buildkite-agent', 'annotate', markdown, '--style', style, '--context', annotation_context)
   end
 end
