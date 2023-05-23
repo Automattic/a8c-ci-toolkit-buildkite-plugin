@@ -5,7 +5,16 @@
 #
 require 'rexml/document'
 require 'shellwords'
+require 'net/http'
 require 'json'
+
+BUILDKITE_ORGANIZATION_SLUG = ENV.fetch('BUILDKITE_ORGANIZATION_SLUG')
+BUILDKITE_PIPELINE_SLUG = ENV.fetch('BUILDKITE_PIPELINE_SLUG')
+BUILDKITE_BUILD_NUMBER = ENV.fetch('BUILDKITE_BUILD_NUMBER')
+BUILDKITE_TOKEN = ENV.fetch('BUILDKITE_TOKEN')
+BUILDKITE_BUILD_AUTHOR = ENV.fetch('BUILDKITE_BUILD_AUTHOR')
+BUILDKITE_PIPELINE_NAME = ENV.fetch('BUILDKITE_PIPELINE_NAME')
+SLACK_WEBHOOK = ENV.fetch('SLACK_WEBHOOK')
 
 ###################
 # Parse arguments
@@ -119,6 +128,65 @@ def update_annotation(title, list, style, state)
   end
 end
 
+# Given a list of failing tests, send a slack notification with the test names in the payload
+#
+def send_slack_notification(failures)
+  if !failures
+    puts "All tests passed! Slack notification not sent."
+  else
+    data = JSON.parse(failures)
+    failing_tests = data['tests'].map { |test| "#{test['name']} in #{test['classname']}" }
+    assertion_failures_count = data['assertion_failures_count']
+
+    slack_message_payload = {
+      channel: "#jos-testing-notif",
+      blocks: [
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "*Platform:* #{BUILDKITE_PIPELINE_NAME} *Build Author:* #{BUILDKITE_BUILD_AUTHOR} *Failures Count:* #{assertion_failures_count}\n"
+          },
+          "accessory": {
+            "type": "button",
+            "text": {
+              "type": "plain_text",
+              "text": "Build",
+              "emoji": true
+            },
+            "value": "build",
+            "url": "https://buildkite.com/#{BUILDKITE_ORGANIZATION_SLUG}/#{BUILDKITE_PIPELINE_SLUG}/builds/#{BUILDKITE_BUILD_NUMBER}",
+            "action_id": "button-action"
+          }
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "*Failing Test(s):* #{failing_tests.to_s[1..-2]}" # To remove the bracket from the notification and only list the tests
+          }
+        }
+      ]
+    }
+
+    json_payload = JSON.generate(slack_message_payload)
+
+    # Send message to Slack
+    uri = URI("#{SLACK_WEBHOOK}")
+    response = Net::HTTP.post(uri, json_payload, "Content-Type" => "application/json")
+
+    # Check response status
+    if response.code == "200"
+      puts "--- :slack: Notification Sent!"
+    else
+      puts "--- :slack: Failed to send notification. Response code: #{response.code}"
+    end
+  end
+end
+
 ###################
 # Main
 ###################
@@ -138,5 +206,6 @@ REXML::XPath.each(xmldoc, '//testcase[failure]') do |node|
   end
 end
 
-update_annotation(title, failures, 'error', 'have failed')
+failing_tests = update_annotation(title, failures, 'error', 'have failed')
+send_slack_notification(failing_tests)
 update_annotation(title, flakies, 'warning', 'were flaky')
