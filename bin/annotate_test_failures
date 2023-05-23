@@ -130,7 +130,7 @@ end
 # Given a list of failing tests, send a slack notification with the test names in the payload
 #
 def send_slack_notification(failures)
-  if !failures
+  if failures==true # system() returns true if no failures are found
     puts "All tests passed! Slack notification not sent."
   else
     data = JSON.parse(failures)
