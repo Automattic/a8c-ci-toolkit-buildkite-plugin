@@ -141,6 +141,8 @@ def send_slack_notification(title, failures)
     slack_message_payload = {
       # testing channel - will be updated later
       "channel": "C03Q9FTCQA0",
+      "username": "#{BUILDKITE_PIPELINE_NAME} Tests Failures",
+      "icon_emoji": ":fire:",
       "blocks": [
         {
           "type": "section",
