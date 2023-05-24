@@ -13,6 +13,7 @@ BUILDKITE_PIPELINE_SLUG = ENV.fetch('BUILDKITE_PIPELINE_SLUG')
 BUILDKITE_BUILD_NUMBER = ENV.fetch('BUILDKITE_BUILD_NUMBER')
 BUILDKITE_BUILD_AUTHOR = ENV.fetch('BUILDKITE_BUILD_AUTHOR')
 BUILDKITE_PIPELINE_NAME = ENV.fetch('BUILDKITE_PIPELINE_NAME')
+BUILDKITE_JOB_ID = ENV.fetch('BUILDKITE_JOB_ID')
 SLACK_WEBHOOK = ENV.fetch('SLACK_BUILD_WEBHOOK')
 
 ###################
@@ -129,7 +130,7 @@ end
 
 # Given a list of failing tests, send a slack notification with the test names in the payload
 #
-def send_slack_notification(failures)
+def send_slack_notification(title, failures)
   if failures==true # system() returns true if no failures are found
     puts "All tests passed! Slack notification not sent."
   else
@@ -138,13 +139,14 @@ def send_slack_notification(failures)
     assertion_failures_count = data['assertion_failures_count']
 
     slack_message_payload = {
-      channel: "#jos-testing-notif",
-      blocks: [
+      # testing channel - will be updated later
+      "channel": "C03Q9FTCQA0",
+      "blocks": [
         {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "*Platform:* #{BUILDKITE_PIPELINE_NAME} *Build Author:* #{BUILDKITE_BUILD_AUTHOR} *Failures Count:* #{assertion_failures_count}\n"
+            "text": ":warning: *#{assertion_failures_count} Test(s) Failed in #{BUILDKITE_PIPELINE_NAME} - #{title}*"
           },
           "accessory": {
             "type": "button",
@@ -154,7 +156,7 @@ def send_slack_notification(failures)
               "emoji": true
             },
             "value": "build",
-            "url": "https://buildkite.com/#{BUILDKITE_ORGANIZATION_SLUG}/#{BUILDKITE_PIPELINE_SLUG}/builds/#{BUILDKITE_BUILD_NUMBER}",
+            "url": "https://buildkite.com/#{BUILDKITE_ORGANIZATION_SLUG}/#{BUILDKITE_PIPELINE_SLUG}/builds/#{BUILDKITE_BUILD_NUMBER}##{BUILDKITE_JOB_ID}",
             "action_id": "button-action"
           }
         },
@@ -165,7 +167,7 @@ def send_slack_notification(failures)
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "*Failing Test(s):* #{failing_tests.to_s[1..-2]}" # To remove the bracket from the notification and only list the tests
+            "text": "*Failing Test(s):* #{failing_tests.to_s[1..-2]}\n" # To remove the bracket from the notification and only list the tests
           }
         }
       ]
@@ -205,6 +207,6 @@ REXML::XPath.each(xmldoc, '//testcase[failure]') do |node|
   end
 end
 
-failing_tests = update_annotation(title, failures, 'error', 'have failed')
-send_slack_notification(failing_tests)
+json_failures = update_annotation(title, failures, 'error', 'have failed')
+send_slack_notification(title, json_failures)
 update_annotation(title, flakies, 'warning', 'were flaky')
