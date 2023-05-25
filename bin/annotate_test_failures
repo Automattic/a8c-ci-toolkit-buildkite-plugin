@@ -14,6 +14,7 @@ BUILDKITE_BUILD_NUMBER = ENV.fetch('BUILDKITE_BUILD_NUMBER')
 BUILDKITE_BUILD_AUTHOR = ENV.fetch('BUILDKITE_BUILD_AUTHOR')
 BUILDKITE_PIPELINE_NAME = ENV.fetch('BUILDKITE_PIPELINE_NAME')
 BUILDKITE_JOB_ID = ENV.fetch('BUILDKITE_JOB_ID')
+BUILDKITE_BRANCH = ENV.fetch('BUILDKITE_BRANCH')
 SLACK_WEBHOOK = ENV.fetch('SLACK_WEBHOOK')
 
 ###################
@@ -131,8 +132,10 @@ end
 # Given a list of failing tests, send a slack notification with the test names in the payload
 #
 def send_slack_notification(title, failures)
-  if failures==true # system() returns true if no failures are found
-    puts "All tests passed! Slack notification not sent."
+  if failures==true # Don't send notification if there are no failures. The condition is set to check if failures equal true as system(...) returns true when no failures are found
+    puts ":tada: All tests passed! Slack notification not sent."
+  elsif "#{BUILDKITE_BRANCH}" != "trunk" # Don't send notification if build is not on trunk branch
+    puts ":merged-pr: Failures not on trunk branch. Slack notification not sent."
   else
     data = JSON.parse(failures)
     failing_tests = data['tests'].map { |test| "#{test['name']} in #{test['classname']}" }
@@ -140,7 +143,7 @@ def send_slack_notification(title, failures)
 
     slack_message_payload = {
       # testing channel - will be updated later
-      "channel": "C03Q9FTCQA0",
+      "channel": "#jos-testing-notif",
       "username": "#{BUILDKITE_PIPELINE_NAME} Tests Failures",
       "icon_emoji": ":fire:",
       "blocks": [
@@ -183,9 +186,9 @@ def send_slack_notification(title, failures)
 
     # Check response status
     if response.code == "200"
-      puts "--- :slack: Notification Sent!"
+      puts ":slack: Notification Sent!"
     else
-      puts "--- :slack: Failed to send notification. Response code: #{response.code}"
+      puts ":slack: Failed to send notification. Response code: #{response.code}"
     end
   end
 end
