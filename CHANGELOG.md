@@ -22,7 +22,7 @@ _None._
 
 ### Bug Fixes
 
-- Fix the `annotate_test_failures` to include test cases with error nodes in the failures list. [#58]
+_None._
 
 ### Internal Changes
 
@@ -38,11 +38,11 @@ _None._
 
 ### New Features
 
-_None._
+- When `install_cocoapods` fails because `Podfile.lock` changed in CI, it now prints a diff of the changes [#59]
 
 ### Bug Fixes
 
-_None._
+- Fix the `annotate_test_failures` to include test cases with error nodes in the failures list. [#58]
 
 ### Internal Changes
 
