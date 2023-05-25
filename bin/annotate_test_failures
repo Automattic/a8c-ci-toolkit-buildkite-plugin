@@ -143,7 +143,7 @@ end
 def send_slack_notification(title, failures)
   if failures==true # Don't send notification if there are no failures. The condition is set to check if failures equal true as system(...) returns true when no failures are found
     puts ":tada: All tests passed! Slack notification not sent."
-  elsif "#{BUILDKITE_BRANCH}" != "trunk" # Don't send notification if build is not on trunk branch
+  elsif "#{BUILDKITE_BRANCH}" != "testing-annotate-test-failures-json" # Don't send notification if build is not on trunk branch / temp change to testing branch
     puts ":merged-pr: Failures not on trunk branch. Slack notification not sent."
   else
     data = JSON.parse(failures)
