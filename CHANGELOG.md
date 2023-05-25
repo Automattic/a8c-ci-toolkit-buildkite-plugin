@@ -22,7 +22,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- Fix the `annotate_test_failures` to include test cases with error nodes in the failures list. [#58]
 
 ### Internal Changes
 

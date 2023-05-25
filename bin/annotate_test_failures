@@ -39,6 +39,9 @@ end
 # <testcase classname='WordPressTest.MediaServiceTests' name='testDeletingLocalMediaThatDoesntExistInCoreData'>
 #   <failure message='Asynchronous wait failed: Exceeded timeout of 0.1 seconds, with unfulfilled expectations: &quot;The delete call succeeds even if the media object isn&apos;t saved.&quot;.'>&lt;unknown&gt;:0</failure>
 # </testcase>
+# <testcase classname="tests.test_editing_drafts.TestEditingDrafts" name="test_adding_a_photo_to_text_draft">
+#   <error message="failed on setup with &quot;TypeError: list indices must be integers or slices, not str&quot;">Traceback (most recent call last): ...</error>
+# </testcase>
 # <testcase classname='WordPressTest.MediaServiceTests' name='testDeletingLocalMediaThatDoesntExistInCoreData' time='0.145'/>
 #
 class TestFailure
@@ -48,7 +51,7 @@ class TestFailure
   def initialize(node)
     @classname = node['classname']
     @name = node['name']
-    failure_node = node.elements['failure']
+    failure_node = node.elements['failure'] || node.elements['error']
     @message = failure_node['message']
     @details = failure_node.text
     @count = 1
@@ -73,7 +76,7 @@ class TestFailure
 
   def ultimately_succeeds?(parent_node:)
     all_same_test_nodes = parent_node.get_elements("testcase[@classname='#{@classname}' and @name='#{@name}']")
-    !all_same_test_nodes.last.elements['failure'] # If last node found for that test doesn't have a <failure> child, then test ultimately succeeded.
+    !(all_same_test_nodes.last.elements['failure'] || all_same_test_nodes.last.elements['error']) # If last node found for that test doesn't have a <failure> or <error> child, then test ultimately succeeded.
   end
 
   def ==(other)
@@ -202,7 +205,7 @@ xmldoc = REXML::Document.new(file)
 
 failures = []
 flakies = []
-REXML::XPath.each(xmldoc, '//testcase[failure]') do |node|
+REXML::XPath.each(xmldoc, '//testcase[failure|error]') do |node|
   test_failure = TestFailure.new(node)
 
   if test_failure.ultimately_succeeds?(parent_node: node.parent)
