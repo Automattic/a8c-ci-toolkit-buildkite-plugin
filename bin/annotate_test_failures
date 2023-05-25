@@ -150,6 +150,9 @@ def send_slack_notification(title, failures)
     failing_tests = data['tests'].map { |test| "#{test['name']} in #{test['classname']}" }
     assertion_failures_count = data['assertion_failures_count']
 
+    header_text = (assertion_failures_count == 1) ? "Test" : "Tests"
+    content_text = "*Failing #{header_text}:*"
+
     slack_message_payload = {
       # testing channel - will be updated later
       "channel": "#jos-testing-notif",
@@ -160,7 +163,7 @@ def send_slack_notification(title, failures)
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": ":warning: *#{assertion_failures_count} Test(s) Failed in #{BUILDKITE_PIPELINE_NAME} - #{title}*"
+            "text": ":warning: *#{assertion_failures_count} #{header_text} Failed in #{BUILDKITE_PIPELINE_NAME} - #{title}*"
           },
           "accessory": {
             "type": "button",
@@ -181,7 +184,7 @@ def send_slack_notification(title, failures)
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "*Failing Test(s):* #{failing_tests.to_s[1..-2]}\n" # To remove the bracket from the notification and only list the tests
+            "text": "#{content_text} #{failing_tests.to_s[1..-2]}\n" # To remove the bracket from the notification and only list the tests
           }
         }
       ]
