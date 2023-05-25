@@ -1,7 +1,13 @@
 #!/usr/bin/env ruby
 #
 # Usage:
-#   annotate_test_failures [junit-file-path]
+#   annotate_test_failures [junit-file-path] [should_send_slack_notification]
+#
+# Arguments:
+#   [junit-file-path]                Path to the JUnit XML file containing test results.
+#
+#   [should_send_slack_notification] Boolean flag indicating whether Slack notification should be sent.
+#                                    This argument is optional. If not provided, Slack notification will not be sent.
 #
 require 'rexml/document'
 require 'shellwords'
@@ -202,6 +208,7 @@ end
 
 file = File.open(junit_path)
 xmldoc = REXML::Document.new(file)
+should_send_slack_notification = ARGV[1]
 
 failures = []
 flakies = []
@@ -216,5 +223,10 @@ REXML::XPath.each(xmldoc, '//testcase[failure|error]') do |node|
 end
 
 json_failures = update_annotation(title, failures, 'error', 'have failed')
-send_slack_notification(title, json_failures)
 update_annotation(title, flakies, 'warning', 'were flaky')
+
+if should_send_slack_notification == 'true'
+  send_slack_notification(title, json_failures)
+else
+  puts 'Slack Notification not sent.'
+end
