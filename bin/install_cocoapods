@@ -32,8 +32,20 @@ else
 fi
 
 function lockfile_error () {
-  message="\`Podfile.lock\` was changed by \`bundle exec pod install\`. Please run \`bundle exec pod install\` locally with a clean cache and commit the result."
+  message=$(cat <<EOF
+  \`Podfile.lock\` was changed by \`bundle exec pod install\`. Please run \`bundle exec pod install\` locally with a clean cache and commit the result.
+
+  <details><summary>See diff</summary>
+
+  \`\`\`
+  $(git diff -- Podfile.lock)
+  \`\`\`
+  </details>
+EOF
+  )
+
   echo "$message"
+
   buildkite-agent annotate "$message" --style 'error' --context 'ctx-error'
 }
 trap lockfile_error ERR
