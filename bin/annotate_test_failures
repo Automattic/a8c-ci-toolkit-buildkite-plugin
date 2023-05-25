@@ -142,9 +142,9 @@ end
 #
 def send_slack_notification(title, failures)
   if failures==true # Don't send notification if there are no failures. The condition is set to check if failures equal true as system(...) returns true when no failures are found
-    puts ":tada: All tests passed! Slack notification not sent."
-  elsif "#{BUILDKITE_BRANCH}" != "testing-annotate-test-failures-json" # Don't send notification if build is not on trunk branch / temp change to testing branch
-    puts ":merged-pr: Failures not on trunk branch. Slack notification not sent."
+    puts "🎉 All tests passed! Slack notification not sent."
+  elsif "#{BUILDKITE_BRANCH}" != "trunk" # Don't send notification if build is not on trunk branch
+    puts "⏭  Failures not on trunk branch. Slack notification not sent."
   else
     data = JSON.parse(failures)
     failing_tests = data['tests'].map { |test| "#{test['name']} in #{test['classname']}" }
@@ -154,8 +154,7 @@ def send_slack_notification(title, failures)
     content_text = "*Failing #{header_text}:*"
 
     slack_message_payload = {
-      # testing channel - will be updated later
-      "channel": "#jos-testing-notif",
+      "channel": "#build-and-ship",
       "username": "#{BUILDKITE_PIPELINE_NAME} Tests Failures",
       "icon_emoji": ":fire:",
       "blocks": [
@@ -198,9 +197,9 @@ def send_slack_notification(title, failures)
 
     # Check response status
     if response.code == "200"
-      puts ":slack: Notification Sent!"
+      puts "✅ Notification Sent!"
     else
-      puts ":slack: Failed to send notification. Response code: #{response.code}"
+      puts "❌ Failed to send notification. Response code: #{response.code}"
     end
   end
 end
@@ -231,5 +230,5 @@ update_annotation(title, flakies, 'warning', 'were flaky')
 if should_send_slack_notification == 'true'
   send_slack_notification(title, json_failures)
 else
-  puts 'Slack Notification not sent.'
+  puts '⏩ should_send_slack_notification is false, skipping Slack notification.'
 end

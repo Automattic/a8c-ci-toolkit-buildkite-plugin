@@ -18,7 +18,7 @@ _None._
 
 ### New Features
 
-_None._
+- Update `annotate_test_failures` to be able to send Slack Notification when there are failures. [#60]
 
 ### Bug Fixes
 
