@@ -114,44 +114,28 @@ def update_annotation(title, list, style, state)
     markdown = "\#\#\#\# #{title}: #{tests_count} tests #{state} (#{list.count} distinct assertion failure(s) in total)\n\n" + list.map(&:to_s).join("\n")
     puts markdown
     assertion_failures_count = list.count
-
-    # Only return JSON object for failing tests
-    if state == 'have failed'
-      tests = list.map do |item|
-        {
-          'name' => item.name,
-          'classname' => item.classname,
-          'message' => item.message,
-          'details' => item.details
-        }
-      end
-
-      test_failure_json_data = {
-        'title' => title,
-        'tests_count' => tests_count,
-        'assertion_failures_count' => assertion_failures_count,
-        'tests' => tests
-      }
-      return JSON.generate(test_failure_json_data)
-    end
     system('buildkite-agent', 'annotate', markdown, '--style', style, '--context', annotation_context)
   end
 end
 
 # Given a list of failing tests, send a slack notification with the test names in the payload
 #
-def send_slack_notification(title, failures)
-  if failures==true # Don't send notification if there are no failures. The condition is set to check if failures equal true as system(...) returns true when no failures are found
-    puts "🎉 All tests passed! Slack notification not sent."
-  elsif "#{BUILDKITE_BRANCH}" != "trunk" # Don't send notification if build is not on trunk branch
+def send_slack_notification_for_failures(title, list)
+  tests = list.map do |item|
+    {
+      'name' => item.name,
+      'classname' => item.classname,
+      'message' => item.message,
+      'details' => item.details
+    }
+  end
+
+  if "#{BUILDKITE_BRANCH}" != "trunk" # Don't send notification if build is not on trunk branch
     puts "⏭  Failures not on trunk branch. Slack notification not sent."
   else
-    data = JSON.parse(failures)
-    failing_tests = data['tests'].map { |test| "#{test['name']} in #{test['classname']}" }
-    assertion_failures_count = data['assertion_failures_count']
-
-    header_text = (assertion_failures_count == 1) ? "Test" : "Tests"
-    content_text = "*Failing #{header_text}:*"
+    failing_tests = tests.map { |test| "#{test['name']} in #{test['classname']}" }
+    assertion_failures_count = list.count
+    test_text = (assertion_failures_count == 1) ? "Test" : "Tests"
 
     slack_message_payload = {
       "channel": "#build-and-ship",
@@ -162,7 +146,7 @@ def send_slack_notification(title, failures)
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": ":warning: *#{assertion_failures_count} #{header_text} Failed in #{BUILDKITE_PIPELINE_NAME} - #{title}*"
+            "text": ":warning: *#{assertion_failures_count} #{test_text} Failed in #{BUILDKITE_PIPELINE_NAME} - #{title}*"
           },
           "accessory": {
             "type": "button",
@@ -183,11 +167,12 @@ def send_slack_notification(title, failures)
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "#{content_text} #{failing_tests.to_s[1..-2]}\n" # To remove the bracket from the notification and only list the tests
+            "text": "*Failing #{test_text}:* #{failing_tests.to_s[1..-2]}\n" # To remove the bracket from the notification and only list the tests
           }
         }
       ]
     }
+  end
 
     json_payload = JSON.generate(slack_message_payload)
 
@@ -201,7 +186,6 @@ def send_slack_notification(title, failures)
     else
       puts "❌ Failed to send notification. Response code: #{response.code}"
     end
-  end
 end
 
 ###################
@@ -224,11 +208,11 @@ REXML::XPath.each(xmldoc, '//testcase[failure|error]') do |node|
   end
 end
 
-json_failures = update_annotation(title, failures, 'error', 'have failed')
+update_annotation(title, failures, 'error', 'have failed')
 update_annotation(title, flakies, 'warning', 'were flaky')
 
 if should_send_slack_notification == 'true'
-  send_slack_notification(title, json_failures)
+  send_slack_notification_for_failures(title, failures)
 else
   puts '⏩ should_send_slack_notification is false, skipping Slack notification.'
 end
