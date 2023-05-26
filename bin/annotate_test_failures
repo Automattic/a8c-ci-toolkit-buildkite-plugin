@@ -99,7 +99,7 @@ def record(test_failure, into:)
   end
 end
 
-# Given a list of failures for a given step and state, update the corresponding annotation and return the list of failures in JSON
+# Given a list of failures for a given step and state, update the corresponding annotation
 #
 def update_annotation(title, list, style, state)
   annotation_context = "#{title} (#{state})"
