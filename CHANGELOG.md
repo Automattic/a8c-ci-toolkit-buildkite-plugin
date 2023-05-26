@@ -18,7 +18,7 @@ _None._
 
 ### New Features
 
-- Update `annotate_test_failures` to be able to send Slack Notification when there are failures. [#60]
+_None._
 
 ### Bug Fixes
 
@@ -39,6 +39,7 @@ _None._
 ### New Features
 
 - When `install_cocoapods` fails because `Podfile.lock` changed in CI, it now prints a diff of the changes [#59]
+- Update `annotate_test_failures` to be able to send Slack Notification when there are failures. [#60]
 
 ### Bug Fixes
 
