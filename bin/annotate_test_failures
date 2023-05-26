@@ -1,33 +1,31 @@
 #!/usr/bin/env ruby
 #
 # Usage:
-#   annotate_test_failures [junit-file-path] [should_send_slack_notification]
-#
-# Arguments:
-#   [junit-file-path]                Path to the JUnit XML file containing test results.
-#
-#   [should_send_slack_notification] Boolean flag indicating whether Slack notification should be sent.
-#                                    This argument is optional. If not provided, Slack notification will not be sent.
+#   annotate_test_failures [options] [junit-report-file-path]
 #
 require 'rexml/document'
 require 'shellwords'
 require 'net/http'
 require 'json'
-
-BUILDKITE_ORGANIZATION_SLUG = ENV.fetch('BUILDKITE_ORGANIZATION_SLUG')
-BUILDKITE_PIPELINE_SLUG = ENV.fetch('BUILDKITE_PIPELINE_SLUG')
-BUILDKITE_BUILD_NUMBER = ENV.fetch('BUILDKITE_BUILD_NUMBER')
-BUILDKITE_BUILD_AUTHOR = ENV.fetch('BUILDKITE_BUILD_AUTHOR')
-BUILDKITE_PIPELINE_NAME = ENV.fetch('BUILDKITE_PIPELINE_NAME')
-BUILDKITE_JOB_ID = ENV.fetch('BUILDKITE_JOB_ID')
-BUILDKITE_BRANCH = ENV.fetch('BUILDKITE_BRANCH')
-SLACK_WEBHOOK = ENV.fetch('SLACK_WEBHOOK')
+require 'optparse'
 
 ###################
 # Parse arguments
 ###################
+slack_channel = nil
+slack_webhook = ENV['SLACK_WEBHOOK'] # default value inferred from env var if not provided explicitly
+args = OptionParser.new do |opts|
+  opts.banner = <<~HELP
+    Usage: annotate_test_failures [options] [junit-report-file-path]
 
-junit_path = ARGV.first || File.join('build', 'results', 'report.junit')
+    Annotates the Buildkite build with a summary of failed and flaky tests based on a JUnit report file.
+    Optionally also posts the same info to a Slack channel.
+  HELP
+  opts.on('--slack CHANNEL_NAME', 'The name of the Slack channel to post the failure summary to') { |v| slack_channel = '#' + v.delete_prefix('#') }
+  opts.on('--slack-webhook URL', 'The Slack Webhook URL to use if --slack is used. Defaults to the value of the `SLACK_WEBHOOK` env var') { |v| slack_webhook = v }
+  opts.on_tail("-h", "--help", "Show this help message") { puts opts; exit }
+end.parse!
+junit_path = args.first || File.join('build', 'results', 'report.junit')
 title = ENV.fetch('BUILDKITE_LABEL', 'Tests')
 
 unless File.exist?(junit_path)
@@ -118,9 +116,9 @@ def update_annotation(title, list, style, state)
   end
 end
 
-# Given a list of failing tests, send a slack notification with the test names in the payload
+# Given a list of failures, parse list and send a slack notification with the test names in the payload
 #
-def send_slack_notification_for_failures(title, list)
+def send_slack_notification(slack_webhook, slack_channel, title, list)
   tests = list.map do |item|
     {
       'name' => item.name,
@@ -130,7 +128,7 @@ def send_slack_notification_for_failures(title, list)
     }
   end
 
-  if "#{BUILDKITE_BRANCH}" != "trunk" # Don't send notification if build is not on trunk branch
+  if "#{ENV['BUILDKITE_BRANCH']}" != "trunk" # Don't send notification if build is not on trunk branch
     puts "⏭  Failures not on trunk branch. Slack notification not sent."
   else
     failing_tests = tests.map { |test| "#{test['name']} in #{test['classname']}" }
@@ -138,15 +136,15 @@ def send_slack_notification_for_failures(title, list)
     test_text = (assertion_failures_count == 1) ? "Test" : "Tests"
 
     slack_message_payload = {
-      "channel": "#build-and-ship",
-      "username": "#{BUILDKITE_PIPELINE_NAME} Tests Failures",
+      "channel": "#{slack_channel}",
+      "username": "#{ENV['BUILDKITE_PIPELINE_NAME']} Tests Failures",
       "icon_emoji": ":fire:",
       "blocks": [
         {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": ":warning: *#{assertion_failures_count} #{test_text} Failed in #{BUILDKITE_PIPELINE_NAME} - #{title}*"
+            "text": ":warning: *#{assertion_failures_count} #{test_text} Failed in #{ENV['BUILDKITE_PIPELINE_NAME']} - #{title}*"
           },
           "accessory": {
             "type": "button",
@@ -156,7 +154,7 @@ def send_slack_notification_for_failures(title, list)
               "emoji": true
             },
             "value": "build",
-            "url": "https://buildkite.com/#{BUILDKITE_ORGANIZATION_SLUG}/#{BUILDKITE_PIPELINE_SLUG}/builds/#{BUILDKITE_BUILD_NUMBER}##{BUILDKITE_JOB_ID}",
+            "url": "https://buildkite.com/#{ENV['BUILDKITE_ORGANIZATION_SLUG']}/#{ENV['BUILDKITE_PIPELINE_SLUG']}/builds/#{ENV['BUILDKITE_BUILD_NUMBER']}##{ENV['BUILDKITE_JOB_ID']}",
             "action_id": "button-action"
           }
         },
@@ -172,12 +170,11 @@ def send_slack_notification_for_failures(title, list)
         }
       ]
     }
-  end
 
     json_payload = JSON.generate(slack_message_payload)
 
     # Send message to Slack
-    uri = URI("#{SLACK_WEBHOOK}")
+    uri = URI("#{slack_webhook}")
     response = Net::HTTP.post(uri, json_payload, "Content-Type" => "application/json")
 
     # Check response status
@@ -186,6 +183,7 @@ def send_slack_notification_for_failures(title, list)
     else
       puts "❌ Failed to send notification. Response code: #{response.code}"
     end
+  end
 end
 
 ###################
@@ -194,7 +192,6 @@ end
 
 file = File.open(junit_path)
 xmldoc = REXML::Document.new(file)
-should_send_slack_notification = ARGV[1]
 
 failures = []
 flakies = []
@@ -211,8 +208,8 @@ end
 update_annotation(title, failures, 'error', 'have failed')
 update_annotation(title, flakies, 'warning', 'were flaky')
 
-if should_send_slack_notification == 'true'
-  send_slack_notification_for_failures(title, failures)
+if slack_channel.nil? || slack_webhook.nil?
+  puts '⏩ No `--slack` channel name and/or `--slack-webhook` URL provided; skipping Slack notification.'
 else
-  puts '⏩ should_send_slack_notification is false, skipping Slack notification.'
+  send_slack_notification(slack_webhook, slack_channel, title, failures) unless failures.empty?
 end
