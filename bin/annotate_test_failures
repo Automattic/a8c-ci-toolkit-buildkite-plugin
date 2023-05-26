@@ -111,7 +111,6 @@ def update_annotation(title, list, style, state)
     puts "#{tests_count} test(s) #{state} (#{list.count} distinct assertion failures in total). Reporting them as a `#{annotation_context}` Buildkite #{style} annotation.\n\n"
     markdown = "\#\#\#\# #{title}: #{tests_count} tests #{state} (#{list.count} distinct assertion failure(s) in total)\n\n" + list.map(&:to_s).join("\n")
     puts markdown
-    assertion_failures_count = list.count
     system('buildkite-agent', 'annotate', markdown, '--style', style, '--context', annotation_context)
   end
 end
