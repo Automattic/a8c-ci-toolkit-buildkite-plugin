@@ -118,19 +118,7 @@ end
 # Given a list of failures, parse list and send a slack notification with the test names in the payload
 #
 def send_slack_notification(slack_webhook, slack_channel, title, list)
-  tests = list.map do |item|
-    {
-      'name' => item.name,
-      'classname' => item.classname,
-      'message' => item.message,
-      'details' => item.details
-    }
-  end
-
-  if !["trunk", "develop", "master"].include?(ENV['BUILDKITE_BRANCH']) # Don't send notification if build is not on trunk/develop/master branch
-    puts "⏭  Failures not on trunk/develop/master branch. Slack notification not sent."
-  else
-    failing_tests = tests.map { |test| "#{test['name']} in #{test['classname']}" }
+    failing_tests = list.map { |item| "#{item.name} in #{item.classname}" }        
     assertion_failures_count = list.count
     test_text = (assertion_failures_count == 1) ? "Test" : "Tests"
 
@@ -182,7 +170,6 @@ def send_slack_notification(slack_webhook, slack_channel, title, list)
     else
       puts "❌ Failed to send notification. Response code: #{response.code}"
     end
-  end
 end
 
 ###################
