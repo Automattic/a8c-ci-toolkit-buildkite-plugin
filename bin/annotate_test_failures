@@ -16,9 +16,9 @@ slack_channel = nil
 slack_webhook = ENV['SLACK_WEBHOOK'] # default value inferred from env var if not provided explicitly
 args = OptionParser.new do |opts|
   opts.banner = <<~HELP
-    Usage: annotate_test_failures [options] [junit-report-file-path]
+    Usage: annotate_test_failures [junit-report-file-path] [--slack CHANNEL] [--slack-webhook URL] 
 
-    Annotates the Buildkite build with a summary of failed and flaky tests based on a JUnit report file.
+    Annotates the Buildkite build with a summary of failed and flaky tests based on a JUnit report file (defaults to using `build/results/report.junit`).
     Optionally also posts the same info to a Slack channel.
   HELP
   opts.on('--slack CHANNEL_NAME', 'The name of the Slack channel to post the failure summary to') { |v| slack_channel = '#' + v.delete_prefix('#') }
@@ -118,7 +118,7 @@ end
 # Given a list of failures, parse list and send a slack notification with the test names in the payload
 #
 def send_slack_notification(slack_webhook, slack_channel, title, list)
-    failing_tests = list.map { |item| "#{item.name} in #{item.classname}" }        
+    failing_tests = list.map { |item| "`#{item.name}` in `#{item.classname}`" }
     assertion_failures_count = list.count
     test_text = (assertion_failures_count == 1) ? "Test" : "Tests"
 
@@ -141,7 +141,7 @@ def send_slack_notification(slack_webhook, slack_channel, title, list)
               "emoji": true
             },
             "value": "build",
-            "url": "https://buildkite.com/#{ENV['BUILDKITE_ORGANIZATION_SLUG']}/#{ENV['BUILDKITE_PIPELINE_SLUG']}/builds/#{ENV['BUILDKITE_BUILD_NUMBER']}##{ENV['BUILDKITE_JOB_ID']}",
+            "url": "#{ENV['BUILDKITE_BUILD_URL']}##{ENV['BUILDKITE_JOB_ID']}",
             "action_id": "button-action"
           }
         },
@@ -152,7 +152,7 @@ def send_slack_notification(slack_webhook, slack_channel, title, list)
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": "*Failing #{test_text}:* #{failing_tests.to_s[1..-2]}\n" # To remove the bracket from the notification and only list the tests
+            "text": "*Failing #{test_text}:*\n#{failing_tests.join("\n")}"
           }
         }
       ]
@@ -161,7 +161,7 @@ def send_slack_notification(slack_webhook, slack_channel, title, list)
     json_payload = JSON.generate(slack_message_payload)
 
     # Send message to Slack
-    uri = URI("#{slack_webhook}")
+    uri = URI(slack_webhook)
     response = Net::HTTP.post(uri, json_payload, "Content-Type" => "application/json")
 
     # Check response status
