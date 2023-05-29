@@ -38,16 +38,26 @@ _None._
 
 ### New Features
 
+_None._
+
+### Bug Fixes
+
+_None._
+
+### Internal Changes
+
+_None._
+
+## 2.17.0
+
+### New Features
+
 - When `install_cocoapods` fails because `Podfile.lock` changed in CI, it now prints a diff of the changes [#59]
 - Update `annotate_test_failures` to be able to send Slack Notification when there are failures. [#60]
 
 ### Bug Fixes
 
 - Fix the `annotate_test_failures` to include test cases with error nodes in the failures list. [#58]
-
-### Internal Changes
-
-_None._
 
 ## 2.16.0
 
