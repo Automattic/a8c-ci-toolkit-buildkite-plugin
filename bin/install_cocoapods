@@ -37,7 +37,7 @@ function lockfile_error () {
 
   <details><summary>See diff</summary>
 
-  \`\`\`
+  \`\`\`diff
   $(git diff -- Podfile.lock)
   \`\`\`
   </details>
