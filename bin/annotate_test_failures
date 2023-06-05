@@ -68,13 +68,23 @@ class TestFailure
 
   def to_s
     times = @count > 1 ? " (#{@count} times)" : ''
+
+    # Do not render a code block for the failure details if there are none
+    formatted_details = if @details.empty? || @details == ''
+                          ''
+                        else
+                          <<~DETAILS
+
+                            ```
+                            #{@details}
+                            ```
+                          DETAILS
+                        end
+
     <<~ENTRY
       <details><summary><tt>#{@name}</tt> in <tt>#{@classname}</tt>#{times}</summary>
-      #{@message}
-
-      ```
-      #{@details}
-      ```
+      <pre>#{@message}</pre>
+      #{formatted_details}
       </details>
     ENTRY
   end
