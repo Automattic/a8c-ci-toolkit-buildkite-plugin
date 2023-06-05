@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- `annotate_test_failures` no longer prints an empty `<code>` box when reporting a `failure` with no extra `details`. [#63]
 
 ### Internal Changes
 
