@@ -10,7 +10,7 @@ buildkite-plugin-test-commands-are-executable:
 	docker run -t --rm -v "${PWD}":/plugin -w /plugin ruby:2.7.4 /bin/bash -c "gem install --silent rspec && rspec tests/test-that-all-files-are-executable.rb"
 
 unit-tests:
-	docker run -t --rm -v "${PWD}":/plugin -w /plugin ruby:$$(cat .ruby-version) /bin/bash -c "bundle install && bundle exec rspec"
+	docker run -t --rm -v "${PWD}":/plugin -w /plugin ruby:$$(cat .ruby-version) /bin/bash -c "bundle install --quiet && bundle exec rspec"
 
 buildkite-plugin-lint:
 	docker-compose run --rm lint
