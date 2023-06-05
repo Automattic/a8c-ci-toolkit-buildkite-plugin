@@ -70,7 +70,7 @@ class TestFailure
     times = @count > 1 ? " (#{@count} times)" : ''
 
     # Do not render a code block for the failure details if there are none
-    formatted_details = if @details.empty? || @details == ''
+    formatted_details = if @details.strip.empty?
                           ''
                         else
                           <<~DETAILS
