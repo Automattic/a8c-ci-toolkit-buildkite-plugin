@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := default
 
 lint: buildkite-plugin-lint rubocop shellcheck
-test: buildkite-plugin-test buildkite-plugin-test-commands-are-executable
+test: unit-tests buildkite-plugin-test buildkite-plugin-test-commands-are-executable
 
 buildkite-plugin-test:
 	docker run -t --rm -v "${PWD}":/plugin buildkite/plugin-tester
