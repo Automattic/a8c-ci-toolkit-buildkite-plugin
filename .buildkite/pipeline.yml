@@ -7,10 +7,3 @@ steps:
 
   - label: ":docker: Test"
     command: make test
-
-  - label: "Test Annotations"
-    commands:
-      - buildkite-agent annotate "Regular Context" --context "regular-context"
-      - buildkite-agent annotate "Tricky Context" --context "regular context \#2"
-      - buildkite-agent annotation remove --context "regular-context" || true
-      - buildkite-agent annotation remove --context "regular context \#2" || true
