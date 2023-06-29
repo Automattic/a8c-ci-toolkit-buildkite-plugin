@@ -42,12 +42,18 @@ _None._
 
 ### Bug Fixes
 
-- `annotate_test_failures` no longer prints an empty `<code>` box when reporting a `failure` with no extra `details`. [#63]
-- `annotate_test_failures` is now able to remove annotations on successful step retry _even if_ the step label contains special characters. [#65]
+_None._
 
 ### Internal Changes
 
 _None._
+
+## 2.18.0
+
+### Bug Fixes
+
+- `annotate_test_failures` no longer prints an empty `<code>` box when reporting a `failure` with no extra `details`. [#63]
+- `annotate_test_failures` is now able to remove annotations on successful step retry _even if_ the step label contains special characters. [#65]
 
 ## 2.17.0
 
