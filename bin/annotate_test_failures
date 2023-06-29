@@ -118,7 +118,8 @@ end
 # Given a list of failures for a given step and state, update the corresponding annotation
 #
 def update_annotation(title, list, style, state)
-  annotation_context = "#{title} (#{state})"
+  step_id = ENV.fetch('BUILDKITE_STEP_ID', title)
+  annotation_context = "step-#{step_id}-#{state}".downcase.gsub(/\W/, '-')
   if list.empty?
     puts "No test #{state}. Removing any previous `#{annotation_context}` Buildkite annotation if any.\n\n"
     system("buildkite-agent annotation remove --context #{annotation_context.shellescape} 2>/dev/null || true")
