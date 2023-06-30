@@ -48,6 +48,13 @@ _None._
 
 _None._
 
+## 2.18.1
+
+### Bug Fixes
+
+- `annotate_test_failures` no longer prints an empty `<code>` box when reporting a `failure` with no extra `details`. [#63]
+- Fix an issue with `annotate_test_failures` on CI steps that are using the `parallelism` attribute. [#67]
+
 ## 2.18.0
 
 ### Bug Fixes
