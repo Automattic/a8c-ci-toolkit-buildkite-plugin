@@ -1,0 +1,117 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'json'
+
+PNG_MAGIC_NUMBER = '89504e470d0a1a0a'
+COLOR_TYPES = { 0 => 'Greyscale', 2 => 'Truecolor', 3 => 'Indexed-color', 4 => 'Greyscale with alpha', 6 => 'Truecolor with alpha' }.freeze
+
+ImageFormat = Struct.new(:width, :height, :depth, :color_type, :has_alpha)
+
+####################
+# Helper Functions
+####################
+
+# Parse a binary PNG file to find IHDR chunk with format info (and tRNS chunk if it exists)
+# @param [String] input_file The path to the PNG file we want to parse
+# @return [ImageFormat] Image format information, or nil if not a valid PNG file
+# @see https://www.w3.org/TR/png/#5DataRep
+def parse_png_file(input_file)
+  File.open(input_file, 'rb') do |f|
+    magic = f.read(8).unpack1('H*')
+    if magic != PNG_MAGIC_NUMBER
+      puts "🔴 #{input_file} is not a PNG file."
+      return nil
+    end
+
+    width, height, depth, color_type = [nil, nil, nil, nil]
+    has_trns = false
+
+    # https://www.w3.org/TR/png/#5Chunk-layout
+    loop do
+      break if f.eof?
+
+      chunk_length = f.read(4).unpack1('L>')
+      chunk_type = f.read(4)
+
+      if chunk_type == 'IHDR'
+        # Read IHDR chunk — https://www.w3.org/TR/png/#11IHDR
+        width, height, depth, color_type = f.read(chunk_length).unpack('L>L>CC')
+      else
+        has_trns = true if chunk_type == 'tRNS' # https://www.w3.org/TR/png/#11tRNS
+        # Skip chunk data we don't care about, and advance to next chunk
+        f.seek(chunk_length + 4, IO::SEEK_CUR) # CRC is 4 extra bytes after chunk data
+      end
+    end
+
+    # See https://www.w3.org/TR/png/#3colourType and https://www.w3.org/TR/png/#6AlphaRepresentation
+    return ImageFormat.new(width, height, depth, color_type, has_trns || (color_type & 0x4 != 0))
+  end
+end
+
+####################
+# Parse Command Line Arguments
+####################
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = 'Usage: pnginfo [options]'
+
+  opts.on('--json', '-j', 'Print all format info as JSON') { options[:json] = true }
+  opts.on('--width[=value]', '-w', Integer, 'Prints or check image width') { |v| options[:width] = v }
+  opts.on('--height[=value]', '-h', Integer, 'Prints or check image height') { |v| options[:height] = v }
+  opts.on('--size[=wxh]', '-s', String, 'Prints or check image size, as {width}x{height}') { |v| options[:size] = v }
+  opts.on('--depth[=value]', '-d', Integer, 'Prints or check bit depth (aka bits per sample)') { |v| options[:depth] = v }
+  opts.on('--color', '-c', 'Prints color type') { options[:color_type] = nil }
+  opts.on('--alpha[=true|false]', '-a', 'Prints or check if image has alpha channel') { |v| options[:has_alpha] = v.nil? ? nil : %w[1 true yes].include?(v) }
+
+  opts.on('--help', '-h') do
+    puts opts
+    exit
+  end
+end.parse!
+
+all_props = %i[width height size depth color_type has_alpha]
+all_props.each { |k| options[k] = nil } if all_props.none? { |k| options.key?(k) }
+
+if ARGV.length != 1
+  puts "Error: Expected 1 argument (input file), got #{ARGV.length}."
+  exit 2
+end
+file = ARGV.first
+
+####################
+# Main
+####################
+
+fmt = parse_png_file(file)
+exit 3 if fmt.nil?
+
+h = {}
+exit_code = 0
+
+check_prop = proc do |key, &block|
+  if options.key?(key)
+    h[key] = block.call
+    if !options[key].nil? && h[key] != options[key]
+      warn "\e[31mError: #{key} does not match expected value of #{options[key]}\e[m"
+      exit_code = 1
+    end
+  end
+end
+
+check_prop.call(:width) { fmt.width }
+check_prop.call(:height) { fmt.height }
+check_prop.call(:size) { "#{fmt.width}x#{fmt.height}" }
+check_prop.call(:depth) { fmt.depth }
+check_prop.call(:color_type) { COLOR_TYPES[fmt.color_type] }
+check_prop.call(:has_alpha) { fmt.has_alpha }
+
+if options[:json]
+  puts h.to_json
+else
+  h.each { |k, v| puts " - #{k}: #{v}" }
+end
+
+exit(exit_code)
