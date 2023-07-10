@@ -12,10 +12,11 @@ if [ ! -f package-lock.json ]; then
     exit 1
 fi
 
+PLATFORM=$(uname -s)
 ARCHITECTURE=$(uname -m)
 NODE_VERSION=$(node --version)
 PACKAGE_HASH=$(hash_file package-lock.json)
-CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$ARCHITECTURE-node$NODE_VERSION-$PACKAGE_HASH"
+CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$PLATFORM-$ARCHITECTURE-node$NODE_VERSION-$PACKAGE_HASH"
 
 restore_cache "$CACHEKEY"
 
