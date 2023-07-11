@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- Ensure that `install_gems` doesn't restore a macOS cache on Linux build machines. [#69]
 
 ### Internal Changes
 
