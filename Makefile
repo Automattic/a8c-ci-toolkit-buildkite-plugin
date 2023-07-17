@@ -1,13 +1,16 @@
 .DEFAULT_GOAL := default
 
 lint: buildkite-plugin-lint rubocop shellcheck
-test: buildkite-plugin-test buildkite-plugin-test-commands-are-executable
+test: unit-tests buildkite-plugin-test buildkite-plugin-test-commands-are-executable
 
 buildkite-plugin-test:
 	docker run -t --rm -v "${PWD}":/plugin buildkite/plugin-tester
 
 buildkite-plugin-test-commands-are-executable:
 	docker run -t --rm -v "${PWD}":/plugin -w /plugin ruby:2.7.4 /bin/bash -c "gem install --silent rspec && rspec tests/test-that-all-files-are-executable.rb"
+
+unit-tests:
+	docker run -t --rm -v "${PWD}":/plugin -w /plugin ruby:$$(cat .ruby-version) /bin/bash -c "bundle install --quiet && bundle exec rspec"
 
 buildkite-plugin-lint:
 	docker-compose run --rm lint
