@@ -2,7 +2,7 @@
 
 PLATFORM=$(uname -s)
 ARCHITECTURE=$(uname -m)
-RUBY_VERSION=$(cat .ruby-version)
+RUBY_VERSION=$(rbenv version-name 2>/dev/null || cat .ruby-version)
 GEMFILE_HASH=$(hash_file Gemfile.lock)
 CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$PLATFORM-$ARCHITECTURE-ruby$RUBY_VERSION-$GEMFILE_HASH"
 
