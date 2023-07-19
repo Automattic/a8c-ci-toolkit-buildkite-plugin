@@ -43,6 +43,7 @@ _None._
 ### Bug Fixes
 
 - Ensure that `install_gems` doesn't restore a macOS cache on Linux build machines. [#69]
+- Ensute that `install_gems` uses the correct ruby version in its `CACHE_KEY` in all cases [#70]
 
 ### Internal Changes
 
