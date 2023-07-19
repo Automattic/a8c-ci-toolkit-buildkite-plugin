@@ -6,8 +6,8 @@ The format of this document is inspired by [Keep a Changelog](https://keepachang
 
 When releasing a new version:
 
-1. Remove any empty section (those with `_None._`)
-2. Update the `## Unreleased` header to `## <version_number>`
+1. Update the `## Unreleased` header to `## <version_number>`
+2. Remove any empty section (those with `_None._`)
 3. Add a new "Unreleased" section for the next iteration, by copy/pasting the following template:
 
 ## Unreleased
@@ -42,12 +42,18 @@ _None._
 
 ### Bug Fixes
 
-- Ensure that `install_gems` doesn't restore a macOS cache on Linux build machines. [#69]
-- Ensute that `install_gems` uses the correct ruby version in its `CACHE_KEY` in all cases [#70]
+_None._
 
 ### Internal Changes
 
 _None._
+
+## 2.18.2
+
+### Bug Fixes
+
+- Ensure that `install_gems` doesn't restore a macOS cache on Linux build machines. [#69]
+- Ensute that `install_gems` uses the correct ruby version in its `CACHE_KEY` in all cases [#70]
 
 ## 2.18.1
 
