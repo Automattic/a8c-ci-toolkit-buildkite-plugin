@@ -1,21 +1,29 @@
 .DEFAULT_GOAL := default
 
+default: lint test
 lint: buildkite-plugin-lint rubocop shellcheck
-test: buildkite-plugin-test buildkite-plugin-test-commands-are-executable
+test: buildkite-plugin-test rspec
 
-buildkite-plugin-test:
-	docker run -t --rm -v "${PWD}":/plugin buildkite/plugin-tester
-
-buildkite-plugin-test-commands-are-executable:
-	docker run -t --rm -v "${PWD}":/plugin -w /plugin ruby:2.7.4 /bin/bash -c "gem install --silent rspec && rspec tests/test-that-all-files-are-executable.rb"
+docker_run := docker run -t --rm -v "${PWD}"/:/plugin:ro -w /plugin
 
 buildkite-plugin-lint:
-	docker-compose run --rm lint
+	@echo ~~~ 🕵️ Plugin Linter
+	$(docker_run) buildkite/plugin-linter --id automattic/a8c-ci-toolkit
 
 shellcheck:
-	docker run -it --rm -v "${PWD}":/app -w /app koalaman/shellcheck hooks/** bin/** --exclude=SC1071
+	@echo ~~~ 🕵️ ShellCheck
+	$(docker_run) koalaman/shellcheck hooks/** bin/** --exclude=SC1071
 
 rubocop:
-	docker run -t --rm -v "${PWD}":/plugin -w /plugin ruby:2.7.4 /bin/bash -c "gem install --silent rubocop && rubocop -A tests/test-that-all-files-are-executable.rb"
+	@echo ~~~ 🕵️ Rubocop
+	$(docker_run) ruby:2.7.4 /bin/bash -c \
+	  "gem install --silent rubocop && rubocop -A tests/test-that-all-files-are-executable.rb"
 
-default: lint test
+buildkite-plugin-test:
+	@echo ~~~ 🔬 Plugin Tester
+	$(docker_run) buildkite/plugin-tester
+
+rspec:
+	@echo ~~~ 🔬 Rspec
+	$(docker_run) ruby:2.7.4 /bin/bash -c \
+	  "gem install --silent rspec && rspec tests/test-that-all-files-are-executable.rb"
