@@ -26,14 +26,17 @@ steps:
       restore_cache $(hash_file package-lock.json)
 
     plugins:
-      - automattic/a8c-ci-toolkit#2.15.0
+      - automattic/a8c-ci-toolkit#2.18.2:
+          bucket: a8c-ci-cache # optional
 ```
 
-Don't forget to verify what [the latest release](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/releases/latest) is and use that value instead of `2.15.0`.
+Don't forget to verify what [the latest release](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/releases/latest) is and use that value instead of `2.18.2`.
 
 ## Configuration
 
-There are no configuration options for this plugin
+### `bucket` (Optional, string)
+
+The name of the S3 bucket to fallback to if the `CACHE_BUCKET_NAME` environment variable is not set in the CI host. Use by `save_cache` and `restore_cache`.
 
 ## Developing
 

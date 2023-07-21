@@ -26,12 +26,12 @@ fi
 
 S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
 if [ -z "$S3_BUCKET_NAME" ]; then
-	if [ -z "$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET" ]; then
+	if [ -z "$BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET" ]; then
 		echo "⛔Unable to save file to cache – no \$CACHE_BUCKET_NAME is set"
 		exit 1
 	else
-		echo "Reading bucket name from 'BUILDKITE_PLUGIN_BASH_CACHE_BUCKET'"
-		S3_BUCKET_NAME="$BUILDKITE_PLUGIN_BASH_CACHE_BUCKET"
+		echo "Reading bucket name from 'BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET'"
+		S3_BUCKET_NAME="$BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET"
 	fi
 fi
 

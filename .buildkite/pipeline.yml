@@ -1,9 +1,6 @@
 steps:
-  - label: ":shell: Lint (Shellcheck)"
-    command: make shellcheck
-
-  - label: ":sparkles: Lint (Buildkite Plugin Linter)"
+  - label: "🕵️ Lint"
     command: make lint
 
-  - label: ":docker: Test"
+  - label: "🔬 Test"
     command: make test
