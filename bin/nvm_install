@@ -1,7 +1,8 @@
 #!/bin/bash -eu
 
 # shellcheck source=/dev/null
-source "$HOME"/.nvm/nvm.sh
+# Passing the '--no-use' option to postpone using the version specified in the project's '.nvmrc', because it may not be installed yet.
+source "$HOME"/.nvm/nvm.sh --no-use
 
 # This script expects a valid .nvmrc at the project's root
 if [ ! -f .nvmrc ]; then
