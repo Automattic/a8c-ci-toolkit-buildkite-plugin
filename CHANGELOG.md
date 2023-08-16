@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+* Do not use the node version specified in `.nvmrc` until it's installed. [#72]
 
 ### Internal Changes
 
