@@ -6,7 +6,6 @@ requirements:
   - gh
   - jq
   - node
-  - nvm
   - ruby
   - xcodebuild
   - xcrun
