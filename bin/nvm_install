@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo 'The nvm_install utility is removed.'
+echo 'Please see this migration guide for details: https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/blob/trunk/MIGRATION.md#from-200-to-300'
+
+exit 1
