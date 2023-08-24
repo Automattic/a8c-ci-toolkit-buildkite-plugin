@@ -34,7 +34,7 @@ _None._
 
 ### Breaking Changes
 
-_None._
+- `nvm_install` utility is removed. See [MIGRATION.md](./MIGRATION.md#from-200-to-300) for details.
 
 ### New Features
 

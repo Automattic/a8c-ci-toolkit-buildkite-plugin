@@ -1,12 +1,6 @@
-#!/bin/bash -eu
+#!/bin/bash
 
-# shellcheck source=/dev/null
-source "$HOME"/.nvm/nvm.sh
+echo 'The nvm_install utility has been removed and replaced by our nvm Buildkite plugin.'
+echo 'Please see this migration guide for details: https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/blob/trunk/MIGRATION.md#from-200-to-300'
 
-# This script expects a valid .nvmrc at the project's root
-if [ ! -f .nvmrc ]; then
-    echo "No valid .nvmrc file found"
-    exit 1
-fi
-
-nvm install
+exit 1
