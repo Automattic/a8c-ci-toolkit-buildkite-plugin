@@ -211,8 +211,12 @@ end
 update_annotation(title, failures, 'error', 'have failed')
 update_annotation(title, flakies, 'warning', 'were flaky')
 
-if slack_channel.nil? || slack_webhook.nil?
-  puts '⏩ No `--slack` channel name and/or `--slack-webhook` URL provided; skipping Slack notification.'
+if slack_channel.nil?
+  if slack_webhook.nil?
+    puts '⏩ No `--slack` channel name nor `--slack-webhook`/`$SLACK_WEBHOOK` URL provided; skipping Slack notification.'
+  else
+    puts '⏩ No `--slack` channel name provided; skipping Slack notification.'
+  end
 else
   send_slack_notification(slack_webhook, slack_channel, title, failures) unless failures.empty?
 end
