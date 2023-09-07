@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- Refine message in `annotate_test_failures` when configuration for optional Slack reporting is missing [#74]
 
 ## 2.18.2
 
