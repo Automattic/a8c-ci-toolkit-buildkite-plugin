@@ -40,7 +40,7 @@ add_host_to_ssh_known_hosts github.com
 # Based on the project type, resolve the packages using the correct build type
 if [[ "$BUILD_TYPE" == "XCODEBUILD" ]]; then
   echo "	Resolving packages with \`xcodebuild\`"
-  xcodebuild -resolvePackageDependencies
+  xcodebuild -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile
 elif [[ "$BUILD_TYPE" == "SWIFT" ]]; then
   echo "	Resolving packages with \`swift\`"
   swift package resolve
