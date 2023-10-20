@@ -34,7 +34,7 @@ _None._
 
 ### Breaking Changes
 
-- `nvm_install` utility is removed. See [MIGRATION.md](./MIGRATION.md#from-200-to-300) for details.
+- `nvm_install` utility is removed. See [MIGRATION.md](./MIGRATION.md#from-200-to-300) for details. [#73]
 
 ### New Features
 
@@ -42,18 +42,19 @@ _None._
 
 ### Bug Fixes
 
-_None._
+ - Fix issue in `annotate_test_failures` where the error details' XML node could sometimes be `nil`. [#76]
+ - Make `install_swiftpm_dependencies` use `-onlyUsePackageVersionsFromResolvedFile` flag, to prevent `Package.resolved` from being modified on CI. [#75]
 
 ### Internal Changes
 
-- Refine message in `annotate_test_failures` when configuration for optional Slack reporting is missing [#74]
+- Refine message in `annotate_test_failures` when configuration for optional Slack reporting is missing. [#74]
 
 ## 2.18.2
 
 ### Bug Fixes
 
 - Ensure that `install_gems` doesn't restore a macOS cache on Linux build machines. [#69]
-- Ensute that `install_gems` uses the correct ruby version in its `CACHE_KEY` in all cases [#70]
+- Ensure that `install_gems` uses the correct ruby version in its `CACHE_KEY` in all cases. [#70]
 
 ## 2.18.1
 
@@ -72,7 +73,7 @@ _None._
 
 ### New Features
 
-- When `install_cocoapods` fails because `Podfile.lock` changed in CI, it now prints a diff of the changes [#59]
+- When `install_cocoapods` fails because `Podfile.lock` changed in CI, it now prints a diff of the changes. [#59]
 - Update `annotate_test_failures` to be able to send Slack Notification when there are failures. [#60]
 
 ### Bug Fixes
