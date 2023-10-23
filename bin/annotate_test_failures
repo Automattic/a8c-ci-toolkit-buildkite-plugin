@@ -61,8 +61,8 @@ class TestFailure
     @classname = node['classname']
     @name = node['name']
     failure_node = node.elements['failure'] || node.elements['error']
-    @message = failure_node['message']
-    @details = failure_node.text
+    @message = failure_node['message'] || ''
+    @details = failure_node.text || ''
     @count = 1
   end
 
