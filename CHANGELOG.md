@@ -34,11 +34,25 @@ _None._
 
 ### Breaking Changes
 
-- `nvm_install` utility is removed. See [MIGRATION.md](./MIGRATION.md#from-200-to-300) for details. [#73]
+_None._
 
 ### New Features
 
 _None._
+
+### Bug Fixes
+
+_None._
+
+### Internal Changes
+
+_None._
+
+## 3.0.0
+
+### Breaking Changes
+
+- `nvm_install` utility is removed. See [MIGRATION.md](./MIGRATION.md#from-200-to-300) for details. [#73]
 
 ### Bug Fixes
 
