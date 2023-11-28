@@ -10,6 +10,9 @@ if [ -n "$BUILDKITE_TAG" ] && [ "$BUILDKITE_TAG" != "$POD_VERSION" ]; then
 	exit 1
 fi
 
+echo "⚠️ Remove the patch-cocoapods step once this issue is fixed: https://github.com/CocoaPods/CocoaPods/issues/12033"
+patch-cocoapods
+
 # For some reason this fixes a failure in `lib lint`
 # https://github.com/Automattic/buildkite-ci/issues/7
 xcrun simctl list >> /dev/null
