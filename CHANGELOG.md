@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- Fix an issue where `validate_podspec` and `publish_pod` fail on Xcode 15.0.1 if the pod has a dependency which targets iOS version older than 13. [#78]
 
 ## 3.0.0
 
