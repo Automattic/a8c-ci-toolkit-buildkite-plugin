@@ -44,4 +44,4 @@ fi
 
 echo "Failed to patch cocoapods. Try to re-apply the patch"
 echo "$patch_content" | patch --reverse --force --directory "$cocoapods_gem_path" --strip 0
-echo "$patch_content" | patch --forward --force --directory "$cocoapods_gem_path" --strip 0;
+echo "$patch_content" | patch --forward --force --directory "$cocoapods_gem_path" --strip 0
