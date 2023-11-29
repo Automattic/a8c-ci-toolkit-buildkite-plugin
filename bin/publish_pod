@@ -1,5 +1,15 @@
 #!/bin/bash -eu
 
+PATCH_COCOAPODS="false"
+
+while [[ "$#" -gt 0 ]]; do
+	case $1 in
+		--patch-cocoapods) PATCH_COCOAPODS="true" ;;
+		*) break ;;
+	esac
+	shift
+done
+
 PODSPEC_PATH=$1
 
 # POD_NAME=$(bundle exec pod ipc spec "$PODSPEC_PATH" | jq -r '.name')
@@ -8,6 +18,11 @@ POD_VERSION=$(bundle exec pod ipc spec "$PODSPEC_PATH" | jq -r '.version')
 if [ -n "$BUILDKITE_TAG" ] && [ "$BUILDKITE_TAG" != "$POD_VERSION" ]; then
 	echo "Tag $BUILDKITE_TAG does not match version $POD_VERSION from $PODSPEC_PATH."
 	exit 1
+fi
+
+if [[ "${PATCH_COCOAPODS}" ==  'true' ]]; then
+	echo "⚠️ Remove this step once this issue is fixed: https://github.com/CocoaPods/CocoaPods/issues/12033"
+	patch-cocoapods
 fi
 
 # For some reason this fixes a failure in `lib lint`

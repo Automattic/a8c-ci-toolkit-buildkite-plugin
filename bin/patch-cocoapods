@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# This is a hack to workaround https://github.com/CocoaPods/CocoaPods/issues/12033.
+# We can remove this script once the issue is fixed.
+#
+# This script updates the cocoapods source code to change Xcode project targets'
+# minimal deployment target to 13.0, which is a requirement in newer Xcode versions.
+
+set -euo pipefail
+
+patch_content=$(cat <<'EOF'
+--- lib/cocoapods/installer/analyzer.rb
++++ lib/cocoapods/installer/analyzer.rb
+@@ -857,7 +857,7 @@
+           Version.new(library_spec.deployment_target(platform_name) || default)
+         end.max
+         if platform_name == :ios && build_type.framework?
+-          minimum = Version.new('8.0')
++          minimum = Version.new('13.0')
+           deployment_target = [deployment_target, minimum].max
+         end
+         Platform.new(platform_name, deployment_target)
+--- lib/cocoapods/validator.rb
++++ lib/cocoapods/validator.rb
+@@ -566,7 +566,7 @@
+     def deployment_target
+       deployment_target = spec.subspec_by_name(subspec_name).deployment_target(consumer.platform_name)
+       if consumer.platform_name == :ios && use_frameworks
+-        minimum = Version.new('8.0')
++        minimum = Version.new('13.0')
+         deployment_target = [Version.new(deployment_target), minimum].max.to_s
+       end
+       deployment_target
+EOF
+)
+
+cocoapods_gem_path=$(bundle info cocoapods --path)
+echo "Path to the cocoapods gem: $cocoapods_gem_path"
+
+if echo "$patch_content" | patch --forward --force --directory "$cocoapods_gem_path" --strip 0; then
+    echo "cocoapods patched successfully"
+    exit 0
+fi
+
+echo "Failed to patch cocoapods. Try to re-apply the patch"
+echo "$patch_content" | patch --reverse --force --directory "$cocoapods_gem_path" --strip 0
+echo "$patch_content" | patch --forward --force --directory "$cocoapods_gem_path" --strip 0
