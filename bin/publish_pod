@@ -20,7 +20,6 @@ if [ -n "$BUILDKITE_TAG" ] && [ "$BUILDKITE_TAG" != "$POD_VERSION" ]; then
 	exit 1
 fi
 
-
 if [[ "${PATCH_COCOAPODS}" ==  'true' ]]; then
 	echo "⚠️ Remove this step once this issue is fixed: https://github.com/CocoaPods/CocoaPods/issues/12033"
 	patch-cocoapods

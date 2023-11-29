@@ -1,5 +1,15 @@
 #!/bin/bash -eu
 
+PATCH_COCOAPODS="false"
+
+while [[ "$#" -gt 0 ]]; do
+	case $1 in
+		--patch-cocoapods) PATCH_COCOAPODS="true" ;;
+		*) break ;;
+	esac
+	shift
+done
+
 PODSPEC_PATH=$1
 PRIVATE_SPECS_REPO=$2
 DEPLOY_KEY=$3
@@ -14,6 +24,11 @@ ssh-add -l
 
 # Add the host of the spec repo (typically github.com) to the known_hosts to be sure we can clone it via ssh
 add_host_to_ssh_known_hosts "$PRIVATE_SPECS_REPO"
+
+if [[ "${PATCH_COCOAPODS}" ==  'true' ]]; then
+	echo "⚠️ Remove this step once this issue is fixed: https://github.com/CocoaPods/CocoaPods/issues/12033"
+	patch-cocoapods
+fi
 
 # For some reason this fixes a failure in `lib lint`
 # https://github.com/Automattic/buildkite-ci/issues/7
