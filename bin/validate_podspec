@@ -1,11 +1,23 @@
 #!/bin/bash -eu
 
+PATCH_COCOAPODS="false"
+
+while [[ "$#" -gt 0 ]]; do
+	case $1 in
+		--patch-cocoapods) PATCH_COCOAPODS="true" ;;
+		*) break ;;
+	esac
+	shift
+done
+
 echo "--- :rubygems: Setting up Gems"
 install_gems
 
-echo "--- :writing_hand: Patching cocoapods"
-echo "⚠️ Remove this step once this issue is fixed: https://github.com/CocoaPods/CocoaPods/issues/12033"
-patch-cocoapods
+if [[ "${PATCH_COCOAPODS}" ==  'true' ]]; then
+	echo "--- :writing_hand: Patching cocoapods"
+	echo "⚠️ Remove this step once this issue is fixed: https://github.com/CocoaPods/CocoaPods/issues/12033"
+	patch-cocoapods
+fi
 
 if [ -f "Podfile.lock" ]; then
 	echo "--- :cocoapods: Setting up Pods"

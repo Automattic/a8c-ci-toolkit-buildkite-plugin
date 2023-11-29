@@ -1,5 +1,15 @@
 #!/bin/bash -eu
 
+PATCH_COCOAPODS="false"
+
+while [[ "$#" -gt 0 ]]; do
+	case $1 in
+		--patch-cocoapods) PATCH_COCOAPODS="true" ;;
+		*) break ;;
+	esac
+	shift
+done
+
 PODSPEC_PATH=$1
 
 # POD_NAME=$(bundle exec pod ipc spec "$PODSPEC_PATH" | jq -r '.name')
@@ -10,8 +20,11 @@ if [ -n "$BUILDKITE_TAG" ] && [ "$BUILDKITE_TAG" != "$POD_VERSION" ]; then
 	exit 1
 fi
 
-echo "⚠️ Remove the patch-cocoapods step once this issue is fixed: https://github.com/CocoaPods/CocoaPods/issues/12033"
-patch-cocoapods
+
+if [[ "${PATCH_COCOAPODS}" ==  'true' ]]; then
+	echo "⚠️ Remove this step once this issue is fixed: https://github.com/CocoaPods/CocoaPods/issues/12033"
+	patch-cocoapods
+fi
 
 # For some reason this fixes a failure in `lib lint`
 # https://github.com/Automattic/buildkite-ci/issues/7
