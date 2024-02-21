@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Added `run_swiftlint` command. It will use the project's SwiftLint version defined in `.swiftlint.yml` property `swiftlint_version` to run the right SwiftLint version via Docker, reporting the warnings/errors as Buildkite annotations.
 
 ### Bug Fixes
 
