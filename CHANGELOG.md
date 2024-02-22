@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- Added `run_swiftlint` command. It will use the project's SwiftLint version defined in `.swiftlint.yml` property `swiftlint_version` to run the right SwiftLint version via Docker, reporting the warnings/errors as Buildkite annotations.
+_None._
 
 ### Bug Fixes
 
@@ -47,6 +47,12 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 3.1.0
+
+### New Features
+
+- Added `run_swiftlint` command. It will use the project's SwiftLint version defined in `.swiftlint.yml` property `swiftlint_version` to run the right SwiftLint version via Docker, reporting the warnings/errors as Buildkite annotations.
 
 ## 3.0.1
 
