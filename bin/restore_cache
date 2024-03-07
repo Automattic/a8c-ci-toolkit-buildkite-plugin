@@ -1,39 +1,46 @@
 #!/bin/bash -eu
 
 CACHE_KEY=$1
+CACHE_SERVER_HOSTNAME="cache.ci.internal"
+CACHE_SERVER_ADDRESS="192.168.0.250"
 
-S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
-if [ -z "$S3_BUCKET_NAME" ]; then
-	if [ -z "$BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET" ]; then
-		echo "⛔Unable to restore file from cache – no \$CACHE_BUCKET_NAME is set"
-		exit 1
-	else
-		echo "Reading bucket name from 'BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET'"
-		S3_BUCKET_NAME="$BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET"
-	fi
-fi
+if [ curl -I "http://$CACHE_SERVER_HOSTNAME/cache/$CACHE_KEY" ]; then
+	echo "Restoring cache entry $CACHE_KEY from local cache server"
 
-echo "Using $S3_BUCKET_NAME as cache bucket"
-
-if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
-	echo "Restoring cache entry $CACHE_KEY"
-
-	echo "	Downloading"
-	# If the bucket has transfer acceleration enabled, use it!
-	ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$S3_BUCKET_NAME" | jq '.Status' -r || true)
-
-	if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
-		echo "Downloading with transfer acceleration"
-		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet --endpoint-url https://s3-accelerate.amazonaws.com
-	else
-		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet
-	fi
-
-	echo "	Decompressing"
-	tar -xf "$CACHE_KEY"
-
-	echo "	Cleaning Up"
-	rm "$CACHE_KEY"
 else
-	echo "No cache entry found for '$CACHE_KEY'"
+	S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
+	if [ -z "$S3_BUCKET_NAME" ]; then
+		if [ -z "$BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET" ]; then
+			echo "⛔Unable to restore file from S3 cache – no \$CACHE_BUCKET_NAME is set"
+			exit 1
+		else
+			echo "Reading bucket name from 'BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET'"
+			S3_BUCKET_NAME="$BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET"
+		fi
+	fi
+
+	echo "Using $S3_BUCKET_NAME as cache bucket"
+
+	if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
+		echo "Restoring cache entry $CACHE_KEY from S3"
+
+		echo "	Downloading"
+		# If the bucket has transfer acceleration enabled, use it!
+		ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$S3_BUCKET_NAME" | jq '.Status' -r || true)
+
+		if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
+			echo "Downloading with transfer acceleration"
+			aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet --endpoint-url https://s3-accelerate.amazonaws.com
+		else
+			aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet
+		fi
+
+		echo "	Decompressing"
+		tar -xf "$CACHE_KEY"
+
+		echo "	Cleaning Up"
+		rm "$CACHE_KEY"
+	else
+		echo "No cache entry found for '$CACHE_KEY' in S3"
+	fi
 fi
