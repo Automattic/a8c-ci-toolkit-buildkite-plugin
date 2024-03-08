@@ -1,11 +1,11 @@
 #!/bin/bash -eu
 
 CACHE_KEY=$1
-CACHE_SERVER_HOSTNAME="cache.ci.internal"
+CACHE_SERVER_IP_ADDRESS="192.168.0.250"
 
-if ! curl --head --fail --silent "http://$CACHE_SERVER_HOSTNAME/cache/$CACHE_KEY" >/dev/null; then
+if ! curl --head --fail --silent "http://$CACHE_SERVER_IP_ADDRESS/cache/$CACHE_KEY" >/dev/null; then
 	echo "Restoring cache entry $CACHE_KEY from local cache server"
-	curl -O "http://$CACHE_SERVER_HOSTNAME/cache/$CACHE_KEY"
+	curl -O "http://$CACHE_SERVER_IP_ADDRESS/cache/$CACHE_KEY"
 	echo "🟢 Cache entry $CACHE_KEY successfully restored from local cache server"
 else
 	S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
