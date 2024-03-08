@@ -4,9 +4,8 @@ CACHE_KEY=$1
 CACHE_SERVER_HOSTNAME="cache.ci.internal"
 CACHE_SERVER_ADDRESS="192.168.0.250"
 
-if [ curl -I "http://$CACHE_SERVER_HOSTNAME/cache/$CACHE_KEY" ]; then
+if ! curl --head --fail --silent "http://$CACHE_SERVER_HOSTNAME/cache/$CACHE_KEY" >/dev/null; then
 	echo "Restoring cache entry $CACHE_KEY from local cache server"
-
 else
 	S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
 	if [ -z "$S3_BUCKET_NAME" ]; then
