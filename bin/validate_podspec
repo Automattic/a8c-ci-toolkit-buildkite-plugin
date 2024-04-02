@@ -60,4 +60,4 @@ echo "--- :microscope: Validate Podspec"
 # https://github.com/Automattic/buildkite-ci/issues/7
 xcrun simctl list >> /dev/null
 
-bundle exec pod lib lint ${COCOAPODS_FLAGS[*]} -- "$@"
+bundle exec pod lib lint "${COCOAPODS_FLAGS[@]}" -- "$@"

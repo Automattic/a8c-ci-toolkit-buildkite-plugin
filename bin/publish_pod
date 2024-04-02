@@ -56,7 +56,7 @@ fi
 # https://github.com/Automattic/buildkite-ci/issues/7
 xcrun simctl list >> /dev/null
 
-bundle exec pod trunk push ${COCOAPODS_FLAGS[*]} "$PODSPEC_PATH"
+bundle exec pod trunk push "${COCOAPODS_FLAGS[@]}" "$PODSPEC_PATH"
 
 if [[ ! "${COCOAPODS_FLAGS[*]}" =~ --synchronous ]]; then
   cache_cocoapods_specs_repo
