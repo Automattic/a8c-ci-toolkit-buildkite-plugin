@@ -44,7 +44,7 @@ if [[ "${PATCH_COCOAPODS}" ==  'true' ]]; then
 	patch-cocoapods
 fi
 
-if [[ ! "${COCOAPODS_FLAGS[*]}" =~ --synchronous ]]; then
+if [[ "${COCOAPODS_FLAGS[*]}" =~ --synchronous ]]; then
 	# When using --synchronous to support pushing co-dependant podspecs one after the other,
 	# Cocoapods will use the master spec repo to avoid being dependant on CDN propagation time
 	# when validating a podspec against another, recently-deployed pod.
@@ -58,6 +58,6 @@ xcrun simctl list >> /dev/null
 
 bundle exec pod trunk push "${COCOAPODS_FLAGS[@]}" "$PODSPEC_PATH"
 
-if [[ ! "${COCOAPODS_FLAGS[*]}" =~ --synchronous ]]; then
+if [[ "${COCOAPODS_FLAGS[*]}" =~ --synchronous ]]; then
   cache_cocoapods_specs_repo
 fi
