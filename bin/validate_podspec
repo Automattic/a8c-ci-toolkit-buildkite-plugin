@@ -1,14 +1,45 @@
 #!/bin/bash -eu
 
+# Usage: validate_podspec [OPTIONS] [PODSPEC(S)_PATH(S)...] 
+#
+#  - If no `PODSPEC_PATH` provided, will lint all `*.podspec` files found
+#  - By default, the linting of each podspec will `--include-podspecs=*.podspec` any other podspec
+#    found in the root of the repo, in order to support repos containing co-dependant pods which
+#    needs to be linted and pushed in concert
+#
+# OPTIONS:
+#  `--patch-cocoapods`:
+#     Apply a patch to work around issues with older deployment targets — see https://github.com/CocoaPods/CocoaPods/issues/12033
+#  `--allow-warnings`, `--sources=…`, `--private`, `--include-podspecs=…`, `--external-podspecs=…`:
+#     Those options are passed to `pod lib lint` verbatim
+#
+
 PATCH_COCOAPODS="false"
+COCOAPODS_FLAGS=(--verbose --fail-fast)
 
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
-		--patch-cocoapods) PATCH_COCOAPODS="true" ;;
+		--patch-cocoapods)
+		  PATCH_COCOAPODS="true"
+			;;
+		--allow-warnings | --sources=* | --private | --include-podspecs=* | --external-podspecs=*)
+			COCOAPODS_FLAGS+=("$1")
+			;;
 		*) break ;;
 	esac
 	shift
 done
+
+if [[ ! "${COCOAPODS_FLAGS[*]}" =~ --include-podspecs=* ]]; then
+	# By default, and if that flag was not already provided explicitly, include all other podspecs present
+	# in the same repo as part of validation, so that if a repo contains multiple co-dependant podspecs,
+	# validation will use the local podspecs of those co-dependant pods when validating each individual pod.
+	#
+	# Note: `pod lib lint` considers it invalid to provide that parameter multiple times, hence testing for it first.
+	# Note: If a client needs to override this to make sure _not_ to include any other podspec for some special case
+	# or reason, one can pass `--include-podspecs=""`
+  COCOAPODS_FLAGS+=("--include-podspecs=*.podspec")
+fi
 
 echo "--- :rubygems: Setting up Gems"
 install_gems
@@ -29,4 +60,4 @@ echo "--- :microscope: Validate Podspec"
 # https://github.com/Automattic/buildkite-ci/issues/7
 xcrun simctl list >> /dev/null
 
-bundle exec pod lib lint --verbose --fail-fast
+bundle exec pod lib lint ${COCOAPODS_FLAGS[*]} -- "$@"

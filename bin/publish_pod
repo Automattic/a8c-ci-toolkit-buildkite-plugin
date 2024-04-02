@@ -1,10 +1,29 @@
 #!/bin/bash -eu
 
+# Usage: publish_pod [OPTIONS] PODSPEC_PATH
+#
+# OPTIONS:
+#  `--patch-cocoapods`:
+#     Apply a patch to work around issues with older deployment targets — see https://github.com/CocoaPods/CocoaPods/issues/12033
+#  `--allow-warnings`, `--synchronous`:
+#     Those options are passed to `pod trunk push` verbatim.
+#
+# Note: Use `--synchronous` if you have co-dependant podspecs in your repo and need to publish multiple pods at the same time.
+# Without this option, since the first pod you push will take time to propagate thru the CocoaPods CDNs, attempting to push
+# the other dependant pod(s) in your repo might fail to find the first pushed pod until it has propagated thru CDNs.
+#
+
 PATCH_COCOAPODS="false"
+COCOAPODS_FLAGS=(--verbose)
 
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
-		--patch-cocoapods) PATCH_COCOAPODS="true" ;;
+		--patch-cocoapods)
+			PATCH_COCOAPODS="true"
+			;;
+		--allow-warnings | --synchronous)
+			COCOAPODS_FLAGS+=("$1")
+			;;
 		*) break ;;
 	esac
 	shift
@@ -25,8 +44,20 @@ if [[ "${PATCH_COCOAPODS}" ==  'true' ]]; then
 	patch-cocoapods
 fi
 
+if [[ ! "${COCOAPODS_FLAGS[*]}" =~ --synchronous ]]; then
+	# When using --synchronous to support pushing co-dependant podspecs one after the other,
+	# Cocoapods will use the master spec repo to avoid being dependant on CDN propagation time
+	# when validating a podspec against another, recently-deployed pod.
+	# The master spec repo is pretty large to clone though, so using cache for it is important
+	restore_cache "$BUILDKITE_PIPELINE_SLUG-specs-repos"
+fi
+
 # For some reason this fixes a failure in `lib lint`
 # https://github.com/Automattic/buildkite-ci/issues/7
 xcrun simctl list >> /dev/null
 
-bundle exec pod trunk push --verbose "$PODSPEC_PATH"
+bundle exec pod trunk push ${COCOAPODS_FLAGS[*]} "$PODSPEC_PATH"
+
+if [[ ! "${COCOAPODS_FLAGS[*]}" =~ --synchronous ]]; then
+  cache_cocoapods_specs_repo
+fi
