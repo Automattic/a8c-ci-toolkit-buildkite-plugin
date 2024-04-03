@@ -38,8 +38,7 @@ _None._
 
 ### New Features
 
- - Make `validate_podspec` support `--allow-warnings`, `--sources=…`, `--private`, `--include-podspecs=…` and `--external-podspecs=…` flags that it will forward to the `pod lib lint` call. `--include-podspecs=*.podspec` is also now added by default if not provided explicitly. [#82]
- - Make `publish_pod` support `--allow-warnings` and `--synchronous` flags that it will forward to the `pod trunk push` call. This is especially useful for repos containing multiple, co-dependant podspecs to publish at the same time, to avoid issues with CDN propagation delays. [#82]
+_None._
 
 ### Bug Fixes
 
@@ -48,6 +47,13 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 3.2.0
+
+### New Features
+
+ - Make `validate_podspec` support `--allow-warnings`, `--sources=…`, `--private`, `--include-podspecs=…` and `--external-podspecs=…` flags that it will forward to the `pod lib lint` call. `--include-podspecs=*.podspec` is also now added by default if not provided explicitly. [#82]
+ - Make `publish_pod` support `--allow-warnings` and `--synchronous` flags that it will forward to the `pod trunk push` call. This is especially useful for repos containing multiple, co-dependant podspecs to publish at the same time, to avoid issues with CDN propagation delays. [#82]
 
 ## 3.1.0
 
