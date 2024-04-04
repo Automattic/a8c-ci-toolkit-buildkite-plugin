@@ -1,8 +1,12 @@
 #!/bin/bash -eu
 
-# Follow the typical pod installation process...
-bundle exec pod install --repo-update --verbose
-
-# ...then overwrite the cache for future jobs to use
+# Update CocoaPods's master specs repo (used when you don't use the CDN)
+bundle exec pod repo update --verbose
 save_cache ~/.cocoapods "$BUILDKITE_PIPELINE_SLUG-specs-repos" --force
-save_cache ~/Library/Caches/CocoaPods/ "$BUILDKITE_PIPELINE_SLUG-global-pod-cache" --force
+
+if [ -f Podfile ]; then
+  # Update the cache of the Pods used by the repo.
+  # Skip if the repo doesn't have a `Podfile` (e.g. lib repo with only a `.podspec`)
+  bundle exec pod install --verbose
+  save_cache ~/Library/Caches/CocoaPods/ "$BUILDKITE_PIPELINE_SLUG-global-pod-cache" --force
+fi
