@@ -48,6 +48,12 @@ _None._
 
 _None._
 
+## 3.2.1
+
+### Bug Fixes
+
+ - Fix crash in recent update of the `publish_pod` implementation. [#84]
+
 ## 3.2.0
 
 ### New Features
