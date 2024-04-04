@@ -44,20 +44,8 @@ if [[ "${PATCH_COCOAPODS}" ==  'true' ]]; then
 	patch-cocoapods
 fi
 
-if [[ "${COCOAPODS_FLAGS[*]}" =~ --synchronous ]]; then
-	# When using --synchronous to support pushing co-dependant podspecs one after the other,
-	# Cocoapods will use the master spec repo to avoid being dependant on CDN propagation time
-	# when validating a podspec against another, recently-deployed pod.
-	# The master spec repo is pretty large to clone though, so using cache for it is important
-	restore_cache "$BUILDKITE_PIPELINE_SLUG-specs-repos"
-fi
-
 # For some reason this fixes a failure in `lib lint`
 # https://github.com/Automattic/buildkite-ci/issues/7
 xcrun simctl list >> /dev/null
 
 bundle exec pod trunk push "${COCOAPODS_FLAGS[@]}" "$PODSPEC_PATH"
-
-if [[ "${COCOAPODS_FLAGS[*]}" =~ --synchronous ]]; then
-  save_cache ~/.cocoapods "$BUILDKITE_PIPELINE_SLUG-specs-repos" --force
-fi
