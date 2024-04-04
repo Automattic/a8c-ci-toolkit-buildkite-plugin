@@ -59,5 +59,5 @@ xcrun simctl list >> /dev/null
 bundle exec pod trunk push "${COCOAPODS_FLAGS[@]}" "$PODSPEC_PATH"
 
 if [[ "${COCOAPODS_FLAGS[*]}" =~ --synchronous ]]; then
-  cache_cocoapods_specs_repo
+  cache_cocoapods_specs_repos
 fi
