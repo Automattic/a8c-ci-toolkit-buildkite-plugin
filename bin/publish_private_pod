@@ -1,10 +1,15 @@
 #!/bin/bash -eu
 
 PATCH_COCOAPODS="false"
+COCOAPODS_FLAGS=(--verbose)
 
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
-		--patch-cocoapods) PATCH_COCOAPODS="true" ;;
+		--patch-cocoapods)
+			PATCH_COCOAPODS="true" ;;
+		--allow-warnings)
+			COCOAPODS_FLAGS+=("$1")
+			;;
 		*) break ;;
 	esac
 	shift
@@ -34,4 +39,4 @@ fi
 # https://github.com/Automattic/buildkite-ci/issues/7
 xcrun simctl list >> /dev/null
 
-bundle exec pod repo push "$PRIVATE_SPECS_REPO" "$PODSPEC_PATH"
+bundle exec pod repo push "${COCOAPODS_FLAGS[@]}" "$PRIVATE_SPECS_REPO" "$PODSPEC_PATH"
