@@ -6,7 +6,8 @@ COCOAPODS_FLAGS=(--verbose)
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
 		--patch-cocoapods)
-			PATCH_COCOAPODS="true" ;;
+			PATCH_COCOAPODS="true"
+                        ;;
 		--allow-warnings)
 			COCOAPODS_FLAGS+=("$1")
 			;;
