@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Make `publish_private_pod` support `--allow-warnings`. [#86]
 
 ### Bug Fixes
 
