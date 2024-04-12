@@ -50,21 +50,13 @@ _None._
 
 ## 3.3.0
 
-### Breaking Changes
-
-_None._
-
 ### New Features
 
 - Make `publish_private_pod` support `--allow-warnings`. [#86]
 
-### Bug Fixes
-
-_None._
-
 ### Internal Changes
 
-- Fixed Ruby, RuboCop and RSpec versions on CI
+- Fixed Ruby, RuboCop and RSpec versions on CI [#88]
 
 ## 3.2.2
 
