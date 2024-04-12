@@ -64,7 +64,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- Fixed Ruby, RuboCop and RSpec versions on CI
 
 ## 3.2.2
 
