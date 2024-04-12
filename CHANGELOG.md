@@ -38,6 +38,24 @@ _None._
 
 ### New Features
 
+_None._
+
+### Bug Fixes
+
+_None._
+
+### Internal Changes
+
+_None._
+
+## 3.3.0
+
+### Breaking Changes
+
+_None._
+
+### New Features
+
 - Make `publish_private_pod` support `--allow-warnings`. [#86]
 
 ### Bug Fixes
