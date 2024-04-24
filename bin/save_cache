@@ -71,8 +71,14 @@ if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/
 		aws s3 cp "$CACHE_KEY" "s3://$S3_BUCKET_NAME/$CACHE_KEY" --quiet
 	fi
 
-	echo "	Cleaning Up"
-	rm "$CACHE_KEY"
+  # FIXME: Need to implement proper option management, there are already two we are checking
+  SKIP_CLEANUP=${3-}
+  if [[ "$SKIP_CLEANUP" != '--skip_cleanup' ]]; then
+    echo "  Skipping clean up. $CACHE_KEY will still be available in the file system."
+  else
+    echo "	Cleaning Up"
+    rm "$CACHE_KEY"
+  fi
 else
 	echo "This file is already cached – skipping upload"
 fi
