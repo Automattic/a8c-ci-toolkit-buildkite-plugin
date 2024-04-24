@@ -18,7 +18,7 @@ if [ -z "$CACHE_KEY" ]; then
 		echo "	'$CACHE_FILE' is a directory with the hash $CACHE_KEY"
 
 	# if the $CACHE_FILE is a regular file, derive the key from the file's hash
-	elif [[ -f $CACHE_FILE ]]; then  
+	elif [[ -f $CACHE_FILE ]]; then
 		CACHE_KEY=$(hash_file "$CACHE_FILE")
 		echo "	'$CACHE_FILE' is a file with the hash $CACHE_KEY"
 	fi
@@ -52,10 +52,10 @@ if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/
 	if [[ "$TAR_CONFIG" == '--use_relative_path_in_tar' ]]; then
 		# This is used by actions such as `install_swiftpm_dependencies`
 		# This configuration allows the tar to not include the full system path of the
-		# directory that's being archived. For example, this will save only the 
-		# "DIRECTORY_BEING_ARCHIVED" in `/User/builder/DIRECTORY_BEING_ARCHIVED` 
+		# directory that's being archived. For example, this will save only the
+		# "DIRECTORY_BEING_ARCHIVED" in `/User/builder/DIRECTORY_BEING_ARCHIVED`
 		# instead of also creating `/User/builder` when extracting the archive
-		tar -czf "$CACHE_KEY" -C "$CACHE_FILE" .		
+		tar -czf "$CACHE_KEY" -C "$CACHE_FILE" .
 	else
 		tar -czf "$CACHE_KEY" "$CACHE_FILE"
 	fi
