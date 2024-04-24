@@ -2,7 +2,7 @@
 
 echo "--- :swift: Running SwiftLint"
 
-SWIFTLINT_VERSION=$(<.swiftlint.yml awk '/swiftlint_version: / {print $2}')
+SWIFTLINT_VERSION=$(<.swiftlint.yml awk '/^swiftlint_version: / {print $2}')
 SWIFTLINT_CMD="docker run --rm -v $PWD:/workspace -w /workspace ghcr.io/realm/swiftlint:$SWIFTLINT_VERSION swiftlint"
 
 set +e
