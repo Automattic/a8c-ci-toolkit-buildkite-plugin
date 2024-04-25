@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- Restrict the possible `run_swiftlint` command arguments to "--strict" and "--lenient" [#90]
 
 ## 3.3.0
 
