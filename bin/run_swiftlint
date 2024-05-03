@@ -1,30 +1,25 @@
 #!/bin/bash -eu
 
-validation_error() {
+echo "--- :swift: Running SwiftLint"
+
+SWIFTLINT_ARGUMENTS=(--quiet --reporter relative-path)
+
+if [ "$1" == "--strict" ] || [ "$1" == "--lenient" ]; then
+  SWIFTLINT_ARGUMENTS+=("$1")
+  shift
+fi
+
+if [[ -n $1 ]]; then
   echo "Error: invalid arguments."
   echo "Usage: $0 [--strict | --lenient]"
   exit 1
-}
-
-echo "--- :swift: Running SwiftLint"
-
-SWIFTLINT_ARGUMENT=""
-
-if [ "$#" -eq 1 ]; then
-  if [ "$1" == "--strict" ] || [ "$1" == "--lenient" ]; then
-    SWIFTLINT_ARGUMENT=$1
-  else
-    validation_error
-  fi
-elif [ "$#" -gt 1 ]; then
-  validation_error
 fi
 
-SWIFTLINT_VERSION=$(<.swiftlint.yml awk '/^swiftlint_version: / {print $2}')
-SWIFTLINT_CMD="docker run --rm -v $PWD:/workspace -w /workspace ghcr.io/realm/swiftlint:$SWIFTLINT_VERSION swiftlint"
+SWIFTLINT_VERSION="$(<.swiftlint.yml awk '/^swiftlint_version: / {print $2}')"
+SWIFTLINT_DOCKER_CMD=(docker run --rm -v "$PWD":/workspace -w /workspace ghcr.io/realm/swiftlint:"$SWIFTLINT_VERSION" swiftlint)
 
 set +e
-SWIFTLINT_OUTPUT=$($SWIFTLINT_CMD lint --quiet "$SWIFTLINT_ARGUMENT" --reporter relative-path)
+SWIFTLINT_OUTPUT=$("${SWIFTLINT_DOCKER_CMD[@]}" lint "${SWIFTLINT_ARGUMENTS[@]}")
 SWIFTLINT_EXIT_STATUS=$?
 set -e
 
