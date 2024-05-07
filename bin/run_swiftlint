@@ -4,10 +4,15 @@ echo "--- :swift: Running SwiftLint"
 
 SWIFTLINT_ARGUMENTS=(--quiet --reporter relative-path)
 
-if [ "$1" == "--strict" ] || [ "$1" == "--lenient" ]; then
-  SWIFTLINT_ARGUMENTS+=("$1")
-  shift
-fi
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --strict | --lenient)
+      SWIFTLINT_ARGUMENTS+=("$1")
+      shift
+      ;;
+    *) break ;;
+  esac
+done
 
 if [[ -n $1 ]]; then
   echo "Error: invalid arguments."
