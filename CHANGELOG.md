@@ -46,7 +46,14 @@ _None._
 
 ### Internal Changes
 
+_None._
+
+## 3.4.0
+
+### Internal Changes
+
 - Restrict the possible `run_swiftlint` command arguments to "--strict" and "--lenient" [#90]
+- Update `swiftlint_version` RegExp to check for top-level node [#89]
 
 ## 3.3.0
 
