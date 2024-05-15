@@ -14,7 +14,7 @@ while [[ "$#" -gt 0 ]]; do
   esac
 done
 
-if [[ -n $1 ]]; then
+if [[ -n ${1+x} ]]; then
   echo "Error: invalid arguments."
   echo "Usage: $0 [--strict | --lenient]"
   exit 1
