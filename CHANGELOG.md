@@ -48,6 +48,12 @@ _None._
 
 _None._
 
+## 3.4.1
+
+### Bug Fixes
+
+- Fix for the unbound variable error seen on `run_swiftlint` [#92]
+
 ## 3.4.0
 
 ### Internal Changes
