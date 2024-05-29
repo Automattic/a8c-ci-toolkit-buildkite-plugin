@@ -9,13 +9,13 @@ fi
 
 # `shasum` is available on only macOS
 if command -v shasum &> /dev/null; then
-  sha_command='shasum -a 256'
+  sha_command=(shasum -a 256)
 else
-  sha_command='sha256sum'
+  sha_command=(sha256sum)
 fi
 
 # - Find all files in the given directory
 # - Run `sha256sum` on each file found – the `+` flag does it in parallel for a huge speed boost.
 # - Sort the files by filename for deterministic hashing
 # - Take the hash of all of the output hashes (and file paths)
-find "${DIRECTORY_PATH%/}" -type f -exec $sha_command "{}" \+ | sort -k 2 | $sha_command | cut -f1 -d " "
+find "${DIRECTORY_PATH%/}" -type f -exec "${sha_command[@]}" "{}" \+ | sort -k 2 | "${sha_command[@]}" | cut -f1 -d " "

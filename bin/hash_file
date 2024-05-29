@@ -7,11 +7,11 @@ fi
 
 # `shasum` is available on only macOS
 if command -v shasum &> /dev/null; then
-  sha_command='shasum -a 256'
+  sha_command=(shasum -a 256)
 else
-  sha_command='sha256sum'
+  sha_command=(sha256sum)
 fi
 
 # Both `shasum` and `sha256sum` will print the hash and the file name (`$1`).
 # We only care about the hash, so we use `cut` to extract it.
-$sha_command "$1" | cut -f1 -d " "
+"${sha_command[@]}" "$1" | cut -f1 -d " "
