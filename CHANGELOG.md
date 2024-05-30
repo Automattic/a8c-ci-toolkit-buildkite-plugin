@@ -54,7 +54,6 @@ _None._
 
 - Fix `hash_directory` helper, and make it portable (Mac+Linux) [#95]
 
-
 ## 3.4.1
 
 ### Bug Fixes
