@@ -1,7 +1,7 @@
 #!/bin/bash -eu
 
 # The key is shared with `bin/restore_gradle_dependency_cache`
-GRADLE_DEPENDENCY_CACHE_KEY="${GRADLE_PROJECT_PREFIX}GRADLE_DEPENDENCY_CACHE"
+GRADLE_DEPENDENCY_CACHE_KEY="${GRADLE_DEPENDENCY_CACHE_PROJECT_PREFIX}GRADLE_DEPENDENCY_CACHE"
 
 echo "Saving Gradle dependency cache..."
 
