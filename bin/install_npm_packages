@@ -6,7 +6,7 @@ if [ ! -f package.json ]; then
     exit 1
 fi
 
-# Ensure package-lock.json is present 
+# Ensure package-lock.json is present
 if [ ! -f package-lock.json ]; then
     echo "No valid package-lock.json file found"
     exit 1
