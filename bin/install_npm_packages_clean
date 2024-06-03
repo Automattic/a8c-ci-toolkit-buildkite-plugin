@@ -17,7 +17,7 @@ ARCHITECTURE=$(uname -m)
 NODE_VERSION=$(node --version)
 PACKAGE_HASH=$(hash_file package-lock.json)
 
-# TODO: This comes from Studio. Figure out if it's standard in Node or not.
+# See https://www.npmjs.com/package/patch-package#circleci
 if [ -d patches ]; then
   PATCHES_HASH=$(hash_directory patches/)
 else
