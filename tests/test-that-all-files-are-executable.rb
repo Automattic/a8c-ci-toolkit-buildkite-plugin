@@ -12,7 +12,8 @@ end
 #
 # See: https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/pull/42
 context 'All Unix Commands Should Be Executable' do
-  Dir.children('bin')
+  Dir
+    .children('bin')
     # Ignore Windows PowerShell scripts
     .reject { |f| f.end_with?('.ps1') }
     .map { |f| File.new(File.join('bin', f)) }.each do |file|
