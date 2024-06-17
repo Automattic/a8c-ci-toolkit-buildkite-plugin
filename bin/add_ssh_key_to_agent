@@ -3,6 +3,8 @@
 NEW_SSH_KEY=$1
 NEW_SSH_KEY_NAME=$2
 
+echo "--- :lock_with_ink_pen: Adding custom SSH key to agent ($NEW_SSH_KEY_NAME)"
+
 # Create key in ~/.ssh dir
 NEW_SSH_KEY_PATH="$HOME"/.ssh/"$NEW_SSH_KEY_NAME"
 echo -e "$NEW_SSH_KEY" > "$NEW_SSH_KEY_PATH"
