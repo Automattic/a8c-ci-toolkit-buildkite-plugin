@@ -7,10 +7,11 @@
 
 set -e
 
+echo "~~~ :file_cabinet: Loading Automattic plugin commands in the environment"
+
 HOOKS_ROOT=$( dirname "${BASH_SOURCE[0]}" )
 PLUGIN_ROOT=$( dirname "$HOOKS_ROOT" )
 PLUGIN_BIN="$PLUGIN_ROOT/bin"
 
 export PATH="$PATH:$PLUGIN_BIN"
-
-echo "~~~ :file_cabinet: Loaded Caching Plugin"
+echo "PATH is now $PATH"
