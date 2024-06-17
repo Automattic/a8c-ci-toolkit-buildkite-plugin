@@ -11,7 +11,20 @@ echo "~~~ :file_cabinet: Loading Automattic plugin commands in the environment"
 
 HOOKS_ROOT=$( dirname "${BASH_SOURCE[0]}" )
 PLUGIN_ROOT=$( dirname "$HOOKS_ROOT" )
-PLUGIN_BIN="$PLUGIN_ROOT/bin"
+
+OS=$(uname -s)
+case $OS in
+  CYGWIN*|MINGW*|MSYS*)
+    echo "Running in a Windows environment."
+    PATH_SEPARATOR="\\"
+    ;;
+  *)
+    echo "Running in a non-Windows environment."
+    PATH_SEPARATOR='/'
+    ;;
+esac
+
+PLUGIN_BIN="${PLUGIN_ROOT}${PATH_SEPARATOR}bin"
 
 export PATH="$PATH:$PLUGIN_BIN"
-echo "PATH is now $PATH"
+echo "PATH updated to $PATH"
