@@ -24,17 +24,19 @@ if [ -z "$reports_dir" ] || [ -z "$output_file" ]; then
     usage
 fi
 
-# Write XML header to the output file
-echo '<?xml version="1.0" encoding="UTF-8"?>' > "$output_file"
-echo '<testsuites>' >> "$output_file"
+{
+  echo '<?xml version="1.0" encoding="UTF-8"?>'
+  # Write XML header to the output file
+  echo '<testsuites>'
 
-# Merge the content of all input JUnit files in the directory.
-# (Note that in the case of Unit Tests, the JUnit XML files produced by Gradle
-# don't have a parent `<testsuites>` root tag, so there's no need to try and remove it)
-sed '/<\?xml .*\?>/d' "$reports_dir"/*.xml >> "$output_file"
+  # Merge the content of all input JUnit files in the directory.
+  # (Note that in the case of Unit Tests, the JUnit XML files produced by Gradle
+  # don't have a parent `<testsuites>` root tag, so there's no need to try and remove it)
+  sed '/<\?xml .*\?>/d' "$reports_dir"/*.xml
 
-# Close the testsuites tag
-echo '</testsuites>' >> "$output_file"
+  # Close the testsuites tag
+  echo '</testsuites>'
+} >> "$output_file"
 
 # Print the result
 echo "Merged XML reports into $output_file"
