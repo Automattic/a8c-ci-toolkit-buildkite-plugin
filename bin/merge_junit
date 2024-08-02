@@ -24,6 +24,7 @@ if [ -z "$reports_dir" ] || [ -z "$output_file" ]; then
     usage
 fi
 
+touch "$output_file"
 {
   echo '<?xml version="1.0" encoding="UTF-8"?>'
   # Write XML header to the output file
