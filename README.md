@@ -30,7 +30,7 @@ steps:
           bucket: a8c-ci-cache # optional
 ```
 
-See the [the latest release](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/releases/latest).
+See [the latest release](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/releases/latest).
 
 ## Configuration
 
