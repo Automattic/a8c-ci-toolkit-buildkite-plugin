@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- Introduce `merge_junit_reports` script [#103]
+_None._
 
 ### Bug Fixes
 
@@ -47,6 +47,12 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 3.5.0
+
+### New Features
+
+- Introduce `merge_junit_reports` script [#103]
 
 ## 3.4.2
 
