@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- Introduce `merge_junit` script [#103]
+- Introduce `merge_junit_reports` script [#103]
 
 ### Bug Fixes
 
