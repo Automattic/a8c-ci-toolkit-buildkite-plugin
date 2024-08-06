@@ -1,30 +1,91 @@
 #!/bin/bash -eu
 
-CUSTOM_PACKAGE_RESOLVED_PATH=${1-}
-BUILD_TYPE=${2-}
+print_usage() {
+  echo "Usage:"
+  echo "  Using the \`Package.resolved\` of an Xcode \`.xworkspace\`:"
+  echo "    $0 --workspace PATH --scheme NAME"
+  echo "  Using the \`Package.resolved\` of an Xcode \`.xcodeproj\`:"
+  echo "    $0 --project PATH"
+  echo "  Using the \`Package.resolved\` at the root, managed by \`swift package\` (and not Xcode)"
+  echo "    $0 --use-spm"
+}
+
+# Parse input parameters
+XCWORKSPACE_PATH=
+SCHEME_NAME=
+XCODEPROJ_PATH=
+USE_SPM=false
+while [[ "$#" -gt 0 ]]; do
+	case $1 in
+		--workspace)
+			XCWORKSPACE_PATH="$2"
+      shift
+			;;
+		--scheme)
+			SCHEME_NAME=$2
+      shift
+			;;
+    --project)
+      XCODEPROJ_PATH=$2
+      shift
+      ;;
+    --use-spm)
+      USE_SPM=true
+      ;;
+    -h|--help)
+      print_usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option or unexpected argument: $1"
+      print_usage
+      exit 2
+      ;;
+	esac
+	shift
+done
+
 SPM_CACHE_LOCATION="$HOME/Library/Caches/org.swift.swiftpm"
 
-WORKSPACE_PACKAGE_RESOLVED_PATH=(*.xcworkspace/xcshareddata/swiftpm/Package.resolved)
-ROOT_PACKAGE_RESOLVED_PATH=Package.resolved
+# Try to guess what to do if no option provided explicitly
+if [[ -z "${XCWORKSPACE_PATH}" && -z "${XCODEPROJ_PATH}" && "${USE_SPM}" != "true" ]]; then
+  echo "No \`--workspace\`, \`--project\` or \`--use-spm\` flag provided. Trying to guess the correct one to use..."
+  FOUND_ROOT_WORKSPACE_PATHS=(*.xcworkspace)
+  if  [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 1 && -d "${FOUND_ROOT_WORKSPACE_PATHS[0]}" && ! -f "Package.resolved" ]]; then
+    XCWORKSPACE_PATH="${FOUND_ROOT_WORKSPACE_PATHS[0]}"
+    echo " --> Found a single \`.xcworkspace\` file at the root of the repo (and no root \`Package.resolved\`)"
+    echo "     so we are assuming \`--workspace \"${XCWORKSPACE_PATH}\"\`."
+  elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && -f "Package.resolved" ]]; then
+    echo " --> Found a \`Package.resolved\` at the root of the repo (and no root \`.xcworkspace\`)"
+    echo "     so we are assuming \`--use-spm\`"
+    USE_SPM=true
+  else
+    echo " -!- No valid --workspace & --scheme, or --project, or --use-spm flag provided, and cannot guess which one to use either, so aborting."
+    echo "     Please call $0 with an explicit \`--workspace PATH\` and \`--scheme NAME\`, or \`--project PATH\`, or \`--use-spm\` flag to desambiguate."
+    exit 1
+  fi
+fi
 
-# Find where Package.resolved is located
-if [[ -n "$CUSTOM_PACKAGE_RESOLVED_PATH" ]]; then
-  PACKAGE_RESOLVED_LOCATION="$CUSTOM_PACKAGE_RESOLVED_PATH"
-elif  [[ -f "${WORKSPACE_PACKAGE_RESOLVED_PATH[0]}" ]]; then
-  BUILD_TYPE="XCODEBUILD"
-  PACKAGE_RESOLVED_LOCATION="${WORKSPACE_PACKAGE_RESOLVED_PATH[0]}"
-elif  [[ -f "$ROOT_PACKAGE_RESOLVED_PATH" ]]; then
-  BUILD_TYPE="SWIFT"
-  PACKAGE_RESOLVED_LOCATION="$ROOT_PACKAGE_RESOLVED_PATH"
-else
-  echo "Unable to find Package.resolved"
+# Find where Package.resolved is located so we can compute the cache key from its hash
+PACKAGE_RESOLVED_LOCATION=
+if [[ -d "${XCWORKSPACE_PATH}" ]]; then
+  PACKAGE_RESOLVED_LOCATION="${XCWORKSPACE_PATH}/xcshareddata/swiftpm/Package.resolved"
+elif [[ -d "${XCODEPROJ_PATH}" ]]; then
+  PACKAGE_RESOLVED_LOCATION="${XCODEPROJ_PATH}/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+elif [[ "${USE_SPM}" == "true" ]]; then
+  PACKAGE_RESOLVED_LOCATION="Package.resolved"
+fi
+
+if [[ ! -f "${PACKAGE_RESOLVED_LOCATION}" ]]; then
+  echo "Unable to find \`Package.resolved\` file (${PACKAGE_RESOLVED_LOCATION:-unable to guess path})"
   exit 1
 fi
 
+# Restore SPM cache if it's available
+echo "~~~ Restoring SPM cache if available"
 PACKAGE_RESOLVED_HASH=$(hash_file "$PACKAGE_RESOLVED_LOCATION")
 CACHE_KEY="${BUILDKITE_PIPELINE_SLUG}-spm-cache-${PACKAGE_RESOLVED_HASH}"
 
-# Restore SPM cache if it's available
 mkdir -p "$SPM_CACHE_LOCATION"
 cd "$SPM_CACHE_LOCATION"
 restore_cache "$CACHE_KEY"
@@ -37,17 +98,24 @@ sudo defaults write com.apple.dt.Xcode IDEPackageSupportUseBuiltinSCM YES
 add_host_to_ssh_known_hosts bitbucket.org
 add_host_to_ssh_known_hosts github.com
 
-# Based on the project type, resolve the packages using the correct build type
-if [[ "$BUILD_TYPE" == "XCODEBUILD" ]]; then
-  echo "	Resolving packages with \`xcodebuild\`"
-  xcodebuild -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile
-elif [[ "$BUILD_TYPE" == "SWIFT" ]]; then
-  echo "	Resolving packages with \`swift\`"
+# Resolve the packages using the correct method
+if [[ -d "${XCWORKSPACE_PATH}" ]]; then
+  echo "~~~ Resolving Swift Packages with \`xcodebuild\`"
+  if [[ -z "${SCHEME_NAME}" ]]; then
+    SCHEME_NAME=$(xcodebuild -workspace "${XCWORKSPACE_PATH}" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -list | sed -n '/Schemes:/{n;s/^ *//p;}')
+    echo "No \`--scheme\` parameter provided; assuming the first one found (as it shouldn't matter in practice?): \`${SCHEME_NAME}\`"
+  fi
+  echo "Using -workspace \"${XCWORKSPACE_PATH}\" -scheme \"${SCHEME_NAME}\""
+  xcodebuild -workspace "${XCWORKSPACE_PATH}" -scheme "${SCHEME_NAME}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile
+elif [[ -d "${XCODEPROJ_PATH}" ]]; then
+  echo "~~~ Resolving Swift Packages with \`xcodebuild\`"
+  echo "Using -project \"${XCODEPROJ_PATH}\""
+  xcodebuild -project "${XCODEPROJ_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile
+elif [[ "${USE_SPM}" == "true" ]]; then
+  echo "~~~ Resolving packages with \`swift package\`"
   swift package resolve
-else 
-  echo "BUILD_TYPE must be set"
-  exit 1
 fi
+
 
 # `checkouts` can be removed because the system can quickly generate them 
 # instead of needing to download them in the cache each time.
@@ -55,11 +123,9 @@ fi
 # `artifacts` should be removed because it causes issues when downloading 
 # certain packages to have the artifacts already present after extracting 
 # cache
-echo "	Cleaning up cache files before saving cache"
+echo "~~~ Cleaning up cache files before saving cache"
 rm -rf "$SPM_CACHE_LOCATION/checkouts" "$SPM_CACHE_LOCATION/artifacts"
 
 # If this is the first time we've seen this particular cache key, save it for the future
-echo "	Saving SPM Cache"
+echo "~~~ Saving SPM Cache"
 save_cache "$SPM_CACHE_LOCATION" "$CACHE_KEY" false --use_relative_path_in_tar
-
-
