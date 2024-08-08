@@ -63,10 +63,10 @@ fi
 
 # Find where Package.resolved is located so we can compute the cache key from its hash
 PACKAGE_RESOLVED_LOCATION=
-if [[ -d "${XCWORKSPACE_PATH}" ]]; then
-  PACKAGE_RESOLVED_LOCATION="${XCWORKSPACE_PATH}/xcshareddata/swiftpm/Package.resolved"
-elif [[ -d "${XCODEPROJ_PATH}" ]]; then
-  PACKAGE_RESOLVED_LOCATION="${XCODEPROJ_PATH}/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+if [[ -n "${XCWORKSPACE_PATH}" ]]; then
+  PACKAGE_RESOLVED_LOCATION="${XCWORKSPACE_PATH%/}/xcshareddata/swiftpm/Package.resolved"
+elif [[ -n "${XCODEPROJ_PATH}" ]]; then
+  PACKAGE_RESOLVED_LOCATION="${XCODEPROJ_PATH%/}/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
 elif [[ "${USE_SPM}" == "true" ]]; then
   PACKAGE_RESOLVED_LOCATION="Package.resolved"
 fi
