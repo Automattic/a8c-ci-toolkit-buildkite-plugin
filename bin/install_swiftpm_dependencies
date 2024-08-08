@@ -51,12 +51,12 @@ SPM_CACHE_LOCATION="$HOME/Library/Caches/org.swift.swiftpm"
 if [[ -z "${XCWORKSPACE_PATH}" && -z "${XCODEPROJ_PATH}" && "${USE_SPM}" != "true" ]]; then
   echo "No \`--workspace\`, \`--project\` or \`--use-spm\` flag provided. Trying to guess the correct one to use..."
   FOUND_ROOT_WORKSPACE_PATHS=(*.xcworkspace)
-  if  [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 1 && -d "${FOUND_ROOT_WORKSPACE_PATHS[0]}" && ! -f "Package.resolved" ]]; then
+  if  [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 1 && -d "${FOUND_ROOT_WORKSPACE_PATHS[0]}" && ! -f "Package.swift" ]]; then
     XCWORKSPACE_PATH="${FOUND_ROOT_WORKSPACE_PATHS[0]}"
-    echo " --> Found a single \`.xcworkspace\` file at the root of the repo (and no root \`Package.resolved\`)"
+    echo " --> Found a single \`.xcworkspace\` file at the root of the repo (and no root \`Package.swift\`)"
     echo "     so we are assuming \`--workspace \"${XCWORKSPACE_PATH}\"\`."
-  elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && -f "Package.resolved" ]]; then
-    echo " --> Found a \`Package.resolved\` at the root of the repo (and no root \`.xcworkspace\`)"
+  elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && -f "Package.swift" ]]; then
+    echo " --> Found a \`Package.swift\` at the root of the repo (and no root \`.xcworkspace\`)"
     echo "     so we are assuming \`--use-spm\`"
     USE_SPM=true
   else
