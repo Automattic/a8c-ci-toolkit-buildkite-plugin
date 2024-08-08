@@ -16,15 +16,15 @@ SCHEME_NAME=
 XCODEPROJ_PATH=
 USE_SPM=false
 while [[ "$#" -gt 0 ]]; do
-	case $1 in
-		--workspace)
-			XCWORKSPACE_PATH="$2"
+  case $1 in
+    --workspace)
+      XCWORKSPACE_PATH="$2"
       shift
-			;;
-		--scheme)
-			SCHEME_NAME=$2
+      ;;
+    --scheme)
+      SCHEME_NAME=$2
       shift
-			;;
+      ;;
     --project)
       XCODEPROJ_PATH=$2
       shift
@@ -41,8 +41,8 @@ while [[ "$#" -gt 0 ]]; do
       print_usage
       exit 2
       ;;
-	esac
-	shift
+  esac
+  shift
 done
 
 SPM_CACHE_LOCATION="$HOME/Library/Caches/org.swift.swiftpm"
