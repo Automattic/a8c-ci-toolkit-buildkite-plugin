@@ -48,10 +48,10 @@ if [[ -z "${XCWORKSPACE_PATH}" && -z "${XCODEPROJ_PATH}" && "${USE_SPM}" != "tru
   FOUND_ROOT_WORKSPACE_PATHS=(*.xcworkspace)
   if  [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 1 && -d "${FOUND_ROOT_WORKSPACE_PATHS[0]}" && ! -f "Package.swift" ]]; then
     XCWORKSPACE_PATH="${FOUND_ROOT_WORKSPACE_PATHS[0]}"
-    echo " --> Found a single \`.xcworkspace\` file and no \`Package.swift\` in the root of the repo."
+    echo " --> Found a single \`.xcworkspace\` file, and no \`Package.swift\` in the root of the repo."
     echo "     Defaulting to \`--workspace \"${XCWORKSPACE_PATH}\"\`."
   elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && -f "Package.swift" ]]; then
-    echo " --> Found a \`Package.swift\` and no root \`.xcworkspace\` in the root of the repo."
+    echo " --> Found a \`Package.swift\`, and no \`.xcworkspace\` in the root of the repo."
     echo "     Defaulting to \`--use-spm\`"
     USE_SPM=true
   else
