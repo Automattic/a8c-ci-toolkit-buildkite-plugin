@@ -3,7 +3,7 @@
 print_usage() {
   echo "Usage:"
   echo "  Using the \`Package.resolved\` of an Xcode \`.xworkspace\`:"
-  echo "    $0 --workspace PATH --scheme NAME"
+  echo "    $0 --workspace PATH"
   echo "  Using the \`Package.resolved\` of an Xcode \`.xcodeproj\`:"
   echo "    $0 --project PATH"
   echo "  Using the \`Package.resolved\` at the root, managed by \`swift package\` instead of Xcode:"
@@ -12,38 +12,33 @@ print_usage() {
 
 # Parse input parameters
 XCWORKSPACE_PATH=
-SCHEME_NAME=
 XCODEPROJ_PATH=
 USE_SPM=false
-while [[ "$#" -gt 0 ]]; do
-  case $1 in
-    --workspace)
-      XCWORKSPACE_PATH="$2"
-      shift
-      ;;
-    --scheme)
-      SCHEME_NAME=$2
-      shift
-      ;;
-    --project)
-      XCODEPROJ_PATH=$2
-      shift
-      ;;
-    --use-spm)
-      USE_SPM=true
-      ;;
-    -h|--help)
-      print_usage
-      exit 0
-      ;;
-    *)
-      echo "Unknown option or unexpected argument: $1"
-      print_usage
-      exit 2
-      ;;
-  esac
-  shift
-done
+
+case ${1:-} in
+  --workspace)
+    XCWORKSPACE_PATH="$2"
+    shift; shift
+    ;;
+  --project)
+    XCODEPROJ_PATH=$2
+    shift; shift
+    ;;
+  --use-spm)
+    USE_SPM=true
+    shift
+    ;;
+  -h|--help)
+    print_usage
+    exit 0
+    ;;
+esac
+
+if [[ "$#" -gt 0 ]]; then
+  echo "Unexpected extra arguments: $@" >&2
+  print_usage
+  exit 2
+fi
 
 SPM_CACHE_LOCATION="$HOME/Library/Caches/org.swift.swiftpm"
 
@@ -56,12 +51,12 @@ if [[ -z "${XCWORKSPACE_PATH}" && -z "${XCODEPROJ_PATH}" && "${USE_SPM}" != "tru
     echo " --> Found a single \`.xcworkspace\` file and no \`Package.swift\` in the root of the repo."
     echo "     Defaulting to \`--workspace \"${XCWORKSPACE_PATH}\"\`."
   elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && -f "Package.swift" ]]; then
-    echo " --> Found a \`Package.swift\` at the root of the repo (and no root \`.xcworkspace\`)"
-    echo "     so we are assuming \`--use-spm\`"
+    echo " --> Found a \`Package.swift\` and no root \`.xcworkspace\` in the root of the repo."
+    echo "     Defaulting to \`--use-spm\`"
     USE_SPM=true
   else
-    echo " -!- No valid --workspace & --scheme, or --project, or --use-spm flag provided, and cannot guess which one to use either, so aborting."
-    echo "     Please call $0 with an explicit \`--workspace PATH\` and \`--scheme NAME\`, or \`--project PATH\`, or \`--use-spm\` flag to disambiguate."
+    echo " -!- No valid --workspace, --project or --use-spm flag provided, and cannot guess which one to use either, so aborting."
+    echo "     Please call $0 with an explicit \`--workspace PATH\`, \`--project PATH\` or \`--use-spm\` flag to disambiguate."
     exit 1
   fi
 fi
@@ -101,12 +96,12 @@ add_host_to_ssh_known_hosts github.com
 # Resolve the packages using the correct method
 if [[ -d "${XCWORKSPACE_PATH}" ]]; then
   echo "~~~ Resolving Swift Packages with \`xcodebuild\`"
-  if [[ -z "${SCHEME_NAME}" ]]; then
-    SCHEME_NAME=$(xcodebuild -workspace "${XCWORKSPACE_PATH}" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -list | sed -n '/Schemes:/{n;s/^ *//p;}')
-    echo "No \`--scheme\` parameter provided. Using the first one found in the list: \`${SCHEME_NAME}\`"
-  fi
-  echo "Using -workspace \"${XCWORKSPACE_PATH}\" -scheme \"${SCHEME_NAME}\""
-  xcodebuild -workspace "${XCWORKSPACE_PATH}" -scheme "${SCHEME_NAME}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile
+  echo "Using -workspace \"${XCWORKSPACE_PATH}\""
+  # Note: we use `-list` as a workaround because otherwise `xcodebuild` complains that using `-workspace` requires to also provide the `-scheme` option
+  # (despite the help page of `xcodebuild` suggesting that it should work without `-scheme`). Since the dependency resolution doesn't really depend on the scheme
+  # and we don't want to have to provide or guess it, using `-list` instead stops making `xcodebuild` complain about `-workspace` not being used in conjunction
+  # with `-scheme` (even if in practice we don't care about the scheme list it returns)
+  xcodebuild -workspace "${XCWORKSPACE_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile -list
 elif [[ -d "${XCODEPROJ_PATH}" ]]; then
   echo "~~~ Resolving Swift Packages with \`xcodebuild\`"
   echo "Using -project \"${XCODEPROJ_PATH}\""
