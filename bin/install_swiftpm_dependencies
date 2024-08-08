@@ -103,7 +103,7 @@ if [[ -d "${XCWORKSPACE_PATH}" ]]; then
   echo "~~~ Resolving Swift Packages with \`xcodebuild\`"
   if [[ -z "${SCHEME_NAME}" ]]; then
     SCHEME_NAME=$(xcodebuild -workspace "${XCWORKSPACE_PATH}" -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -list | sed -n '/Schemes:/{n;s/^ *//p;}')
-    echo "No \`--scheme\` parameter provided; assuming the first one found (as it shouldn't matter in practice?): \`${SCHEME_NAME}\`"
+    echo "No \`--scheme\` parameter provided. Using the first one found in the list: \`${SCHEME_NAME}\`"
   fi
   echo "Using -workspace \"${XCWORKSPACE_PATH}\" -scheme \"${SCHEME_NAME}\""
   xcodebuild -workspace "${XCWORKSPACE_PATH}" -scheme "${SCHEME_NAME}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile
