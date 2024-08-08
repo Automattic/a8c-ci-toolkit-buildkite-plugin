@@ -17,11 +17,11 @@ USE_SPM=false
 
 case ${1:-} in
   --workspace)
-    XCWORKSPACE_PATH="$2"
+    XCWORKSPACE_PATH="${2:?you need to provide a value after the --workspace option}"
     shift; shift
     ;;
   --project)
-    XCODEPROJ_PATH=$2
+    XCODEPROJ_PATH=${2:?you need to provide a value after the --project option}
     shift; shift
     ;;
   --use-spm)
