@@ -48,30 +48,36 @@ _None._
 
 _None._
 
+## 3.5.1
+
+### Bug Fixes
+
+ - Fix an issue in `annotate_test_failures` when test cases had apostrophes in their name. [#106]
+
 ## 3.5.0
 
 ### New Features
 
-- Introduce `merge_junit_reports` script [#103]
+- Introduce `merge_junit_reports` script. [#103]
 
 ## 3.4.2
 
 ### Bug Fixes
 
-- Fix `hash_directory` helper, and make it portable (Mac+Linux) [#95]
+- Fix `hash_directory` helper, and make it portable (Mac+Linux). [#95]
 
 ## 3.4.1
 
 ### Bug Fixes
 
-- Fix for the unbound variable error seen on `run_swiftlint` [#92]
+- Fix for the unbound variable error seen on `run_swiftlint`. [#92]
 
 ## 3.4.0
 
 ### Internal Changes
 
-- Restrict the possible `run_swiftlint` command arguments to "--strict" and "--lenient" [#90]
-- Update `swiftlint_version` RegExp to check for top-level node [#89]
+- Restrict the possible `run_swiftlint` command arguments to "--strict" and "--lenient". [#90]
+- Update `swiftlint_version` RegExp to check for top-level node. [#89]
 
 ## 3.3.0
 
@@ -81,13 +87,13 @@ _None._
 
 ### Internal Changes
 
-- Fixed Ruby, RuboCop and RSpec versions on CI [#88]
+- Fixed Ruby, RuboCop and RSpec versions on CI. [#88]
 
 ## 3.2.2
 
 ### Bug Fixes
 
- - Fix crash in recent update of the `publish_pod` implementation — 2nd attempt [#85]
+ - Fix crash in recent update of the `publish_pod` implementation — 2nd attempt. [#85]
 
 ## 3.2.1
 

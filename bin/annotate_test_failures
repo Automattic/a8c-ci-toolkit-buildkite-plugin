@@ -94,9 +94,11 @@ class TestFailure
   end
 
   def ultimately_succeeds?(parent_node:)
-    all_same_test_nodes = parent_node.get_elements("testcase[@classname='#{@classname}' and @name='#{@name}']")
+    child_testcase_nodes = parent_node.get_elements('testcase')
+    last_same_testcase_idx = child_testcase_nodes.rindex { |e| e['classname'] == @classname && e['name'] == @name }
+    last_same_testcase_node = child_testcase_nodes[last_same_testcase_idx]
     # If last node found for that test doesn't have a <failure> or <error> child, then test ultimately succeeded.
-    !(all_same_test_nodes.last.elements['failure'] || all_same_test_nodes.last.elements['error'])
+    !(last_same_testcase_node.elements['failure'] || last_same_testcase_node.elements['error'])
   end
 
   def ==(other)
