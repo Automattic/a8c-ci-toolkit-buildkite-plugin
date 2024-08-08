@@ -35,12 +35,12 @@ case ${1:-} in
 esac
 
 if [[ "$#" -gt 0 ]]; then
-  echo "Unexpected extra arguments: $@" >&2
+  echo "Unexpected extra arguments: $*" >&2
   print_usage
   exit 2
 fi
 
-SPM_CACHE_LOCATION="$HOME/Library/Caches/org.swift.swiftpm"
+SPM_CACHE_LOCATION="${HOME}/Library/Caches/org.swift.swiftpm"
 
 # Try to guess what to do if no option provided explicitly
 if [[ -z "${XCWORKSPACE_PATH}" && -z "${XCODEPROJ_PATH}" && "${USE_SPM}" != "true" ]]; then
@@ -78,12 +78,12 @@ fi
 
 # Restore SPM cache if it's available
 echo "~~~ Restoring SPM cache if available"
-PACKAGE_RESOLVED_HASH=$(hash_file "$PACKAGE_RESOLVED_LOCATION")
+PACKAGE_RESOLVED_HASH=$(hash_file "${PACKAGE_RESOLVED_LOCATION}")
 CACHE_KEY="${BUILDKITE_PIPELINE_SLUG}-spm-cache-${PACKAGE_RESOLVED_HASH}"
 
-mkdir -p "$SPM_CACHE_LOCATION"
-cd "$SPM_CACHE_LOCATION"
-restore_cache "$CACHE_KEY"
+mkdir -p "${SPM_CACHE_LOCATION}"
+cd "${SPM_CACHE_LOCATION}"
+restore_cache "${CACHE_KEY}"
 cd -
 
 # This will let Xcode use the system SSH config for downloading packages
@@ -119,8 +119,8 @@ fi
 # certain packages to have the artifacts already present after extracting 
 # cache
 echo "~~~ Cleaning up cache files before saving cache"
-rm -rf "$SPM_CACHE_LOCATION/checkouts" "$SPM_CACHE_LOCATION/artifacts"
+rm -rf "${SPM_CACHE_LOCATION}/checkouts" "${SPM_CACHE_LOCATION}/artifacts"
 
 # If this is the first time we've seen this particular cache key, save it for the future
 echo "~~~ Saving SPM Cache"
-save_cache "$SPM_CACHE_LOCATION" "$CACHE_KEY" false --use_relative_path_in_tar
+save_cache "${SPM_CACHE_LOCATION}" "${CACHE_KEY}" false --use_relative_path_in_tar
