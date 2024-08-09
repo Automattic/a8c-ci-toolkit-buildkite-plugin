@@ -9,8 +9,9 @@ steps:
     steps:
       - label: ":swift: Standalone Swift Package - Autodetect"
         command: |
+          export PATH=$PATH:./bin
           # cd tests/spm_caching/standalone_package
-          # ../../../bin/install_swiftpm_dependencies
+          # install_swiftpm_dependencies
           # swift test
           echo "^^^ +++ Temporarily disabled because it fails, see https://buildkite.com/automattic/ci-toolkit-buildkite-plugin/builds/671"
         agents:
@@ -20,8 +21,9 @@ steps:
 
       - label: ":swift: Standalone Swift Package - Explicit"
         command: |
+          export PATH=$PATH:./bin
           cd tests/spm_caching/standalone_package
-          ../../../bin/install_swiftpm_dependencies --use-spm
+          install_swiftpm_dependencies --use-spm
           swift test
         agents:
           queue: mac
