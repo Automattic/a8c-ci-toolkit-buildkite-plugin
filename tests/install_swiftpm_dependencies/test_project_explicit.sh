@@ -4,7 +4,7 @@ TESTS_LOCATION="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NEW_PATH=$PATH:"$TESTS_LOCATION/../../bin"
 export PATH=$NEW_PATH
 
-pushd "$TESTS_LOCATION/xcodeproj"
+pushd "$TESTS_LOCATION/project"
 
 install_swiftpm_dependencies --project Demo.xcodeproj
 
