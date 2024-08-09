@@ -27,3 +27,10 @@ steps:
           queue: mac
         env:
           IMAGE_ID: xcode-15.4
+
+      - label: ":xcode: Xcode Project - Explicit"
+        command: tests/install_swiftpm_dependencies/test_xcodeproj_explicit.sh
+        agents:
+          queue: mac
+        env:
+          IMAGE_ID: xcode-15.4
