@@ -8,14 +8,14 @@ steps:
   - group: ":swift: install_swiftpm_dependencies Tests"
     steps:
       - label: ":swift: Standalone Swift Package - Autodetect"
-        command: tests/install_swiftpm_dependencies/test_standalone_package_automatic.sh
+        command: tests/install_swiftpm_dependencies/test_package_automatic.sh
         agents:
           queue: mac
         env:
           IMAGE_ID: xcode-15.4
 
       - label: ":swift: Standalone Swift Package - Explicit"
-        command: tests/install_swiftpm_dependencies/test_standalone_package_explicit.sh
+        command: tests/install_swiftpm_dependencies/test_package_explicit.sh
         agents:
           queue: mac
         env:
