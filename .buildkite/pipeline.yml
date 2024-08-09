@@ -34,3 +34,17 @@ steps:
           queue: mac
         env:
           IMAGE_ID: xcode-15.4
+
+      - label: ":xcode: Xcode Workspace - Autodetect"
+        command: tests/install_swiftpm_dependencies/test_workspace_automatic.sh
+        agents:
+          queue: mac
+        env:
+          IMAGE_ID: xcode-15.4
+
+      - label: ":xcode: Xcode Workspace - Explicit"
+        command: tests/install_swiftpm_dependencies/test_workspace_explicit.sh
+        agents:
+          queue: mac
+        env:
+          IMAGE_ID: xcode-15.4
