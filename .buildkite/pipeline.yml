@@ -4,3 +4,15 @@ steps:
 
   - label: "🔬 Test"
     command: make test
+
+  - group: ":swift: Swift Caching Tests"
+    steps:
+      - label: ":swift: Standalone Swift Package"
+        command: |
+          cd tests/spm_caching/standalone_package
+          ../../../bin/install_swiftpm_dependencies
+          swift test
+        agents:
+          queue: mac
+        env:
+          IMAGE_ID: xcode-15.4
