@@ -6,7 +6,7 @@ export PATH=$NEW_PATH
 
 pushd "$TESTS_LOCATION/workspace_and_project"
 
-install_swiftpm_dependencies --workspace Demo.xcworspace
+install_swiftpm_dependencies --workspace Demo.xcworkspace
 
 xcodebuild test \
   -scheme Demo \
