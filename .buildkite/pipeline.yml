@@ -22,14 +22,14 @@ steps:
           IMAGE_ID: xcode-15.4
 
       - label: ":xcode: Xcode Project - Autodetect"
-        command: tests/install_swiftpm_dependencies/test_xcodeproj_automatic.sh
+        command: tests/install_swiftpm_dependencies/test_project_automatic.sh
         agents:
           queue: mac
         env:
           IMAGE_ID: xcode-15.4
 
       - label: ":xcode: Xcode Project - Explicit"
-        command: tests/install_swiftpm_dependencies/test_xcodeproj_explicit.sh
+        command: tests/install_swiftpm_dependencies/test_project_explicit.sh
         agents:
           queue: mac
         env:

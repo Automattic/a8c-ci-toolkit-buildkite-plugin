@@ -24,8 +24,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		3F3400052C65E4DD0012FBE6 /* Demo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Demo.swift; path = ../../standalone_package/Sources/Demo/Demo.swift; sourceTree = "<group>"; };
-		3F3400072C65E4EE0012FBE6 /* DemoTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DemoTests.swift; path = ../../standalone_package/Tests/DemoTests/DemoTests.swift; sourceTree = "<group>"; };
+		3F3400052C65E4DD0012FBE6 /* Demo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Demo.swift; path = ../../package/Sources/Demo/Demo.swift; sourceTree = "<group>"; };
+		3F3400072C65E4EE0012FBE6 /* DemoTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DemoTests.swift; path = ../../package/Tests/DemoTests/DemoTests.swift; sourceTree = "<group>"; };
 		3F34FFEB2C65E49D0012FBE6 /* Demo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Demo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3F34FFEE2C65E49D0012FBE6 /* Demo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Demo.h; sourceTree = "<group>"; };
 		3F34FFF32C65E49D0012FBE6 /* DemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
