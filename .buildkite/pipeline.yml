@@ -5,7 +5,7 @@ steps:
   - label: "🔬 Test"
     command: make test
 
-  - group: ":swift: `install_swiftpm_dependencies` Tests"
+  - group: ":swift: install_swiftpm_dependencies Tests"
     steps:
       - label: ":swift: Standalone Swift Package - Autodetect"
         command: tests/install_swiftpm_dependencies/test_standalone_package_automatic.sh
