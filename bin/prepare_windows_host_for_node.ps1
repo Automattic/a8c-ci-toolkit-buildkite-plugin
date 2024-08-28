@@ -63,7 +63,11 @@ choco install nvm.portable -y
 If ($LastExitCode -ne 0) { Exit $LastExitCode }
 
 Write-Host "Refreshing the current PowerShell session's environment"
+Write-Host "--- :bug: PATH before refreshenv"
+Write-Host "+++ ^^^ PATH is $env:PATH"
 refreshenv
+Write-Host "--- :bug: PATH avter refreshenv"
+Write-Host "+++ ^^^ PATH is $env:PATH"
 
 Write-Host "--- :node: Installing Node"
 $nvmVersion=(Get-Content -Path .nvmrc -Total 1)
