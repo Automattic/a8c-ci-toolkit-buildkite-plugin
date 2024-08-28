@@ -30,7 +30,13 @@ if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/nu
 	fi
 
 	echo "	Decompressing"
-	tar -xf "$CACHE_KEY"
+  if [[ "$(uname -s)" == *"CYGWIN"* || "$(uname -s)" == *"MINGW"* || "$(uname -s)" == *"MSYS"* ]]; then
+    echo "  Detected Windows environment. Extracting tar without symlinks."
+    tar -xf "$CACHE_KEY" --no-symlinks --no-same-owner
+  else
+    echo "  Detected non-Windows environment. Extracting tar normally."
+    tar -xf "$CACHE_KEY"
+  fi
 
 	echo "	Cleaning Up"
 	rm "$CACHE_KEY"
