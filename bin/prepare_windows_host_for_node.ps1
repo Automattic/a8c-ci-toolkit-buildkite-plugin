@@ -95,3 +95,11 @@ refreshenv
 $mergedPath = "$env:PATH;$originalPath" -split ";" | Select-Object -Unique -Skip 1
 $env:PATH = ($mergedPath -join ";")
 Write-Host "PATH after refreshenv is $env:PATH"
+
+# This should avoid issues with symlinks not being supported in Windows.
+#
+# See how this build failed
+# https://buildkite.com/automattic/beeper-desktop/builds/2895#01919738-7c6e-4b82-8d1d-1c1800481740
+Write-Host "--- :windows: :linux: Enable developer mode for Bash simulation"
+Set-ExecutionPolicy RemoteSigned -Scope LocalMachine
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
