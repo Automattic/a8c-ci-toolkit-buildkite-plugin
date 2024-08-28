@@ -62,12 +62,18 @@ Write-Host "--- :node: Installing NVM"
 choco install nvm.portable -y
 If ($LastExitCode -ne 0) { Exit $LastExitCode }
 
-Write-Host "Refreshing the current PowerShell session's environment"
-Write-Host "--- :bug: PATH before refreshenv"
-Write-Host "+++ ^^^ PATH is $env:PATH"
+Write-Host "--- :hammer: Custom PATH refresh post NVM installation to avoid losing previous PATH changes"
+Write-Host "PATH before refreshenv is $env:PATH"
+# It looks like out of the box, calling refreshenv at this point erases various PATH modifications made by the rest of our automation.
+#
+# See https://buildkite.com/automattic/beeper-desktop/builds/2893#01919717-d0d0-441d-a85d-0fe3223467d2/195
+#
+# To avoid the issue, we save the PATH pre-refreshenv and then manually add all the components that were removed.
+$originalPath = "$env:PATH"
 refreshenv
-Write-Host "--- :bug: PATH after refreshenv"
-Write-Host "+++ ^^^ PATH is $env:PATH"
+$mergedPath = "$env:PATH;$originalPath" -split ";" | Select-Object -Unique -Skip 1
+$env:PATH = ($mergedPath -join ";")
+Write-Host "PATH after refreshenv is $env:PATH"
 
 Write-Host "--- :node: Installing Node"
 $nvmVersion=(Get-Content -Path .nvmrc -Total 1)
@@ -77,5 +83,15 @@ nvm install $nvmVersion
 nvm use $nvmVersion
 If ($LastExitCode -ne 0) { Exit $LastExitCode }
 
-Write-Host "Refreshing the current PowerShell session's environment"
+Write-Host "--- :hammer: Custom PATH refresh post NVM installation to avoid losing previous PATH changes"
+Write-Host "PATH before refreshenv is $env:PATH"
+# It looks like out of the box, calling refreshenv at this point erases various PATH modifications made by the rest of our automation.
+#
+# See https://buildkite.com/automattic/beeper-desktop/builds/2893#01919717-d0d0-441d-a85d-0fe3223467d2/195
+#
+# To avoid the issue, we save the PATH pre-refreshenv and then manually add all the components that were removed.
+$originalPath = "$env:PATH"
 refreshenv
+$mergedPath = "$env:PATH;$originalPath" -split ";" | Select-Object -Unique -Skip 1
+$env:PATH = ($mergedPath -join ";")
+Write-Host "PATH after refreshenv is $env:PATH"
