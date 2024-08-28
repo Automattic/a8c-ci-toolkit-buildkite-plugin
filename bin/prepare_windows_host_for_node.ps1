@@ -101,5 +101,5 @@ Write-Host "PATH after refreshenv is $env:PATH"
 # See how this build failed
 # https://buildkite.com/automattic/beeper-desktop/builds/2895#01919738-7c6e-4b82-8d1d-1c1800481740
 Write-Host "--- :windows: :linux: Enable developer mode for Bash simulation"
-Set-ExecutionPolicy RemoteSigned -Scope LocalMachine
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
