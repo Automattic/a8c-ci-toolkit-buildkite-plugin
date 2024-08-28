@@ -13,18 +13,12 @@ HOOKS_ROOT=$( dirname "${BASH_SOURCE[0]}" )
 PLUGIN_ROOT=$( dirname "$HOOKS_ROOT" )
 
 OS=$(uname -s)
-case $OS in
-  CYGWIN*|MINGW*|MSYS*)
-    echo "Running in a Windows environment."
-    PATH_SEPARATOR="\\"
-    ;;
-  *)
-    echo "Running in a non-Windows environment."
-    PATH_SEPARATOR='/'
-    ;;
-esac
+echo "FYI: Running on OS $OS"
 
-PLUGIN_BIN="${PLUGIN_ROOT}${PATH_SEPARATOR}bin"
+# Notice that we don't need any OS-specific treatment of the path format for UNIX vs Windows.
+# When Windows runs this script via bash, it handles the path separation conversion from / to \ internally.
+PLUGIN_BIN="${PLUGIN_ROOT}/bin"
 
+echo "Original PATH: $PATH"
 export PATH="$PATH:$PLUGIN_BIN"
-echo "PATH updated to $PATH"
+echo "PATH updated to: $PATH"
