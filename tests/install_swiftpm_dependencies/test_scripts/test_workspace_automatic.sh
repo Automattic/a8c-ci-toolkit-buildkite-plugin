@@ -13,4 +13,4 @@ make
 echo "--- :wrench: Run install_swiftpm_dependencies"
 install_swiftpm_dependencies
 
-"$(dirname "${BASH_SOURCE[0]}")/run_tests_with_xcodebuild.sh"
+"$TESTS_LOCATION/run_tests_with_xcodebuild.sh"
