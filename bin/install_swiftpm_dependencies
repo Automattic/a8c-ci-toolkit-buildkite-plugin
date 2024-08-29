@@ -45,18 +45,7 @@ SPM_CACHE_LOCATION="${HOME}/Library/Caches/org.swift.swiftpm"
 # Try to guess what to do if no option provided explicitly
 if [[ -z "${XCWORKSPACE_PATH}" && -z "${XCODEPROJ_PATH}" && "${USE_SPM}" != "true" ]]; then
   echo "No \`--workspace\`, \`--project\` or \`--use-spm\` flag provided. Trying to guess the correct one to use..."
-
-  # Notice that we cannot use the compact form
-  #
-  # FOUND_ROOT_WORKSPACE_PATHS=(*.xcworkspace)
-  #
-  # because that syntax will create an array with one element even if no match is found.
-  # The content of that single element would be the *.xcworkspace pattern itself.
-  FOUND_ROOT_WORKSPACE_PATHS=()
-  for workspace in *.xcworkspace; do
-    [[ -e "$workspace" ]] && FOUND_ROOT_WORKSPACE_PATHS+=("$workspace")
-  done
-
+  FOUND_ROOT_WORKSPACE_PATHS=(*.xcworkspace)
   if  [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 1 && -d "${FOUND_ROOT_WORKSPACE_PATHS[0]}" && ! -f "Package.swift" ]]; then
     XCWORKSPACE_PATH="${FOUND_ROOT_WORKSPACE_PATHS[0]}"
     echo " --> Found a single \`.xcworkspace\` file, and no \`Package.swift\` in the root of the repo."
@@ -123,11 +112,11 @@ elif [[ "${USE_SPM}" == "true" ]]; then
 fi
 
 
-# `checkouts` can be removed because the system can quickly generate them
+# `checkouts` can be removed because the system can quickly generate them 
 # instead of needing to download them in the cache each time.
-#
-# `artifacts` should be removed because it causes issues when downloading
-# certain packages to have the artifacts already present after extracting
+# 
+# `artifacts` should be removed because it causes issues when downloading 
+# certain packages to have the artifacts already present after extracting 
 # cache
 echo "~~~ Cleaning up cache files before saving cache"
 rm -rf "${SPM_CACHE_LOCATION}/checkouts" "${SPM_CACHE_LOCATION}/artifacts"
