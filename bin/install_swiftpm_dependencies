@@ -45,7 +45,10 @@ SPM_CACHE_LOCATION="${HOME}/Library/Caches/org.swift.swiftpm"
 # Try to guess what to do if no option provided explicitly
 if [[ -z "${XCWORKSPACE_PATH}" && -z "${XCODEPROJ_PATH}" && "${USE_SPM}" != "true" ]]; then
   echo "No \`--workspace\`, \`--project\` or \`--use-spm\` flag provided. Trying to guess the correct one to use..."
+
+  shopt -s nullglob
   FOUND_ROOT_WORKSPACE_PATHS=(*.xcworkspace)
+
   if  [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 1 && -d "${FOUND_ROOT_WORKSPACE_PATHS[0]}" && ! -f "Package.swift" ]]; then
     XCWORKSPACE_PATH="${FOUND_ROOT_WORKSPACE_PATHS[0]}"
     echo " --> Found a single \`.xcworkspace\` file, and no \`Package.swift\` in the root of the repo."
