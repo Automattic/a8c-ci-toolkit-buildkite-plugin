@@ -10,6 +10,7 @@ export PATH=$NEW_PATH
 echo "--- :computer: Jump to test folder"
 pushd "$TESTS_LOCATION/../workspace_and_project"
 
+brew install xcodegen
 make
 
 echo "--- :wrench: Run install_swiftpm_dependencies"

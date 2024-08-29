@@ -2,14 +2,21 @@
 
 set -o pipefail
 
+echo "--- :computer: Prepare environment"
 TESTS_LOCATION="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NEW_PATH=$PATH:"$TESTS_LOCATION/../../../bin"
 export PATH=$NEW_PATH
 
+echo "--- :computer: Jump to test folder"
 pushd "$TESTS_LOCATION/../workspace"
 
+brew install xcodegen
+make
+
+echo "--- :wrench: Run install_swiftpm_dependencies"
 install_swiftpm_dependencies --workspace Demo.xcworkspace
 
+echo "--- :xcode: Run tests to verify packages have been fetched and are available"
 xcodebuild test \
   -scheme Demo \
   -configuration Debug \
