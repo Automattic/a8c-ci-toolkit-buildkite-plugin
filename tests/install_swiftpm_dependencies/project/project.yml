@@ -13,8 +13,8 @@ targets:
     settings:
       GENERATE_INFOPLIST_FILE: YES
     scheme:
-      testTargets: [Tests]
-  Tests:
+      testTargets: [DemoTests]
+  DemoTests:
     target: Demo
     type: bundle.unit-test
     platform: iOS
