@@ -11,6 +11,8 @@ pushd "$TESTS_LOCATION/../project-2"
 brew install xcodegen
 
 xcodegen generate
+# Also resolve packages to generate Package.resolved in expected location
+xcodebuild -resolvePackageDependencies -project Demo.xcodeproj
 
 install_swiftpm_dependencies
 

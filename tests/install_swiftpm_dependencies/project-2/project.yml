@@ -1,4 +1,4 @@
-name: IntegrationTest
+name: Demo
 options:
   bundleIdPrefix: com.automattic.tests
 packages:
