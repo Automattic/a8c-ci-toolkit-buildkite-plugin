@@ -1,4 +1,2 @@
 generate:
-	pushd ../project
-	xcodegen generate
-	popd
+	xcodegen generate --spec ../project/project.yml
