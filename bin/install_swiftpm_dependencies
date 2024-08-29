@@ -111,12 +111,11 @@ elif [[ "${USE_SPM}" == "true" ]]; then
   swift package resolve
 fi
 
-
-# `checkouts` can be removed because the system can quickly generate them 
+# `checkouts` can be removed because the system can quickly generate them
 # instead of needing to download them in the cache each time.
-# 
-# `artifacts` should be removed because it causes issues when downloading 
-# certain packages to have the artifacts already present after extracting 
+#
+# `artifacts` should be removed because it causes issues when downloading
+# certain packages to have the artifacts already present after extracting
 # cache
 echo "~~~ Cleaning up cache files before saving cache"
 rm -rf "${SPM_CACHE_LOCATION}/checkouts" "${SPM_CACHE_LOCATION}/artifacts"
