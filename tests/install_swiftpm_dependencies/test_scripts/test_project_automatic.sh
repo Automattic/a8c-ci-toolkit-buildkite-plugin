@@ -11,7 +11,7 @@ echo "--- :computer: Jump to test folder"
 pushd "$TESTS_LOCATION/../project"
 
 brew install xcodegen
-xcodegen generate
+make
 # Also resolve packages to generate Package.resolved in expected location
 xcodebuild -resolvePackageDependencies -project Demo.xcodeproj
 

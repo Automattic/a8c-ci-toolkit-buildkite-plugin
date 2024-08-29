@@ -1,3 +1,4 @@
-# For convenience, ignore everything in this folder other that the project.yml
+# For convenience with the code generation, ignore everything in this folder other that the project.yml and Makefile
 *
 !project.yml
+!Makefile
