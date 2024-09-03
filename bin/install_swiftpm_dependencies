@@ -127,6 +127,7 @@ fi
 # cache
 echo "~~~ Cleaning up cache files before saving cache"
 rm -rf "${SPM_CACHE_LOCATION}/checkouts" "${SPM_CACHE_LOCATION}/artifacts"
+echo "Done. Removed checkouts and artifacts subfolders from $SPM_CACHE_LOCATION"
 
 # If this is the first time we've seen this particular cache key, save it for the future
 echo "~~~ Saving SPM Cache"
