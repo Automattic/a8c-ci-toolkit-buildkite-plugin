@@ -22,16 +22,21 @@ install_swiftpm_dependencies --project $PROJECT 2>&1 | tee "$LOGS_PATH"
 CMD_EXIT_STATUS=$?
 set -e
 
+EXPECTED="Unable to find \`Package.resolved\` file ($PROJECT/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)"
+
 if [[ $CMD_EXIT_STATUS -eq 0 ]]; then
-  echo "^^^ install_swiftpm_dependencies unexpectedly succeeded without a Package.resolved in the project folder!"
+  echo "+++ :x: install_swiftpm_dependencies unexpectedly succeeded without a Package.resolved in the project folder!"
+  echo "Expected: $EXPECTED"
+  echo "Got: $(cat $LOGS_PATH)"
   exit 1
 else
-  EXPECTED="Unable to find \`Package.resolved\` file ($PROJECT/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)"
   if grep -qF "$EXPECTED" "$LOGS_PATH"; then
-    echo "^^^ +++ install_swiftpm_dependencies failed as expected because there is no Package.resolved in the project folder."
+    echo "^^^ +++"
+    echo "+++ :white_check_mark: install_swiftpm_dependencies failed as expected because there is no Package.resolved in the project folder."
   else
-    echo "+++ install_swiftpm_dependencies failed, but the message it printed is not what we expected."
+    echo "+++ :x: install_swiftpm_dependencies failed, but the message it printed is not what we expected."
     echo "Expected: $EXPECTED"
     echo "Got: $(cat $LOGS_PATH)"
+    exit 1
   fi
 fi
