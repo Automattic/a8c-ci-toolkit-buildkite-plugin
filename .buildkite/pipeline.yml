@@ -29,6 +29,9 @@ steps:
       - label: ":xcode: Xcode Project - Explicit"
         command: tests/install_swiftpm_dependencies/test_scripts/test_project_explicit.sh
 
+      - label: ":xcode: Xcode Project - No Package.resolved"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_project_no_package.sh
+
       - label: ":xcode: Xcode Workspace - Autodetect"
         command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_automatic.sh
 
