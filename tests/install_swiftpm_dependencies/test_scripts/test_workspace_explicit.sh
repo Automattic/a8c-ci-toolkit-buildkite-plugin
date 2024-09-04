@@ -7,6 +7,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/set_up_environment.sh"
 echo "--- :computer: Jump to test folder"
 pushd "$TESTS_LOCATION/../workspace"
 
+echo "--- :computer: Generate project"
 brew install xcodegen
 make
 

@@ -1,3 +1,2 @@
 generate:
-	cp ../project/project.yml .
-	xcodegen generate
+	xcodegen generate --spec ../project/project.yml

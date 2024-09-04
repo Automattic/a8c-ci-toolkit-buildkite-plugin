@@ -56,7 +56,7 @@ if [[ -z "${XCWORKSPACE_PATH}" && -z "${XCODEPROJ_PATH}" && "${USE_SPM}" != "tru
     echo "     Defaulting to \`--workspace \"${XCWORKSPACE_PATH}\"\`."
   elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && ${#FOUND_ROOT_PROJECT_PATHS[@] } -eq 1 && ! -f "Package.swift" ]]; then
     XCODEPROJ_PATH="${FOUND_ROOT_PROJECT_PATHS[0]}"
-    echo " --> Found an \`.xcodeproj\`, and no \`Package.swift\` or \`.xcworkspace\` or \`.xcodeproj\` in the root of the repo."
+    echo " --> Found an \`.xcodeproj\`, and no \`Package.swift\` nor \`.xcworkspace\`in the root of the repo."
     echo "     Defaulting to \`--project \"${XCODEPROJ_PATH}\`"
   elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && ${#FOUND_ROOT_PROJECT_PATHS[@] } -eq 0 && -f "Package.swift" ]]; then
     echo " --> Found a \`Package.swift\`, and no \`.xcworkspace\` or \`.xcodeproj\` in the root of the repo."
