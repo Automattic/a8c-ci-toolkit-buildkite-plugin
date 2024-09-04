@@ -1,0 +1,15 @@
+{
+  "originHash" : "c908e0d89a41be29a11cf4ce76b34002b6c4863ff5d7eafd623b36c267284b12",
+  "pins" : [
+    {
+      "identity" : "screenobject",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Automattic/ScreenObject",
+      "state" : {
+        "revision" : "328db56c62aab91440ec5e07cc9f7eef6e26a26e",
+        "version" : "0.2.3"
+      }
+    }
+  ],
+  "version" : 3
+}

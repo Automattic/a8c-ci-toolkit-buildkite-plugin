@@ -1,0 +1,5 @@
+# For convenience with the code generation, ignore everything other than the Makefile and workspace
+*
+!Makefile
+!*.xcworkspace/
+*.xcworkspace/xcuserdata

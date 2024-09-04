@@ -45,13 +45,21 @@ SPM_CACHE_LOCATION="${HOME}/Library/Caches/org.swift.swiftpm"
 # Try to guess what to do if no option provided explicitly
 if [[ -z "${XCWORKSPACE_PATH}" && -z "${XCODEPROJ_PATH}" && "${USE_SPM}" != "true" ]]; then
   echo "No \`--workspace\`, \`--project\` or \`--use-spm\` flag provided. Trying to guess the correct one to use..."
+
+  shopt -s nullglob
   FOUND_ROOT_WORKSPACE_PATHS=(*.xcworkspace)
-  if  [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 1 && -d "${FOUND_ROOT_WORKSPACE_PATHS[0]}" && ! -f "Package.swift" ]]; then
+  FOUND_ROOT_PROJECT_PATHS=(*.xcodeproj)
+
+  if [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 1 && -d "${FOUND_ROOT_WORKSPACE_PATHS[0]}" && ! -f "Package.swift" ]]; then
     XCWORKSPACE_PATH="${FOUND_ROOT_WORKSPACE_PATHS[0]}"
     echo " --> Found a single \`.xcworkspace\` file, and no \`Package.swift\` in the root of the repo."
     echo "     Defaulting to \`--workspace \"${XCWORKSPACE_PATH}\"\`."
-  elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && -f "Package.swift" ]]; then
-    echo " --> Found a \`Package.swift\`, and no \`.xcworkspace\` in the root of the repo."
+  elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && ${#FOUND_ROOT_PROJECT_PATHS[@] } -eq 1 && ! -f "Package.swift" ]]; then
+    XCODEPROJ_PATH="${FOUND_ROOT_PROJECT_PATHS[0]}"
+    echo " --> Found an \`.xcodeproj\`, and no \`Package.swift\` nor \`.xcworkspace\`in the root of the repo."
+    echo "     Defaulting to \`--project \"${XCODEPROJ_PATH}\`"
+  elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && ${#FOUND_ROOT_PROJECT_PATHS[@] } -eq 0 && -f "Package.swift" ]]; then
+    echo " --> Found a \`Package.swift\`, and no \`.xcworkspace\` or \`.xcodeproj\` in the root of the repo."
     echo "     Defaulting to \`--use-spm\`"
     USE_SPM=true
   else
@@ -111,15 +119,15 @@ elif [[ "${USE_SPM}" == "true" ]]; then
   swift package resolve
 fi
 
-
-# `checkouts` can be removed because the system can quickly generate them 
+# `checkouts` can be removed because the system can quickly generate them
 # instead of needing to download them in the cache each time.
-# 
-# `artifacts` should be removed because it causes issues when downloading 
-# certain packages to have the artifacts already present after extracting 
+#
+# `artifacts` should be removed because it causes issues when downloading
+# certain packages to have the artifacts already present after extracting
 # cache
 echo "~~~ Cleaning up cache files before saving cache"
 rm -rf "${SPM_CACHE_LOCATION}/checkouts" "${SPM_CACHE_LOCATION}/artifacts"
+echo "Done. Removed checkouts and artifacts subfolders from $SPM_CACHE_LOCATION"
 
 # If this is the first time we've seen this particular cache key, save it for the future
 echo "~~~ Saving SPM Cache"

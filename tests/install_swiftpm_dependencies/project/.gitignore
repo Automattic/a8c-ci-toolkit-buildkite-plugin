@@ -1,0 +1,5 @@
+# For convenience with the code generation, ignore everything in this folder other that what's required to code-gen and test behavior
+*
+!project.yml
+!Makefile
+!Demo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
