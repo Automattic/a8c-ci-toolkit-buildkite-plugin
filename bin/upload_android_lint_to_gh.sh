@@ -1,0 +1,47 @@
+#!/bin/bash -eu
+
+sarif_file=$1
+owner=$2
+repo=$3
+
+# Check if an argument is provided
+if [ -z "$sarif_file" ] || [ -z "$owner" ] || [ -z "$repo" ]; then
+  echo "No argument provided. Usage: ./upload_android_lint_to_gh.sh <path to .sarif report> <gh owner> <gh repo>"
+  exit 1
+fi
+
+gzip -c "$sarif_file" | base64 >sarif_base64.tmp
+
+if [[ -n $BUILDKITE_PULL_REQUEST ]]; then
+  json=$(jq -n \
+    --arg commit_sha "$BUILDKITE_COMMIT" \
+    --arg pr_number "$BUILDKITE_PULL_REQUEST" \
+    --rawfile sarif sarif_base64.tmp \
+    '{
+     "commit_sha": $commit_sha,
+     "ref": ("refs/pull/"+$pr_number+"/head"),
+     "sarif": $sarif
+   }')
+elif [[ "$BUILDKITE_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
+  json=$(jq -n \
+    --arg commit_sha "$BUILDKITE_COMMIT" \
+    --arg branch "$BUILDKITE_BRANCH" \
+    --rawfile sarif sarif_base64.tmp \
+    '{
+     "commit_sha": $commit_sha,
+     "ref": ("refs/heads/$branch"),
+     "sarif": $sarif
+   }')
+fi
+
+echo "$json" > payload.json
+
+curl -L \
+  -X POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  --data-binary "@payload.json" \
+  https://api.github.com/repos/wordpress-mobile/WordPress-Android/code-scanning/sarifs
+
+rm sarif_base64.tmp
