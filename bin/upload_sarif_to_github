@@ -1,11 +1,24 @@
-#!/bin/bash -eu
+#!/bin/bash
+
+set -euo pipefail
 
 sarif_file=$1
 owner=$2
 repo=$3
 
 if [ -z "$sarif_file" ] || [ -z "$owner" ] || [ -z "$repo" ]; then
-  echo "No argument provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report> <gh owner> <gh repo>"
+  echo "Not enough arguments provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report> <gh owner> <gh repo>"
+  exit 1
+fi
+
+if [ ! -r "$sarif_file" ]; then
+  echo "Error: The specified sarif file '$sarif_file' is not readable."
+  exit 1
+fi
+
+# Check that GITHUB_TOKEN is set
+if [ -z "$GITHUB_TOKEN" ]; then
+  echo "Error: GITHUB_TOKEN is not defined."
   exit 1
 fi
 
