@@ -4,7 +4,6 @@ sarif_file=$1
 owner=$2
 repo=$3
 
-# Check if an argument is provided
 if [ -z "$sarif_file" ] || [ -z "$owner" ] || [ -z "$repo" ]; then
   echo "No argument provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report> <gh owner> <gh repo>"
   exit 1
