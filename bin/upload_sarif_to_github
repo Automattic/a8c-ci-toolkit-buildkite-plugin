@@ -11,6 +11,11 @@ if [ -z "$sarif_file" ] || [ -z "$owner" ] || [ -z "$repo" ]; then
   exit 1
 fi
 
+if [ ! -f "$sarif_file" ]; then
+  echo "Error: The specified sarif file '$sarif_file' does not exist or is not a regular file."
+  exit 1
+fi
+
 if [ ! -r "$sarif_file" ]; then
   echo "Error: The specified sarif file '$sarif_file' is not readable."
   exit 1
