@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- Tooling change: Dangermattic setup [#113]
 
 ## 3.6.0
 
