@@ -18,7 +18,7 @@ _None._
 
 ### New Features
 
-_None._
+- Introduce a command for uploading .sarif files to GitHub's registry [#111]
 
 ### Bug Fixes
 
