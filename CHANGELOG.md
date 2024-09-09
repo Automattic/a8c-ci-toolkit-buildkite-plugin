@@ -38,11 +38,12 @@ _None._
 
 ### New Features
 
-_None._
+ - Refactor `install_swiftpm_dependencies` to allow specifying `--workspace`/`--project`/`--use-spm` type of project explicitly, and improve implicit/automatic project type detection logic. [#105]
 
 ### Bug Fixes
 
-_None._
+ - Make sure `install_swiftpm_dependencies` uses the correct `Package.resolved` file (`.xcworkspace` vs `.xcodeproj/project.xcworkspace`). [#105]
+
 
 ### Internal Changes
 

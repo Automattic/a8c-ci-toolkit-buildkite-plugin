@@ -1,6 +1,45 @@
+# For convenience with the many install_swiftpm_dependencies steps, we declare agents and env for macOS in the root, then specialize the fewer remaining steps
+agents:
+  queue: mac
+env:
+  IMAGE_ID: xcode-15.4
+
 steps:
   - label: "🕵️ Lint"
     command: make lint
+    agents:
+      queue: default
 
   - label: "🔬 Test"
     command: make test
+    agents:
+      queue: default
+
+  - group: ":swift: install_swiftpm_dependencies Tests"
+    steps:
+      - label: ":swift: Standalone Swift Package - Autodetect"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_package_automatic.sh
+
+      - label: ":swift: Standalone Swift Package - Explicit"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_package_explicit.sh
+
+      - label: ":xcode: Xcode Project - Autodetect"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_project_automatic.sh
+
+      - label: ":xcode: Xcode Project - Explicit"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_project_explicit.sh
+
+      - label: ":xcode: Xcode Project - No Package.resolved"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_project_no_package.sh
+
+      - label: ":xcode: Xcode Workspace - Autodetect"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_automatic.sh
+
+      - label: ":xcode: Xcode Workspace - Explicit"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_explicit.sh
+
+      - label: ":xcode: Xcode Workspace and Project - Autodetect"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_and_project_automatic.sh
+
+      - label: ":xcode: Xcode Workspace and Project - Explicit"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_and_project_explicit.sh

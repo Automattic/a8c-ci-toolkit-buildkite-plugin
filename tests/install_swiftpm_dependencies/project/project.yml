@@ -1,0 +1,28 @@
+name: Demo
+options:
+  bundleIdPrefix: com.automattic.tests
+packages:
+  ScreenObject:
+    url: https://github.com/Automattic/ScreenObject
+    from: 0.2.3
+targets:
+  Demo:
+    type: framework
+    platform: iOS
+    sources: [../package/Sources]
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+    scheme:
+      testTargets: [DemoTests]
+  DemoTests:
+    target: Demo
+    type: bundle.unit-test
+    platform: iOS
+    sources: [../package/Tests/]
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+      # No need for code signing in this demo, plus, it's the test target
+      CODE_SIGNING_ALLOWED: NO
+    dependencies:
+      - target: Demo
+      - package: ScreenObject
