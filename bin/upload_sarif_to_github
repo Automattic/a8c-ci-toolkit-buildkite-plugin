@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-sarif_file=$1
-owner=$2
-repo=$3
+sarif_file="${1:-}"
+owner="${2:-}"
+repo="${3:-}"
 
 if [ -z "$sarif_file" ] || [ -z "$owner" ] || [ -z "$repo" ]; then
   echo "Not enough arguments provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report> <gh owner> <gh repo>"
@@ -22,7 +22,7 @@ if [ ! -r "$sarif_file" ]; then
 fi
 
 # Check that GITHUB_TOKEN is set
-if [ -z "$GITHUB_TOKEN" ]; then
+if [ -z "${GITHUB_TOKEN:-}" ]; then
   echo "Error: GITHUB_TOKEN is not defined."
   exit 1
 fi
