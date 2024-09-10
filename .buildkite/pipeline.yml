@@ -5,17 +5,17 @@ env:
   IMAGE_ID: xcode-15.4
 
 steps:
-  - label: ":sleuth_or_spy: Lint"
+  - label: "🕵️ Lint"
     command: make lint
     agents:
       queue: default
 
-  - label: ":microscope: Test"
+  - label: "🔬 Test"
     command: make test
     agents:
       queue: default
 
-  - label: ":radioactive_sign: Danger - PR Check"
+  - label: "☢️ Danger - PR Check"
     command: danger
     key: danger
     if: build.pull_request.id != null
