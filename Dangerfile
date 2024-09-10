@@ -16,4 +16,4 @@ labels_checker.check(
   required_labels: []
 )
 
-warn("No reviewers have been set for this PR yet. Please request a review from **@\u2060Automattic/apps-infrastructure**.") unless github_utils.requested_reviewers?
+warn("This PR has no reviewers. Please request a review from **@\u2060Automattic/apps-infrastructure**.") unless github_utils.requested_reviewers?
