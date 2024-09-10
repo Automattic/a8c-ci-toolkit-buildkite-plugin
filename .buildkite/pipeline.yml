@@ -15,6 +15,16 @@ steps:
     agents:
       queue: default
 
+  - label: "☢️ Danger - PR Check"
+    command: danger
+    key: danger
+    if: build.pull_request.id != null
+    retry:
+      manual:
+        permit_on_passed: true
+    agents:
+      queue: linter
+
   - group: ":swift: install_swiftpm_dependencies Tests"
     steps:
       - label: ":swift: Standalone Swift Package - Autodetect"
