@@ -18,7 +18,7 @@ _None._
 
 ### New Features
 
-- Introduce a command for uploading .sarif files to GitHub's registry [#111]
+_None._
 
 ### Bug Fixes
 
@@ -38,16 +38,26 @@ _None._
 
 ### New Features
 
- - Refactor `install_swiftpm_dependencies` to allow specifying `--workspace`/`--project`/`--use-spm` type of project explicitly, and improve implicit/automatic project type detection logic. [#105]
+_None._
 
 ### Bug Fixes
 
- - Make sure `install_swiftpm_dependencies` uses the correct `Package.resolved` file (`.xcworkspace` vs `.xcodeproj/project.xcworkspace`). [#105]
-
+_None._
 
 ### Internal Changes
 
 _None._
+
+## 3.6.0
+
+### New Features
+
+- Refactor `install_swiftpm_dependencies` to allow specifying `--workspace`/`--project`/`--use-spm` type of project explicitly, and improve implicit/automatic project type detection logic. [#105]
+- Introduce a command for uploading .sarif files to GitHub's registry [#111]
+
+### Bug Fixes
+
+- Make sure `install_swiftpm_dependencies` uses the correct `Package.resolved` file (`.xcworkspace` vs `.xcodeproj/project.xcworkspace`). [#105]
 
 ## 3.5.1
 
