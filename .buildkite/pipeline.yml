@@ -43,52 +43,52 @@ steps:
         command: tests/install_swiftpm_dependencies/test_scripts/test_package_automatic.sh
         notify:
           - github_commit_status:
-              context: Standalone Swift Package - Autodetect
+              context: "install_swiftpm_dependencies Tests: Standalone Swift Package - Autodetect"
 
       - label: ":swift: Standalone Swift Package - Explicit"
         command: tests/install_swiftpm_dependencies/test_scripts/test_package_explicit.sh
         notify:
           - github_commit_status:
-              context: Standalone Swift Package - Explicit
+              context: "install_swiftpm_dependencies Tests: Standalone Swift Package - Explicit"
 
       - label: ":xcode: Xcode Project - Autodetect"
         command: tests/install_swiftpm_dependencies/test_scripts/test_project_automatic.sh
         notify:
           - github_commit_status:
-              context: Xcode Project - Autodetect
+              context: "install_swiftpm_dependencies Tests: Xcode Project - Autodetect"
 
       - label: ":xcode: Xcode Project - Explicit"
         command: tests/install_swiftpm_dependencies/test_scripts/test_project_explicit.sh
         notify:
           - github_commit_status:
-              context: Xcode Project - Explicit
+              context: "install_swiftpm_dependencies Tests: Xcode Project - Explicit"
 
       - label: ":xcode: Xcode Project - No Package.resolved"
         command: tests/install_swiftpm_dependencies/test_scripts/test_project_no_package.sh
         notify:
           - github_commit_status:
-              context: Xcode Project - No Package.resolved
+              context: "install_swiftpm_dependencies Tests: Xcode Project - No Package.resolved"
 
       - label: ":xcode: Xcode Workspace - Autodetect"
         command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_automatic.sh
         notify:
           - github_commit_status:
-              context: Xcode Workspace - Autodetect
+              context: "install_swiftpm_dependencies Tests: Xcode Workspace - Autodetect"
 
       - label: ":xcode: Xcode Workspace - Explicit"
         command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_explicit.sh
         notify:
           - github_commit_status:
-              context: Xcode Workspace - Explicit
+              context: "install_swiftpm_dependencies Tests: Xcode Workspace - Explicit"
 
       - label: ":xcode: Xcode Workspace and Project - Autodetect"
         command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_and_project_automatic.sh
         notify:
           - github_commit_status:
-              context: Xcode Workspace and Project - Autodetect
+              context: "install_swiftpm_dependencies Tests: Xcode Workspace and Project - Autodetect"
 
       - label: ":xcode: Xcode Workspace and Project - Explicit"
         command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_and_project_explicit.sh
         notify:
           - github_commit_status:
-              context: Xcode Workspace and Project - Explicit
+              context: "install_swiftpm_dependencies Tests: Xcode Workspace and Project - Explicit"
