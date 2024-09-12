@@ -31,7 +31,7 @@ sarif_base64_temp_file=$(mktemp)
 
 gzip -c "$sarif_file" | base64 > "$sarif_base64_temp_file"
 
-if [[ -n $BUILDKITE_PULL_REQUEST ]]; then
+if [[ $BUILDKITE_PULL_REQUEST != "false" ]]; then
   json=$(jq -n \
     --arg commit_sha "$BUILDKITE_COMMIT" \
     --arg pr_number "$BUILDKITE_PULL_REQUEST" \
