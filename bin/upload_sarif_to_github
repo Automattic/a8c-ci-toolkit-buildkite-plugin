@@ -51,6 +51,8 @@ elif [[ "$BUILDKITE_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
      "ref": ("refs/heads/$branch"),
      "sarif": $sarif
    }')
+else
+  exit 0
 fi
 
 sarif_json_temp_file=$(mktemp)
