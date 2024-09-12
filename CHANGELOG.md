@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+Check for $BUILDKITE_PULL_REQUEST = false when uploading sarif file [#116]
 
 ### Internal Changes
 
