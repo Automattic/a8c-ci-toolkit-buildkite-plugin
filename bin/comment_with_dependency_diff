@@ -35,9 +35,9 @@ echo "--> Base branch is $baseBranch"
 
 git merge "origin/$baseBranch" --no-edit
 
-if (git diff --name-status "origin/$baseBranch" | grep -E "\.gradle(\.kts)?|\.toml" --quiet) then
+if (git diff --name-status "origin/$baseBranch" | grep -E "\.gradle(\.kts)?|\.toml" --quiet); then
     echo ".gradle files have been changed. Looking for caused dependency changes"
-  else
+else
     echo ".gradle files haven't been changed. There is no need to run the diff"
     exit 0
 fi
@@ -114,10 +114,10 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
   echo "--> Commenting result to GitHub"
   COMMENT_BODY=""
   if [ -s $DIFF_DEPENDENCIES_FILE ]; then
-    COMMENT_BODY += $(generate_project_dependencies_comment_body)
+    COMMENT_BODY+="$(generate_project_dependencies_comment_body)"
   fi
   if [ -s $DIFF_BUILD_ENV_FILE ]; then
-    COMMENT_BODY += $(generate_build_dependencies_comment_body)
+    COMMENT_BODY+="$(generate_build_dependencies_comment_body)"
   fi
   bundle exec fastlane run comment_on_pr \
     github_token:$GITHUB_TOKEN \
