@@ -15,7 +15,10 @@ fi
 DIFF_DEPENDENCIES_FOLDER="./build/reports/diff"
 BASE_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_dependencies.txt"
 HEAD_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/head_branch_dependencies.txt"
+BASE_BRANCH_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_build_env.txt"
+HEAD_BRANCH_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/head_branch_build_env.txt"
 DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_dependencies.txt"
+DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_build_env.txt"
 DEPENDENCY_TREE_VERSION="1.2.1"
 
 PR_NUMBER=$BUILDKITE_PULL_REQUEST
@@ -30,10 +33,6 @@ githubResponse="$(curl "$PR_URL" -H "Authorization: token $GITHUB_TOKEN")"
 baseBranch=$(echo "$githubResponse" | tr '\r\n' ' ' | jq '.base.ref' | tr -d '"')
 echo "--> Base branch is $baseBranch"
 
-# The merge helps catch any discrepancies caused by outdated dependency tree, since the branch
-# could be behind base branch even if the PR itself doesn't introduce direct changes. Merging
-# base branch in advance provides a more robust verification process by simulating the post-merge
-# state of the codebase.
 git merge "origin/$baseBranch" --no-edit
 
 if (git diff --name-status "origin/$baseBranch" | grep -E "\.gradle(\.kts)?|\.toml" --quiet) then
@@ -48,13 +47,19 @@ mkdir -p "$DIFF_DEPENDENCIES_FOLDER"
 echo "--> Generating dependencies to the file $HEAD_BRANCH_DEPENDENCIES_FILE"
 ./gradlew :"$MODULE":dependencies --configuration "$CONFIGURATION" >$HEAD_BRANCH_DEPENDENCIES_FILE
 
+echo "--> Generating build environment dependencies for the head branch"
+./gradlew buildEnvironment >$HEAD_BRANCH_BUILD_ENV_FILE
+
 echo "--> Generating dependencies to the file $BASE_BRANCH_DEPENDENCIES_FILE"
 git checkout "$baseBranch"
 ./gradlew :"$MODULE":dependencies --configuration "$CONFIGURATION" >$BASE_BRANCH_DEPENDENCIES_FILE
+
+echo "--> Generating build environment dependencies for the base branch"
+./gradlew buildEnvironment >$BASE_BRANCH_BUILD_ENV_FILE
+
 git checkout "-"
 
 echo "--> Downloading dependency-tree-diff.jar"
-# https://github.com/JakeWharton/dependency-tree-diff
 curl -v -L "https://github.com/JakeWharton/dependency-tree-diff/releases/download/$DEPENDENCY_TREE_VERSION/dependency-tree-diff.jar" -o dependency-tree-diff.jar
 sha=$(sha1sum dependency-tree-diff.jar | cut -d' ' -f1)
 if [[ $sha != "39c50f22cd4211a3e52afec43120b7fdf90f9890" ]]; then
@@ -66,11 +71,29 @@ chmod +x dependency-tree-diff.jar
 echo "--> Running dependency-tree-diff.jar"
 ./dependency-tree-diff.jar $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$DIFF_DEPENDENCIES_FILE
 
+COMMENT_BODY=""
+
+# Add the dependency diff to the comment
 if [ -s $DIFF_DEPENDENCIES_FILE ]; then
   echo "There are changes in dependencies of the project"
+  COMMENT_BODY+="## Dependency Changes\n"
+  COMMENT_BODY+="The following changes in project dependencies were detected:\n"
+  COMMENT_BODY+="\`\`\`diff\n$(cat "$DIFF_DEPENDENCIES_FILE")\n\`\`\`\n"
+fi
 
-  COMMENT_BODY=$(printf "This PR causes following diff of project dependencies:\n\`\`\`diff\n%s\n\`\`\`" "$(cat "$DIFF_DEPENDENCIES_FILE")")
+# Generate diff for build environment
+echo "--> Generating build environment diff"
+diff $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$DIFF_BUILD_ENV_FILE || true
 
+# Add the build environment diff to the comment
+if [ -s $DIFF_BUILD_ENV_FILE ]; then
+  echo "There are changes in the build environment dependencies"
+  COMMENT_BODY+="## Build Environment Changes\n"
+  COMMENT_BODY+="The following changes in the build environment were detected:\n"
+  COMMENT_BODY+="\`\`\`diff\n$(cat "$DIFF_BUILD_ENV_FILE")\n\`\`\`\n"
+fi
+
+if [ -n "$COMMENT_BODY" ]; then
   echo "--> Commenting result to GitHub"
   bundle exec fastlane run comment_on_pr \
     github_token:$GITHUB_TOKEN \
