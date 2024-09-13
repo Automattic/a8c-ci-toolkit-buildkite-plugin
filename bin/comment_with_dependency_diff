@@ -40,7 +40,6 @@ if (git diff --name-status "origin/$baseBranch" | grep ".gradle*|.toml" --quiet)
     echo ".gradle files have been changed. Looking for caused dependency changes"
   else
     echo ".gradle files haven't been changed. There is no need to run the diff"
-    ./gradlew dependencyTreeDiffCommentToGitHub -DGITHUB_PULLREQUESTID="${PR_NUMBER}" -DGITHUB_OAUTH2TOKEN="$GITHUB_TOKEN"
     exit 0
 fi
 
