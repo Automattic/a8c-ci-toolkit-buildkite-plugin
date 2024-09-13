@@ -7,7 +7,7 @@ CONFIGURATION="${2:-}"
 OWNER="${3:-}"
 REPO="${4:-}"
 
-if [ -z "$MODULE" ] [ -z "$CONFIGURATION" ] || [ -z "$OWNER" ] || [ -z "$REPO" ]; then
+if [ -z "$MODULE" ] || [ -z "$CONFIGURATION" ] || [ -z "$OWNER" ] || [ -z "$REPO" ]; then
   echo "Not enough arguments provided. Usage: ./comment_with_dependency_diff <MODULE> <CONFIGURATION> <OWNER> <REPO>"
   exit 1
 fi
