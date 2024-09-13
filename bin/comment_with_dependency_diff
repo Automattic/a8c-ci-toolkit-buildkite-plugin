@@ -71,30 +71,49 @@ chmod +x dependency-tree-diff.jar
 echo "--> Running dependency-tree-diff.jar"
 ./dependency-tree-diff.jar $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$DIFF_DEPENDENCIES_FILE
 
-COMMENT_BODY=""
+generate_project_dependencies_comment_body() {
+  cat <<EOF
+## Dependency Changes
 
-# Add the dependency diff to the comment
-if [ -s $DIFF_DEPENDENCIES_FILE ]; then
-  echo "There are changes in dependencies of the project"
-  COMMENT_BODY+="## Dependency Changes\n"
-  COMMENT_BODY+="The following changes in project dependencies were detected:\n"
-  COMMENT_BODY+="\`\`\`diff\n$(cat "$DIFF_DEPENDENCIES_FILE")\n\`\`\`\n"
-fi
+The following changes in project dependencies were detected
 
-# Generate diff for build environment
-echo "--> Generating build environment diff"
-diff $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$DIFF_BUILD_ENV_FILE || true
+<details><summary>expand</summary>
 
-# Add the build environment diff to the comment
-if [ -s $DIFF_BUILD_ENV_FILE ]; then
-  echo "There are changes in the build environment dependencies"
-  COMMENT_BODY+="## Build Environment Changes\n"
-  COMMENT_BODY+="The following changes in the build environment were detected:\n"
-  COMMENT_BODY+="\`\`\`diff\n$(cat "$DIFF_BUILD_ENV_FILE")\n\`\`\`\n"
-fi
+```diff
+$(cat "$DIFF_DEPENDENCIES_FILE")
+```
+
+</details>
+
+EOF
+}
+
+generate_build_dependencies_comment_body() {
+  cat <<EOF
+
+## Build Environment Changes
+
+The following changes in the build environment were detected:
+
+<details><summary>expand</summary>
+
+```diff
+$(cat "$DIFF_BUILD_ENV_FILE")
+```
+
+</details>
+
+EOF
+}
+
+
 
 if [ -n "$COMMENT_BODY" ]; then
   echo "--> Commenting result to GitHub"
+  COMMENT_BODY=$(generate_project_dependencies_comment_body)
+  if [ -s $DIFF_BUILD_ENV_FILE ]; then
+    COMMENT_BODY += $(generate_build_dependencies_comment_body)
+  fi
   bundle exec fastlane run comment_on_pr \
     github_token:$GITHUB_TOKEN \
     project:"$OWNER/$REPO" \
@@ -102,3 +121,4 @@ if [ -n "$COMMENT_BODY" ]; then
     body:"$COMMENT_BODY" \
     reuse_identifier:"dependency-diff"
 fi
+
