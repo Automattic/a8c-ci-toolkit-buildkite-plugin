@@ -48,7 +48,7 @@ elif [[ "$BUILDKITE_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
     --rawfile sarif "$sarif_base64_temp_file" \
     '{
      "commit_sha": $commit_sha,
-     "ref": ("refs/heads/$branch"),
+     "ref": ("refs/heads/"+$branch),
      "sarif": $sarif
    }')
 else
