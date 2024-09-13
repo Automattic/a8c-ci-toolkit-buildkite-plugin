@@ -35,7 +35,7 @@ echo "--> Base branch is $baseBranch"
 # state of the codebase.
 git merge "origin/$baseBranch" --no-edit
 
-if (git diff --name-status "origin/$baseBranch" | grep ".gradle*" --quiet) then
+if (git diff --name-status "origin/$baseBranch" | grep ".gradle*|.toml" --quiet) then
     echo ".gradle files have been changed. Looking for caused dependency changes"
   else
     echo ".gradle files haven't been changed. There is no need to run the diff"
