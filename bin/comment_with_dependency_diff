@@ -2,12 +2,13 @@
 
 set -euo pipefail
 
-CONFIGURATION="${1:-}"
-OWNER="${2:-}"
-REPO="${3:-}"
+MODULE="${1:-}"
+CONFIGURATION="${2:-}"
+OWNER="${3:-}"
+REPO="${4:-}"
 
-if [ -z "$CONFIGURATION" ] || [ -z "$OWNER" ] || [ -z "$REPO" ]; then
-  echo "Not enough arguments provided. Usage: ./comment_with_dependency_diff <CONFIGURATION> <OWNER> <REPO>"
+if [ -z "$MODULE" ] [ -z "$CONFIGURATION" ] || [ -z "$OWNER" ] || [ -z "$REPO" ]; then
+  echo "Not enough arguments provided. Usage: ./comment_with_dependency_diff <MODULE> <CONFIGURATION> <OWNER> <REPO>"
   exit 1
 fi
 
@@ -46,11 +47,11 @@ fi
 mkdir -p "$DIFF_DEPENDENCIES_FOLDER"
 
 echo "--> Generating dependencies to the file $HEAD_BRANCH_DEPENDENCIES_FILE"
-./gradlew :app:dependencies --configuration "$CONFIGURATION" >$HEAD_BRANCH_DEPENDENCIES_FILE
+./gradlew :"$MODULE":dependencies --configuration "$CONFIGURATION" >$HEAD_BRANCH_DEPENDENCIES_FILE
 
 echo "--> Generating dependencies to the file $BASE_BRANCH_DEPENDENCIES_FILE"
 git checkout "$baseBranch"
-./gradlew :app:dependencies --configuration "$CONFIGURATION" >$BASE_BRANCH_DEPENDENCIES_FILE
+./gradlew :"$MODULE":dependencies --configuration "$CONFIGURATION" >$BASE_BRANCH_DEPENDENCIES_FILE
 git checkout "-"
 
 echo "--> Downloading dependency-tree-diff.jar"
