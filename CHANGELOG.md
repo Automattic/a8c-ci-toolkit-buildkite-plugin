@@ -52,7 +52,7 @@ _None._
 
 ### Bug Fixes
 
-- Fix passing branch name when sending sarif fail [#118]
+- Fix passing branch name when sending sarif file [#118]
 
 ## 3.6.1
 
