@@ -77,5 +77,5 @@ if [ -s $DIFF_DEPENDENCIES_FILE ]; then
     project:"$OWNER/$REPO" \
     pr_number:$PR_NUMBER \
     body:"$COMMENT_BODY" \
-    reuse_identifier: "dependency-diff"
+    reuse_identifier:"dependency-diff"
 fi
