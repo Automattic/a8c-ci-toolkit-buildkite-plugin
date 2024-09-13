@@ -81,9 +81,9 @@ The following changes in project dependencies were detected
 
 <details><summary>expand</summary>
 
-```diff
+\`\`\`diff
 $(cat "$DIFF_DEPENDENCIES_FILE")
-```
+\`\`\`
 
 </details>
 
@@ -99,16 +99,14 @@ The following changes in the build environment were detected:
 
 <details><summary>expand</summary>
 
-```diff
+\`\`\`diff
 $(cat "$DIFF_BUILD_ENV_FILE")
-```
+\`\`\`
 
 </details>
 
 EOF
 }
-
-
 
 if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
   echo "--> Commenting result to GitHub"
