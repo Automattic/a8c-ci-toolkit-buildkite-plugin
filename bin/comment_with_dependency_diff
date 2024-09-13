@@ -68,11 +68,14 @@ echo "--> Running dependency-tree-diff.jar"
 
 if [ -s $DIFF_DEPENDENCIES_FILE ]; then
   echo "There are changes in dependencies of the project"
-  cat "$DIFF_DEPENDENCIES_FILE"
-else
-  echo "There are no changes in dependencies of the project"
-  rm "$DIFF_DEPENDENCIES_FILE"
-fi
 
-echo "--> Commenting result to GitHub"
-./gradlew dependencyTreeDiffCommentToGitHub -DGITHUB_PULLREQUESTID="${PR_NUMBER##*/}" -DGITHUB_OAUTH2TOKEN="$GITHUB_TOKEN" --info
+  COMMENT_BODY=$(printf "This PR causes following diff of project dependencies:\n\`\`\`diff\n%s\n\`\`\`" "$(cat "$DIFF_DEPENDENCIES_FILE")")
+
+  echo "--> Commenting result to GitHub"
+  bundle exec fastlane comment_on_pr \
+    github_token:$GITHUB_TOKEN \
+    project:"$OWNER/$REPO" \
+    pr_number:$PR_NUMBER \
+    body:"$COMMENT_BODY" \
+    reuse_identifier: "dependency-diff"
+fi
