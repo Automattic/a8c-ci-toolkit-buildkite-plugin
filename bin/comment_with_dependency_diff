@@ -1,0 +1,70 @@
+#!/bin/bash -eu
+
+DIFF_DEPENDENCIES_FOLDER="./build/reports/diff"
+BASE_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_dependencies.txt"
+HEAD_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/head_branch_dependencies.txt"
+DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_dependencies.txt"
+CONFIGURATION="releaseRuntimeClasspath"
+DEPENDENCY_TREE_VERSION="1.2.1"
+
+REPO_HANDLE="bloom/DayOne-Android"
+
+PR_NUMBER=$BUILDKITE_PULL_REQUEST
+PR_URL="https://api.github.com/repos/$REPO_HANDLE/pulls/$PR_NUMBER"
+
+git config --global user.email "mobile@automattic.com"
+git config --global user.name "Dependency Tree Diff Tool"
+
+echo "--> Starting the check"
+echo "--> Fetching the base branch from $PR_URL"
+githubResponse="$(curl "$PR_URL" -H "Authorization: token $GITHUB_TOKEN")"
+baseBranch=$(echo "$githubResponse" | tr '\r\n' ' ' | jq '.base.ref' | tr -d '"')
+echo "--> Base branch is $baseBranch"
+
+# The merge helps catch any discrepancies caused by outdated dependency tree, since the branch
+# could be behind base branch even if the PR itself doesn't introduce direct changes. Merging
+# base branch in advance provides a more robust verification process by simulating the post-merge
+# state of the codebase.
+git merge "origin/$baseBranch" --no-edit
+
+if (git diff --name-status "origin/$baseBranch" | grep ".gradle" --quiet) then
+    echo ".gradle files have been changed. Looking for caused dependency changes"
+  else
+    echo ".gradle files haven't been changed. There is no need to run the diff"
+    ./gradlew dependencyTreeDiffCommentToGitHub -DGITHUB_PULLREQUESTID="${PR_NUMBER}" -DGITHUB_OAUTH2TOKEN="$GITHUB_TOKEN"
+    exit 0
+fi
+
+mkdir -p "$DIFF_DEPENDENCIES_FOLDER"
+
+echo "--> Generating dependencies to the file $HEAD_BRANCH_DEPENDENCIES_FILE"
+./gradlew :app:dependencies --configuration $CONFIGURATION >$HEAD_BRANCH_DEPENDENCIES_FILE
+
+echo "--> Generating dependencies to the file $BASE_BRANCH_DEPENDENCIES_FILE"
+git checkout "$baseBranch"
+./gradlew :app:dependencies --configuration $CONFIGURATION >$BASE_BRANCH_DEPENDENCIES_FILE
+git checkout "-"
+
+echo "--> Downloading dependency-tree-diff.jar"
+# https://github.com/JakeWharton/dependency-tree-diff
+curl -v -L "https://github.com/JakeWharton/dependency-tree-diff/releases/download/$DEPENDENCY_TREE_VERSION/dependency-tree-diff.jar" -o dependency-tree-diff.jar
+sha=$(sha1sum dependency-tree-diff.jar | cut -d' ' -f1)
+if [[ $sha != "39c50f22cd4211a3e52afec43120b7fdf90f9890" ]]; then
+  echo "dependency-tree-diff.jar file has unexpected sha1"
+  exit 1
+fi
+chmod +x dependency-tree-diff.jar
+
+echo "--> Running dependency-tree-diff.jar"
+./dependency-tree-diff.jar $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$DIFF_DEPENDENCIES_FILE
+
+if [ -s $DIFF_DEPENDENCIES_FILE ]; then
+  echo "There are changes in dependencies of the project"
+  cat "$DIFF_DEPENDENCIES_FILE"
+else
+  echo "There are no changes in dependencies of the project"
+  rm "$DIFF_DEPENDENCIES_FILE"
+fi
+
+echo "--> Commenting result to GitHub"
+./gradlew dependencyTreeDiffCommentToGitHub -DGITHUB_PULLREQUESTID="${PR_NUMBER##*/}" -DGITHUB_OAUTH2TOKEN="$GITHUB_TOKEN" --info
