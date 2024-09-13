@@ -72,7 +72,7 @@ if [ -s $DIFF_DEPENDENCIES_FILE ]; then
   COMMENT_BODY=$(printf "This PR causes following diff of project dependencies:\n\`\`\`diff\n%s\n\`\`\`" "$(cat "$DIFF_DEPENDENCIES_FILE")")
 
   echo "--> Commenting result to GitHub"
-  bundle exec fastlane comment_on_pr \
+  bundle exec fastlane run comment_on_pr \
     github_token:$GITHUB_TOKEN \
     project:"$OWNER/$REPO" \
     pr_number:$PR_NUMBER \
