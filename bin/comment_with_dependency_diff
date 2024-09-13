@@ -1,16 +1,24 @@
-#!/bin/bash -eu
+#!/bin/bash
+
+set -euo pipefail
+
+CONFIGURATION="${1:-}"
+OWNER="${2:-}"
+REPO="${3:-}"
+
+if [ -z "$CONFIGURATION" ] || [ -z "$OWNER" ] || [ -z "$REPO" ]; then
+  echo "Not enough arguments provided. Usage: ./comment_with_dependency_diff <CONFIGURATION> <OWNER> <REPO>"
+  exit 1
+fi
 
 DIFF_DEPENDENCIES_FOLDER="./build/reports/diff"
 BASE_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_dependencies.txt"
 HEAD_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/head_branch_dependencies.txt"
 DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_dependencies.txt"
-CONFIGURATION="releaseRuntimeClasspath"
 DEPENDENCY_TREE_VERSION="1.2.1"
 
-REPO_HANDLE="bloom/DayOne-Android"
-
 PR_NUMBER=$BUILDKITE_PULL_REQUEST
-PR_URL="https://api.github.com/repos/$REPO_HANDLE/pulls/$PR_NUMBER"
+PR_URL="https://api.github.com/repos/$OWNER/$REPO/pulls/$PR_NUMBER"
 
 git config --global user.email "mobile@automattic.com"
 git config --global user.name "Dependency Tree Diff Tool"
@@ -38,11 +46,11 @@ fi
 mkdir -p "$DIFF_DEPENDENCIES_FOLDER"
 
 echo "--> Generating dependencies to the file $HEAD_BRANCH_DEPENDENCIES_FILE"
-./gradlew :app:dependencies --configuration $CONFIGURATION >$HEAD_BRANCH_DEPENDENCIES_FILE
+./gradlew :app:dependencies --configuration "$CONFIGURATION" >$HEAD_BRANCH_DEPENDENCIES_FILE
 
 echo "--> Generating dependencies to the file $BASE_BRANCH_DEPENDENCIES_FILE"
 git checkout "$baseBranch"
-./gradlew :app:dependencies --configuration $CONFIGURATION >$BASE_BRANCH_DEPENDENCIES_FILE
+./gradlew :app:dependencies --configuration "$CONFIGURATION" >$BASE_BRANCH_DEPENDENCIES_FILE
 git checkout "-"
 
 echo "--> Downloading dependency-tree-diff.jar"
