@@ -48,6 +48,12 @@ _None._
 
 _None._
 
+## 3.6.2
+
+### Bug Fixes
+
+- Fix passing main branch name when sending sarif file [#118]
+
 ## 3.6.1
 
 ### Bug Fixes
