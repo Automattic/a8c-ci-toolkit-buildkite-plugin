@@ -71,6 +71,8 @@ chmod +x dependency-tree-diff.jar
 echo "--> Running dependency-tree-diff.jar"
 ./dependency-tree-diff.jar $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$DIFF_DEPENDENCIES_FILE
 
+./dependency-tree-diff.jar $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$DIFF_BUILD_ENV_FILE
+
 generate_project_dependencies_comment_body() {
   cat <<EOF
 ## Dependency Changes
@@ -108,9 +110,12 @@ EOF
 
 
 
-if [ -n "$COMMENT_BODY" ]; then
+if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
   echo "--> Commenting result to GitHub"
-  COMMENT_BODY=$(generate_project_dependencies_comment_body)
+  COMMENT_BODY=""
+  if [ -s $DIFF_DEPENDENCIES_FILE ]; then
+    COMMENT_BODY += $(generate_project_dependencies_comment_body)
+  fi
   if [ -s $DIFF_BUILD_ENV_FILE ]; then
     COMMENT_BODY += $(generate_build_dependencies_comment_body)
   fi
