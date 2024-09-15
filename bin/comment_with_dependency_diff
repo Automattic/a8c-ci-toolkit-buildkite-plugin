@@ -132,11 +132,13 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
     generate_build_dependencies_comment_body >> $COMMENT_FILE
   fi
 
+  COMMENT_BODY=$(<"$COMMENT_FILE")
+
   # Run the fastlane command and pass the comment body from the file
   bundle exec fastlane run comment_on_pr \
     github_token:"$GITHUB_TOKEN" \
     project:"$OWNER/$REPO" \
     pr_number:"$PR_NUMBER" \
-    body:"$(cat $COMMENT_FILE)" \
+    body:"$COMMENT_BODY" \
     reuse_identifier:"dependency-diff"
 fi
