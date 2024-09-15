@@ -126,7 +126,16 @@ $comment_body_id
 $arg_pr_comment
 EOF
 )
-json_payload=$(jq -c --null-input --arg body "$comment_body" '{body: $body}')
+
+# Write the comment body to a temporary file to fix possible "Argument list too long" error
+comment_body_file=$(mktemp)
+echo "$comment_body" > "$comment_body_file"
+
+# Use jq with the temporary file
+json_payload=$(jq -c --null-input --arg body "$(cat "$comment_body_file")" '{body: $body}')
+
+# Clean up temporary files
+rm "$comment_body_file"
 
 if [[ -n "$existing_comment_id" && "$opt_if_exist" == "update" ]]; then
     echo "Update the existing comment: $existing_comment_id"
