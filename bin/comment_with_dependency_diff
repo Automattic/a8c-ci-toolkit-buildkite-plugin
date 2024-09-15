@@ -51,6 +51,8 @@ echo "--> Generating build environment dependencies for the head branch"
 ./gradlew buildEnvironment >$HEAD_BRANCH_BUILD_ENV_FILE
 
 echo "--> Generating dependencies to the file $BASE_BRANCH_DEPENDENCIES_FILE"
+git status
+git diff
 git checkout "$baseBranch"
 ./gradlew :"$MODULE":dependencies --configuration "$CONFIGURATION" >$BASE_BRANCH_DEPENDENCIES_FILE
 
