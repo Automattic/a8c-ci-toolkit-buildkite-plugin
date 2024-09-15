@@ -132,7 +132,5 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
     generate_build_dependencies_comment_body >> $COMMENT_FILE
   fi
 
-  COMMENT_BODY=$(<"$COMMENT_FILE")
-
-  comment_on_pr --id "dependency-diff" --if-exist update "$COMMENT_BODY"
+  comment_on_pr --id "dependency-diff" --if-exist update "$COMMENT_FILE"
 fi
