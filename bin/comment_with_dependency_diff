@@ -119,18 +119,24 @@ EOF
 
 if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
   echo "--> Commenting result to GitHub"
-  COMMENT_BODY=""
+
+  # Create or clear the comment body file
+  COMMENT_FILE="$DIFF_DEPENDENCIES_FOLDER/comment_body.txt"
+  true > $COMMENT_FILE  # 'true' used to clear the file as a no-op
+
   if [ -s $DIFF_DEPENDENCIES_FILE ]; then
-    COMMENT_BODY+="$(generate_project_dependencies_comment_body)"
+    generate_project_dependencies_comment_body >> $COMMENT_FILE
   fi
+
   if [ -s $DIFF_BUILD_ENV_FILE ]; then
-    COMMENT_BODY+="$(generate_build_dependencies_comment_body)"
+    generate_build_dependencies_comment_body >> $COMMENT_FILE
   fi
+
+  # Run the fastlane command and pass the comment body from the file
   bundle exec fastlane run comment_on_pr \
-    github_token:$GITHUB_TOKEN \
+    github_token:"$GITHUB_TOKEN" \
     project:"$OWNER/$REPO" \
-    pr_number:$PR_NUMBER \
-    body:"$COMMENT_BODY" \
+    pr_number:"$PR_NUMBER" \
+    body:"$(cat $COMMENT_FILE)" \
     reuse_identifier:"dependency-diff"
 fi
-
