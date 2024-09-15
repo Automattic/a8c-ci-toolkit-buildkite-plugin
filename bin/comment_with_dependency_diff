@@ -51,8 +51,13 @@ echo "--> Generating build environment dependencies for the head branch"
 ./gradlew buildEnvironment >$HEAD_BRANCH_BUILD_ENV_FILE
 
 echo "--> Generating dependencies to the file $BASE_BRANCH_DEPENDENCIES_FILE"
-git status
-git diff
+
+if ! git diff --quiet; then
+  echo "Changes detected. Stashing and continuing with the script"
+  git diff
+  git stash
+fi
+
 git checkout "$baseBranch"
 ./gradlew :"$MODULE":dependencies --configuration "$CONFIGURATION" >$BASE_BRANCH_DEPENDENCIES_FILE
 
