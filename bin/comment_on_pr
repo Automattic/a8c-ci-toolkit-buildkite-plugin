@@ -131,8 +131,9 @@ EOF
 comment_body_file=$(mktemp)
 echo "$comment_body" > "$comment_body_file"
 
-# Use jq with the temporary file
-json_payload=$(jq -c --null-input --arg body "$(cat "$comment_body_file")" '{body: $body}')
+# Use jq with the temporary file for payload
+json_payload_file=$(mktemp)
+jq -c --null-input --arg body "$(cat "$comment_body_file")" '{body: $body}' > "$json_payload_file"
 
 # Clean up temporary files
 rm "$comment_body_file"
@@ -142,14 +143,17 @@ if [[ -n "$existing_comment_id" && "$opt_if_exist" == "update" ]]; then
     github_api "$issues_endpoint/comments/$existing_comment_id" \
         --fail-with-body -X PATCH \
         -H "Content-Type: application/json" \
-        -d "${json_payload}"
+        -d @"$json_payload_file"
 elif [[ -n "$arg_pr_comment" ]]; then
     echo "Post a new comment"
     github_api "$issues_endpoint/${BUILDKITE_PULL_REQUEST}/comments" \
         --fail-with-body -X POST \
         -H "Content-Type: application/json" \
-        -d "${json_payload}"
+        -d @"$json_payload_file"
 else
     # No comment body was given in CLI, so no new comment to post
     echo "No new comment to post"
 fi
+
+# Clean up json payload file
+rm "$json_payload_file"
