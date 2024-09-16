@@ -4,13 +4,14 @@ set -euo pipefail
 
 MODULE="${1:-}"
 CONFIGURATION="${2:-}"
-OWNER="${3:-}"
-REPO="${4:-}"
 
-if [ -z "$MODULE" ] || [ -z "$CONFIGURATION" ] || [ -z "$OWNER" ] || [ -z "$REPO" ]; then
-  echo "Not enough arguments provided. Usage: ./comment_with_dependency_diff <MODULE> <CONFIGURATION> <OWNER> <REPO>"
+if [ -z "$MODULE" ] || [ -z "$CONFIGURATION" ]; then
+  echo "Not enough arguments provided. Usage: ./comment_with_dependency_diff <MODULE> <CONFIGURATION>"
   exit 1
 fi
+
+OWNER=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO}")")
+REPO=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
 
 DIFF_DEPENDENCIES_FOLDER="./build/reports/diff"
 BASE_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_dependencies.txt"
