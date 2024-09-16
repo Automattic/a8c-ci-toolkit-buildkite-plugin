@@ -82,7 +82,6 @@ echo "--> Running dependency-tree-diff.jar"
 
 generate_project_dependencies_comment_body() {
   cat <<EOF
-## Project dependencies changes
 
 The following changes in project dependencies were detected (configuration "$CONFIGURATION"):
 
@@ -100,9 +99,6 @@ EOF
 
 generate_build_dependencies_comment_body() {
   cat <<EOF
-
-
-## Build environment changes
 
 The following changes in the build classpath were detected:
 
@@ -124,13 +120,30 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
   COMMENT_FILE="$DIFF_DEPENDENCIES_FOLDER/comment_body.txt"
   true > $COMMENT_FILE  # 'true' used to clear the file as a no-op
 
+  append_content() {
+    local content="$1"
+    local github_pr_comment_max_size=65536
+
+    if [ "${#content}" -gt $github_pr_comment_max_size ]; then
+      echo "Content exceeds $github_pr_comment_max_size characters. Navigate to Buildkite build artifacts to see details." >> $COMMENT_FILE
+    else
+      echo "$content" >> $COMMENT_FILE
+    fi
+  }
+
   if [ -s $DIFF_DEPENDENCIES_FILE ]; then
-    generate_project_dependencies_comment_body >> $COMMENT_FILE
+    printf "## Project dependencies changes\n\n" >> $COMMENT_FILE
+    content=$(generate_project_dependencies_comment_body)
+    append_content "$content"
   fi
 
   if [ -s $DIFF_BUILD_ENV_FILE ]; then
-    generate_build_dependencies_comment_body >> $COMMENT_FILE
+    printf "## Build environment changes\n\n" >> $COMMENT_FILE
+    content=$(generate_build_dependencies_comment_body)
+    append_content "$content"
   fi
 
   comment_on_pr --id "dependency-diff" --if-exist update "$COMMENT_FILE"
+else
+  comment_on_pr --id "dependency-diff" --if-exist delete
 fi
