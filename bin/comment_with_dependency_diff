@@ -83,7 +83,7 @@ echo "--> Running dependency-tree-diff.jar"
 generate_project_dependencies_comment_body() {
   cat <<EOF
 
-The following changes in project dependencies were detected (configuration \`"$CONFIGURATION"\`):
+The following changes in project dependencies were detected (configuration \`$CONFIGURATION\`):
 
 <details><summary>expand</summary>
 
