@@ -101,13 +101,6 @@ $(cat "$TLDR_DIFF_DEPENDENCIES_FILE")
 </details>
 
 
-<details><summary>tree</summary>
-
-\`\`\`diff
-$(cat "$DIFF_DEPENDENCIES_FILE")
-\`\`\`
-
-</details>
 
 
 EOF
@@ -120,14 +113,6 @@ The following changes in the build classpath were detected:
 
 <details><summary>TLDR; list</summary>
 $(cat "$TLDR_DIFF_BUILD_ENV_FILE")
-</details>
-
-<details><summary>expand</summary>
-
-\`\`\`diff
-$(cat "$DIFF_BUILD_ENV_FILE")
-\`\`\`
-
 </details>
 
 EOF
