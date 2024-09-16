@@ -20,6 +20,10 @@ BASE_BRANCH_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_build_env.txt"
 HEAD_BRANCH_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/head_branch_build_env.txt"
 DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_dependencies.txt"
 DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_build_env.txt"
+
+TLDR_DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_dependencies.txt"
+TLDR_DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_build_env.txt"
+
 DEPENDENCY_TREE_VERSION="1.2.1"
 
 PR_NUMBER=$BUILDKITE_PULL_REQUEST
@@ -78,15 +82,22 @@ chmod +x dependency-tree-diff.jar
 
 echo "--> Running dependency-tree-diff.jar"
 ./dependency-tree-diff.jar $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$DIFF_DEPENDENCIES_FILE
+../jar/dependency-diff-tldr.jar $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$TLDR_DIFF_DEPENDENCIES_FILE
 
 ./dependency-tree-diff.jar $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$DIFF_BUILD_ENV_FILE
+../jar/dependency-diff-tldr.jar $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$TLDR_DIFF_BUILD_ENV_FILE
 
 generate_project_dependencies_comment_body() {
   cat <<EOF
 
 The following changes in project dependencies were detected (configuration \`$CONFIGURATION\`):
 
-<details><summary>expand</summary>
+<details><summary>TLDR; list</summary>
+$(cat "$TLDR_DIFF_DEPENDENCIES_FILE")
+</details>
+
+
+<details><summary>tree</summary>
 
 \`\`\`diff
 $(cat "$DIFF_DEPENDENCIES_FILE")
@@ -102,6 +113,10 @@ generate_build_dependencies_comment_body() {
   cat <<EOF
 
 The following changes in the build classpath were detected:
+
+<details><summary>TLDR; list</summary>
+$(cat "$TLDR_DIFF_BUILD_ENV_FILE")
+</details>
 
 <details><summary>expand</summary>
 
