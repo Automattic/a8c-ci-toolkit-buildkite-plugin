@@ -83,7 +83,7 @@ echo "--> Running dependency-tree-diff.jar"
 generate_project_dependencies_comment_body() {
   cat <<EOF
 
-The following changes in project dependencies were detected (configuration "$CONFIGURATION"):
+The following changes in project dependencies were detected (configuration \`"$CONFIGURATION"\`):
 
 <details><summary>expand</summary>
 
@@ -134,13 +134,13 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
   }
 
   if [ -s $DIFF_DEPENDENCIES_FILE ]; then
-    printf "## Project dependencies changes\n\n" >> $COMMENT_FILE
+    printf "\n## Project dependencies changes\n\n" >> $COMMENT_FILE
     content=$(generate_project_dependencies_comment_body)
     append_content "$content"
   fi
 
   if [ -s $DIFF_BUILD_ENV_FILE ]; then
-    printf "## Build environment changes\n\n" >> $COMMENT_FILE
+    printf "\n## Build environment changes\n\n" >> $COMMENT_FILE
     content=$(generate_build_dependencies_comment_body)
     append_content "$content"
   fi
