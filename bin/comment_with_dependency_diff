@@ -123,8 +123,10 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
   append_content() {
     local content="$1"
     local github_pr_comment_max_size=65536
+    local current_file_size
+    current_file_size=$(wc -c < "$COMMENT_FILE")
 
-    if [ "${#content}" -gt $github_pr_comment_max_size ]; then
+    if (( current_file_size + ${#content} > github_pr_comment_max_size )); then
       echo "Content exceeds $github_pr_comment_max_size characters. Navigate to Buildkite build artifacts to see details." >> $COMMENT_FILE
     else
       echo "$content" >> $COMMENT_FILE
@@ -147,3 +149,4 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
 else
   comment_on_pr --id "dependency-diff" --if-exist delete
 fi
+
