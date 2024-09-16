@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- Don't require passing owner and repo names to `upload_sarif_to_github` [#121]
 
 ### Internal Changes
 
