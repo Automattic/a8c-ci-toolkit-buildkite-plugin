@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Add a script for commenting dependencies diff on PRs in Android projects [#120]
 
 ### Bug Fixes
 
