@@ -12,6 +12,6 @@ PLUGIN_ROOT=$( dirname "$HOOKS_ROOT" )
 PLUGIN_BIN="$PLUGIN_ROOT/bin"
 
 export PATH="$PATH:$PLUGIN_BIN"
-alias dependency-diff-tldr='java -jar "$PLUGIN_BIN/dependency-diff-tldr.jar"'
+export PLUGIN_ROOT=$PLUGIN_ROOT
 
 echo "~~~ :file_cabinet: Loaded Caching Plugin"
