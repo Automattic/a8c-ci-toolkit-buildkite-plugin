@@ -120,6 +120,14 @@ generate_project_dependencies_comment_body() {
 
 The following changes in project dependencies were detected (configuration \`$CONFIGURATION\`):
 
+<details><summary>TLDR; list</summary>
+
+\`\`\`
+$(cat "$TLDR_DIFF_DEPENDENCIES_FILE")
+\`\`\`
+
+</details>
+
 <details><summary>expand</summary>
 
 \`\`\`diff
@@ -136,6 +144,14 @@ generate_build_dependencies_comment_body() {
   cat <<EOF
 
 The following changes in the build classpath were detected:
+
+<details><summary>TLDR; list</summary>
+
+\`\`\`
+$(cat "$TLDR_DIFF_BUILD_ENV_FILE")
+\`\`\`
+
+</details>
 
 <details><summary>expand</summary>
 
