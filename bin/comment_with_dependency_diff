@@ -174,7 +174,7 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
   append_content() {
     local header="$1"
     local content="$2"
-    local github_comment_max_size=65536
+    local github_comment_max_size=65400 # GitHub constraint is 65536, but we decrease this value slightly to reserve for hidden comment_on_pr content and line breaks
     local warning_message="Content exceeds $github_comment_max_size characters. [Navigate to Buildkite build artifacts](${BUILDKITE_BUILD_URL}#${BUILDKITE_JOB_ID}) to see details."
 
     local current_size
