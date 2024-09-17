@@ -56,12 +56,12 @@ git config --global user.email "mobile@automattic.com"
 git config --global user.name "Dependency Tree Diff Tool"
 
 echo "--> Starting the check"
-baseBranch=$BUILDKITE_PULL_REQUEST_BASE_BRANCH
-echo "--> Base branch is $baseBranch"
+BASE_BRANCH=$BUILDKITE_PULL_REQUEST_BASE_BRANCH
+echo "--> Base branch is $BASE_BRANCH"
 
-git merge "origin/$baseBranch" --no-edit
+git merge "origin/$BASE_BRANCH" --no-edit
 
-if (git diff --name-status "origin/$baseBranch" | grep -E "\.gradle(\.kts)?|\.toml" --quiet); then
+if (git diff --name-status "origin/$BASE_BRANCH" | grep -E "\.gradle(\.kts)?|\.toml" --quiet); then
     echo "Gradle files have been changed. Looking for caused dependency changes"
 else
     echo "Gradle files haven't been changed. There is no need to run the diff"
@@ -84,7 +84,7 @@ if ! git diff --quiet; then
   git stash
 fi
 
-git checkout "$baseBranch"
+git checkout "$BASE_BRANCH"
 ./gradlew :"$MODULE":dependencies --configuration "$CONFIGURATION" >$BASE_BRANCH_DEPENDENCIES_FILE
 
 echo "--> Generating build environment dependencies for the base branch"
