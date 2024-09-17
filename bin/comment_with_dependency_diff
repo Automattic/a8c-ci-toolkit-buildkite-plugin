@@ -151,14 +151,14 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
   append_content() {
     local header="$1"
     local content="$2"
-    local max_size=65536
-    local warning_message="Content exceeds $max_size characters. Check Buildkite artifacts for details."
+    local github_comment_max_size=65536
+    local warning_message="Content exceeds $github_comment_max_size characters. [Navigate to Buildkite build artifacts](${BUILDKITE_BUILD_URL}#${BUILDKITE_JOB_ID}) to see details."
 
     local current_size
     current_size=$(wc -c < "$COMMENT_FILE")
 
     # Calculate if there's enough space for the content and header
-    if (( current_size + ${#header} + ${#content} > max_size - ${#warning_message} )); then
+    if (( current_size + ${#header} + ${#content} > github_comment_max_size - ${#warning_message} )); then
       printf "%s\n" "$warning_message" > $COMMENT_FILE
       return
     fi
