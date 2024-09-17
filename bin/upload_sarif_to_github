@@ -3,11 +3,11 @@
 set -euo pipefail
 
 sarif_file="${1:-}"
-owner="${2:-}"
-repo="${3:-}"
+owner=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO}")")
+repo=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
 
-if [ -z "$sarif_file" ] || [ -z "$owner" ] || [ -z "$repo" ]; then
-  echo "Not enough arguments provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report> <gh owner> <gh repo>"
+if [ -z "$sarif_file" ]; then
+  echo "Not enough arguments provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report>"
   exit 1
 fi
 
