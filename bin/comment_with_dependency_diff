@@ -43,9 +43,6 @@ if [ "${BUILDKITE_PULL_REQUEST:-false}" == "false" ]; then
   exit 2
 fi
 
-OWNER=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO}")")
-REPO=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
-
 DIFF_DEPENDENCIES_FOLDER="./build/reports/diff"
 BASE_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_dependencies.txt"
 HEAD_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/head_branch_dependencies.txt"
@@ -55,16 +52,11 @@ DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_dependencies.txt"
 DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_build_env.txt"
 DEPENDENCY_TREE_VERSION="1.2.1"
 
-PR_NUMBER=$BUILDKITE_PULL_REQUEST
-PR_URL="https://api.github.com/repos/$OWNER/$REPO/pulls/$PR_NUMBER"
-
 git config --global user.email "mobile@automattic.com"
 git config --global user.name "Dependency Tree Diff Tool"
 
 echo "--> Starting the check"
-echo "--> Fetching the base branch from $PR_URL"
-githubResponse="$(curl "$PR_URL" -H "Authorization: token $GITHUB_TOKEN")"
-baseBranch=$(echo "$githubResponse" | tr '\r\n' ' ' | jq '.base.ref' | tr -d '"')
+baseBranch=$BUILDKITE_PULL_REQUEST_BASE_BRANCH
 echo "--> Base branch is $baseBranch"
 
 git merge "origin/$baseBranch" --no-edit
