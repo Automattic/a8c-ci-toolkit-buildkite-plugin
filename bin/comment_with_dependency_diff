@@ -113,7 +113,7 @@ echo "--> Running dependency-tree-diff.jar"
 java -jar "$JAR_DIR/dependency-diff-tldr.jar" $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$TLDR_DIFF_DEPENDENCIES_FILE
 
 ./dependency-tree-diff.jar $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$DIFF_BUILD_ENV_FILE
-java -jar "$JAR_DIR/dependency-diff-tldr.jar" $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$TLDR_DIFF_BUILD_ENV_FILE
+java -jar "$JAR_DIR/dependency-diff-tldr.jar" $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$TLDR_DIFF_BUILD_ENV_FILE
 
 generate_project_dependencies_comment_body() {
   cat <<EOF
@@ -128,7 +128,7 @@ $(cat "$TLDR_DIFF_DEPENDENCIES_FILE")
 
 </details>
 
-<details><summary>expand</summary>
+<details><summary>tree</summary>
 
 \`\`\`diff
 $(cat "$DIFF_DEPENDENCIES_FILE")
@@ -153,7 +153,7 @@ $(cat "$TLDR_DIFF_BUILD_ENV_FILE")
 
 </details>
 
-<details><summary>expand</summary>
+<details><summary>tree</summary>
 
 \`\`\`diff
 $(cat "$DIFF_BUILD_ENV_FILE")
