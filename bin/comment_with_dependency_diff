@@ -158,8 +158,8 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
     current_size=$(wc -c < "$COMMENT_FILE")
 
     # Calculate if there's enough space for the content and header
-    if (( current_size + ${#header} + ${#content} > github_comment_max_size - ${#warning_message} )); then
-      printf "%s\n" "$warning_message" > $COMMENT_FILE
+    if (( current_size + ${#header} + ${#content} > github_comment_max_size - ${#header} - ${#warning_message})); then
+      printf "\n%s\n%s\n" "$header" "$warning_message" > $COMMENT_FILE
       return
     fi
 
