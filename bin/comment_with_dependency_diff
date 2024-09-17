@@ -38,6 +38,11 @@ if [ -z "$MODULE" ] || [ -z "$CONFIGURATION" ]; then
   exit 1
 fi
 
+if [ "${BUILDKITE_PULL_REQUEST:-false}" == "false" ]; then
+  echo "This script should only be called on pull requests. Be sure to set \`if: build.pull_request.id != null\` on the step invoking it in your Buildkite pipeline"
+  exit 2
+fi
+
 OWNER=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO}")")
 REPO=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
 
