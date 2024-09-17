@@ -149,28 +149,30 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
   true > $COMMENT_FILE  # 'true' used to clear the file as a no-op
 
   append_content() {
-    local content="$1"
-    local github_pr_comment_max_size=65536
-    local current_file_size
-    current_file_size=$(wc -c < "$COMMENT_FILE")
+    local header="$1"
+    local content="$2"
+    local max_size=65536
+    local warning_message="Content exceeds $max_size characters. Check Buildkite artifacts for details."
 
-    if (( current_file_size + ${#content} > github_pr_comment_max_size )); then
-      echo "Content exceeds $github_pr_comment_max_size characters. Navigate to Buildkite build artifacts to see details." >> $COMMENT_FILE
-    else
-      echo "$content" >> $COMMENT_FILE
+    local current_size
+    current_size=$(wc -c < "$COMMENT_FILE")
+
+    # Calculate if there's enough space for the content and header
+    if (( current_size + ${#header} + ${#content} > max_size - ${#warning_message} )); then
+      printf "%s\n" "$warning_message" > $COMMENT_FILE
+      return
     fi
+
+    printf "\n%s\n" "$header" >> $COMMENT_FILE
+    printf "%s\n" "$content" >> $COMMENT_FILE
   }
 
-  if [ -s $DIFF_DEPENDENCIES_FILE ]; then
-    printf "\n## Project dependencies changes\n\n" >> $COMMENT_FILE
-    content=$(generate_project_dependencies_comment_body)
-    append_content "$content"
+  if [ -s "$DIFF_DEPENDENCIES_FILE" ]; then
+    append_content "## Project dependencies changes" "$(generate_project_dependencies_comment_body)"
   fi
 
-  if [ -s $DIFF_BUILD_ENV_FILE ]; then
-    printf "\n## Build environment changes\n\n" >> $COMMENT_FILE
-    content=$(generate_build_dependencies_comment_body)
-    append_content "$content"
+  if [ -s "$DIFF_BUILD_ENV_FILE" ]; then
+    append_content "## Build environment changes" "$(generate_build_dependencies_comment_body)"
   fi
 
   comment_on_pr --id "dependency-diff" --if-exist update "$COMMENT_FILE"
