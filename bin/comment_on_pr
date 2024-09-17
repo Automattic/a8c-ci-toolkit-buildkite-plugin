@@ -131,9 +131,6 @@ EOF
 comment_body_file=$(mktemp)
 echo "$comment_body" > "$comment_body_file"
 
-# Use jq with the temporary file for payload
-#jq -c --null-input --arg body "$(cat "$comment_body_file")" '{body: $body}' > "$json_payload_file"
-
 json=$(jq -c --null-input \
   --rawfile body "$comment_body_file" \
   '{
