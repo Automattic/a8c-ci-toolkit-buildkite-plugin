@@ -1,5 +1,33 @@
 #!/bin/bash
 
+# This script is used in a Buildkite CI pipeline to analyze and comment on dependency changes in a
+# GitHub pull request (PR). It compares the Gradle project dependencies and build environment between the
+# base branch and the head branch to identify changes caused by updates to Gradle files.
+#
+# Usage:
+#    ./comment_with_dependency_diff <MODULE> <CONFIGURATION>
+#
+# Parameters:
+#    <MODULE>        : The Gradle module whose dependencies will be checked.
+#    <CONFIGURATION> : The Gradle configuration to inspect for dependencies (e.g., "runtimeClasspath").
+#
+# Steps:
+# 1. The script fetches the base branch of the PR and merges it into the head branch.
+# 2. It generates the dependency and build environment reports for both the base and head branches.
+# 3. The script compares these reports to detect any changes in the project's dependencies.
+# 4. If changes are found, the script creates a comment on the GitHub PR with the results.
+# 5. If no changes are detected, the script exits without posting any comment.
+#
+# Notes:
+# - The GitHub token must be set via the environment variable `GITHUB_TOKEN` to authenticate API requests.
+# - The comment on the PR will include a summary of changes and a detailed list in expandable sections.
+# - A jar file `dependency-tree-diff.jar` is downloaded and executed to perform the dependency diff.
+#
+# Example:
+#    ./comment_with_dependency_diff app release
+#
+# This will analyze the `app` module with the `release` configuration and post the result to the PR.
+
 set -euo pipefail
 
 MODULE="${1:-}"
@@ -10,8 +38,10 @@ if [ -z "$MODULE" ] || [ -z "$CONFIGURATION" ]; then
   exit 1
 fi
 
-OWNER=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO}")")
-REPO=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
+if [ "${BUILDKITE_PULL_REQUEST:-false}" == "false" ]; then
+  echo "This script should only be called on pull requests. Be sure to set \`if: build.pull_request.id != null\` on the step invoking it in your Buildkite pipeline"
+  exit 2
+fi
 
 DIFF_DEPENDENCIES_FOLDER="./build/reports/diff"
 BASE_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_dependencies.txt"
@@ -21,29 +51,25 @@ HEAD_BRANCH_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/head_branch_build_env.txt"
 DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_dependencies.txt"
 DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_build_env.txt"
 
+DEPENDENCY_TREE_VERSION="1.2.1"
+DEPENDENCY_TREE_CHECKSUM="39c50f22cd4211a3e52afec43120b7fdf90f9890"
+
 TLDR_DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_dependencies.txt"
 TLDR_DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_build_env.txt"
-
-DEPENDENCY_TREE_VERSION="1.2.1"
-
-PR_NUMBER=$BUILDKITE_PULL_REQUEST
-PR_URL="https://api.github.com/repos/$OWNER/$REPO/pulls/$PR_NUMBER"
 
 git config --global user.email "mobile@automattic.com"
 git config --global user.name "Dependency Tree Diff Tool"
 
 echo "--> Starting the check"
-echo "--> Fetching the base branch from $PR_URL"
-githubResponse="$(curl "$PR_URL" -H "Authorization: token $GITHUB_TOKEN")"
-baseBranch=$(echo "$githubResponse" | tr '\r\n' ' ' | jq '.base.ref' | tr -d '"')
-echo "--> Base branch is $baseBranch"
+BASE_BRANCH=$BUILDKITE_PULL_REQUEST_BASE_BRANCH
+echo "--> Base branch is $BASE_BRANCH"
 
-git merge "origin/$baseBranch" --no-edit
+git merge "origin/$BASE_BRANCH" --no-edit
 
-if (git diff --name-status "origin/$baseBranch" | grep -E "\.gradle(\.kts)?|\.toml" --quiet); then
-    echo ".gradle files have been changed. Looking for caused dependency changes"
+if (git diff --name-status "origin/$BASE_BRANCH" | grep -E "\.gradle(\.kts)?|\.toml" --quiet); then
+    echo "Gradle files have been changed. Looking for caused dependency changes"
 else
-    echo ".gradle files haven't been changed. There is no need to run the diff"
+    echo "Gradle files haven't been changed. There is no need to run the diff"
     exit 0
 fi
 
@@ -63,7 +89,7 @@ if ! git diff --quiet; then
   git stash
 fi
 
-git checkout "$baseBranch"
+git checkout "$BASE_BRANCH"
 ./gradlew :"$MODULE":dependencies --configuration "$CONFIGURATION" >$BASE_BRANCH_DEPENDENCIES_FILE
 
 echo "--> Generating build environment dependencies for the base branch"
@@ -74,15 +100,13 @@ git checkout "-"
 echo "--> Downloading dependency-tree-diff.jar"
 curl -v -L "https://github.com/JakeWharton/dependency-tree-diff/releases/download/$DEPENDENCY_TREE_VERSION/dependency-tree-diff.jar" -o dependency-tree-diff.jar
 sha=$(sha1sum dependency-tree-diff.jar | cut -d' ' -f1)
-if [[ $sha != "39c50f22cd4211a3e52afec43120b7fdf90f9890" ]]; then
+if [[ $sha != "$DEPENDENCY_TREE_CHECKSUM" ]]; then
   echo "dependency-tree-diff.jar file has unexpected sha1"
   exit 1
 fi
 chmod +x dependency-tree-diff.jar
 
 JAR_DIR="$PLUGIN_ROOT/jar"
-pwd
-ls
 
 echo "--> Running dependency-tree-diff.jar"
 ./dependency-tree-diff.jar $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$DIFF_DEPENDENCIES_FILE
@@ -96,11 +120,13 @@ generate_project_dependencies_comment_body() {
 
 The following changes in project dependencies were detected (configuration \`$CONFIGURATION\`):
 
-<details><summary>TLDR; list</summary>
-$(cat "$TLDR_DIFF_DEPENDENCIES_FILE")
+<details><summary>expand</summary>
+
+\`\`\`diff
+$(cat "$DIFF_DEPENDENCIES_FILE")
+\`\`\`
+
 </details>
-
-
 
 
 EOF
@@ -111,8 +137,12 @@ generate_build_dependencies_comment_body() {
 
 The following changes in the build classpath were detected:
 
-<details><summary>TLDR; list</summary>
-$(cat "$TLDR_DIFF_BUILD_ENV_FILE")
+<details><summary>expand</summary>
+
+\`\`\`diff
+$(cat "$DIFF_BUILD_ENV_FILE")
+\`\`\`
+
 </details>
 
 EOF
@@ -126,32 +156,33 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
   true > $COMMENT_FILE  # 'true' used to clear the file as a no-op
 
   append_content() {
-    local content="$1"
-    local github_pr_comment_max_size=65536
-    local current_file_size
-    current_file_size=$(wc -c < "$COMMENT_FILE")
+    local header="$1"
+    local content="$2"
+    local github_comment_max_size=65536
+    local warning_message="Content exceeds $github_comment_max_size characters. [Navigate to Buildkite build artifacts](${BUILDKITE_BUILD_URL}#${BUILDKITE_JOB_ID}) to see details."
 
-    if (( current_file_size + ${#content} > github_pr_comment_max_size )); then
-      echo "Content exceeds $github_pr_comment_max_size characters. Navigate to Buildkite build artifacts to see details." >> $COMMENT_FILE
-    else
-      echo "$content" >> $COMMENT_FILE
+    local current_size
+    current_size=$(wc -c < "$COMMENT_FILE")
+
+    # Calculate if there's enough space for the content and header
+    if (( current_size + ${#header} + ${#content} > github_comment_max_size - ${#warning_message} )); then
+      printf "%s\n" "$warning_message" > $COMMENT_FILE
+      return
     fi
+
+    printf "\n%s\n" "$header" >> $COMMENT_FILE
+    printf "%s\n" "$content" >> $COMMENT_FILE
   }
 
-  if [ -s $DIFF_DEPENDENCIES_FILE ]; then
-    printf "\n## Project dependencies changes\n\n" >> $COMMENT_FILE
-    content=$(generate_project_dependencies_comment_body)
-    append_content "$content"
+  if [ -s "$DIFF_DEPENDENCIES_FILE" ]; then
+    append_content "## Project dependencies changes" "$(generate_project_dependencies_comment_body)"
   fi
 
-  if [ -s $DIFF_BUILD_ENV_FILE ]; then
-    printf "\n## Build environment changes\n\n" >> $COMMENT_FILE
-    content=$(generate_build_dependencies_comment_body)
-    append_content "$content"
+  if [ -s "$DIFF_BUILD_ENV_FILE" ]; then
+    append_content "## Build environment changes" "$(generate_build_dependencies_comment_body)"
   fi
 
   comment_on_pr --id "dependency-diff" --if-exist update "$COMMENT_FILE"
 else
   comment_on_pr --id "dependency-diff" --if-exist delete
 fi
-
