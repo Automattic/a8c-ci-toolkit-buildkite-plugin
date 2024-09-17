@@ -50,7 +50,9 @@ BASE_BRANCH_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_build_env.txt"
 HEAD_BRANCH_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/head_branch_build_env.txt"
 DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_dependencies.txt"
 DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_build_env.txt"
+
 DEPENDENCY_TREE_VERSION="1.2.1"
+DEPENDENCY_TREE_CHECKSUM="39c50f22cd4211a3e52afec43120b7fdf90f9890"
 
 git config --global user.email "mobile@automattic.com"
 git config --global user.name "Dependency Tree Diff Tool"
@@ -95,7 +97,7 @@ git checkout "-"
 echo "--> Downloading dependency-tree-diff.jar"
 curl -v -L "https://github.com/JakeWharton/dependency-tree-diff/releases/download/$DEPENDENCY_TREE_VERSION/dependency-tree-diff.jar" -o dependency-tree-diff.jar
 sha=$(sha1sum dependency-tree-diff.jar | cut -d' ' -f1)
-if [[ $sha != "39c50f22cd4211a3e52afec43120b7fdf90f9890" ]]; then
+if [[ $sha != "$DEPENDENCY_TREE_CHECKSUM" ]]; then
   echo "dependency-tree-diff.jar file has unexpected sha1"
   exit 1
 fi
@@ -175,4 +177,3 @@ if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
 else
   comment_on_pr --id "dependency-diff" --if-exist delete
 fi
-
