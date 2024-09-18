@@ -38,16 +38,26 @@ _None._
 
 ### New Features
 
+_None._
+
+### Bug Fixes
+
+_None._
+
+### Internal Changes
+
+_None._
+
+## 3.7.0
+
+### New Features
+
 - Add a script for commenting dependencies diff on PRs in Android projects [#120]
 - Append summarized list to dependency diff comment [#122]
 
 ### Bug Fixes
 
 - Don't require passing owner and repo names to `upload_sarif_to_github` [#121]
-
-### Internal Changes
-
-_None._
 
 ## 3.6.2
 
