@@ -109,11 +109,16 @@ chmod +x dependency-tree-diff.jar
 JAR_DIR="$PLUGIN_ROOT/jar"
 
 echo "--> Running dependency-tree-diff.jar"
+
+# This script uses the 'dependency-diff-tldr' tool to summarize dependency differences.
+# Source code: https://github.com/careem/dependency-diff-tldr
+# Version: v0.0.6 (commit: 953a153)
+# To update: build from source using the repo above and `r8Jar` task
 ./dependency-tree-diff.jar $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$DIFF_DEPENDENCIES_FILE
-java -jar "$JAR_DIR/dependency-diff-tldr.jar" $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$TLDR_DIFF_DEPENDENCIES_FILE
+java -jar "$JAR_DIR/dependency-diff-tldr-0.0.6.jar" $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$TLDR_DIFF_DEPENDENCIES_FILE
 
 ./dependency-tree-diff.jar $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$DIFF_BUILD_ENV_FILE
-java -jar "$JAR_DIR/dependency-diff-tldr.jar" $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$TLDR_DIFF_BUILD_ENV_FILE
+java -jar "$JAR_DIR/dependency-diff-tldr-0.0.6.jar" $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$TLDR_DIFF_BUILD_ENV_FILE
 
 generate_project_dependencies_comment_body() {
   cat <<EOF
