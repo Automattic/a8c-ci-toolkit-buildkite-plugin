@@ -106,7 +106,8 @@ if [[ $sha != "$DEPENDENCY_TREE_CHECKSUM" ]]; then
 fi
 chmod +x dependency-tree-diff.jar
 
-JAR_DIR="$PLUGIN_ROOT/jar"
+REPO_ROOT=$( dirname "$( dirname "${BASH_SOURCE[0]}" )" )
+JAR_DIR="$REPO_ROOT/jar"
 
 echo "--> Running dependency-tree-diff.jar"
 

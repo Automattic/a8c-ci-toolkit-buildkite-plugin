@@ -12,6 +12,5 @@ PLUGIN_ROOT=$( dirname "$HOOKS_ROOT" )
 PLUGIN_BIN="$PLUGIN_ROOT/bin"
 
 export PATH="$PATH:$PLUGIN_BIN"
-export PLUGIN_ROOT=$PLUGIN_ROOT
 
 echo "~~~ :file_cabinet: Loaded Caching Plugin"
