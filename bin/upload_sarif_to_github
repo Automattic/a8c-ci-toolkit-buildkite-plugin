@@ -3,8 +3,8 @@
 set -euo pipefail
 
 sarif_file="${1:-}"
-owner=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO}")")
-repo=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
+owner=$(echo "$BUILDKITE_REPO" | awk -F'[:/]' '{print $2}')
+repo=$(echo "$BUILDKITE_REPO" | awk -F'[/.]' '{print $(NF-1)}')
 
 if [ -z "$sarif_file" ]; then
   echo "Not enough arguments provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report>"
