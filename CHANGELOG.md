@@ -42,12 +42,18 @@ _None._
 
 ### Bug Fixes
 
-- Fix not working SARIF upload on non-PR branches [#124] [#128]
-- Fix logic in our `github_api` helper to auto-detecting the GitHub host [#127] [#128]
+_None._
 
 ### Internal Changes
 
 _None._
+
+## 3.7.1
+
+### Bug Fixes
+
+- Fix logic in our `github_api` helper to auto-detecting the GitHub host [#127] [#128]
+- Fix not working SARIF upload on non-PR branches [#124]
 
 ## 3.7.0
 
