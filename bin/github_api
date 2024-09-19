@@ -4,7 +4,7 @@
 #
 # ENVIRONMENT VARIABLES:
 #   GITHUB_TOKEN: Required. The GitHub token to use for authentication.
-#   GH_HOST: Optional. The GitHub host to use. We'll figure out the host from `BUILDKITE_*` env vars if not set.
+#   GH_HOST: Optional. The GitHub host to use. We'll figure out the host from `BUILDKITE_REPO` env var if not set.
 #
 # Usage:
 #   github_api <endpoint> [curl-options]
@@ -23,8 +23,8 @@ shift
 
 github_host=${GH_HOST:-}
 if [[ -z "${github_host}" ]]; then
-    if [[ -n "${BUILDKITE_PULL_REQUEST_REPO:-}" ]]; then
-        github_host=$(echo "$BUILDKITE_PULL_REQUEST_REPO" | awk -F[/:] '{print $4}')
+    if [[ "${BUILDKITE_REPO:-}" =~ ^(https?://|git@)([^/:]+)[:/] ]]; then
+        github_host="${BASH_REMATCH[2]}"
     else
         github_host=github.com
     fi

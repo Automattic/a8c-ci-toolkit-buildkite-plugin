@@ -43,6 +43,7 @@ _None._
 ### Bug Fixes
 
 - Fix not working SARIF upload on non-PR branches [#124]
+- Fix logic in our `github_api` helper to auto-detecting the GitHub host [#127]
 
 ### Internal Changes
 
