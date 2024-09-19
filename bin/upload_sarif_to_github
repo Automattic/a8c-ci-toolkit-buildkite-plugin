@@ -62,4 +62,4 @@ fi
 sarif_json_temp_file=$(mktemp)
 echo "$json" > "$sarif_json_temp_file"
 
-github_api "https://api.github.com/repos/$slug/code-scanning/sarifs" --data-binary "@$sarif_json_temp_file"
+github_api "repos/$slug/code-scanning/sarifs" --data-binary "@$sarif_json_temp_file"
