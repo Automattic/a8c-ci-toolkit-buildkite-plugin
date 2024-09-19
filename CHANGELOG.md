@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- Fix not working SARIF upload on non-PR branches [#124]
 
 ### Internal Changes
 

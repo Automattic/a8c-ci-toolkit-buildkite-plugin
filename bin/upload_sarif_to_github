@@ -3,8 +3,12 @@
 set -euo pipefail
 
 sarif_file="${1:-}"
-owner=$(basename "$(dirname "${BUILDKITE_PULL_REQUEST_REPO}")")
-repo=$(basename "${BUILDKITE_PULL_REQUEST_REPO%.git}")
+
+[[ $BUILDKITE_REPO =~ ^(https?://|git@)([^/:]+)[/:](.*)$ ]] && slug=${BASH_REMATCH[3]%%.git}
+if [[ -z "${slug:-}" ]]; then
+  echo "Unable to determine the repo slug from the repo URL"
+  exit 1
+fi
 
 if [ -z "$sarif_file" ]; then
   echo "Not enough arguments provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report>"
@@ -64,4 +68,4 @@ curl -L \
   -H "Authorization: Bearer $GITHUB_TOKEN" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   --data-binary "@$sarif_json_temp_file" \
-  https://api.github.com/repos/"$owner"/"$repo"/code-scanning/sarifs
+  https://api.github.com/repos/"$slug"/code-scanning/sarifs
