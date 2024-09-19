@@ -36,5 +36,5 @@ else
     url="https://${github_host}/api/v3/$github_endpoint"
 fi
 
-curl -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" -s "$@" "$url"
+curl -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" -s "$@" "$url"
 exit $?
