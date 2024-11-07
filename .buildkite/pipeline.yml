@@ -10,8 +10,8 @@ env:
 steps:
   - label: Windows test inline Bash
     command: |
-      echo "I'm about to exit 1. I expect this step to fail..."
-      exit 1
+      echo "I'm about to exit 2. I expect this step to fail..."
+      exit 2
 
   - label: Windows test Bash script
     command: .buildkite/commands/command-that-fails.sh
