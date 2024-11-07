@@ -8,6 +8,17 @@ env:
   IMAGE_ID: xcode-15.4
 
 steps:
+  - label: Windows test inline Bash
+    command: |
+      echo "I'm about to exit 1. I expect this step to fail..."
+      exit 1
+
+  - label: Windows test Bash script
+    command: .buildkite/commands/command-that-fails.sh
+
+  - label: Windows test Bash script no set -e
+    command: .buildkite/commands/command-that-fails-without-set-e.sh
+
   - label: ":sleuth_or_spy: Lint"
     command: make lint
     notify:
