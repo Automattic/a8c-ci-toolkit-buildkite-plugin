@@ -22,6 +22,14 @@ steps:
     command: .buildkite/commands/command-that-fails-without-set-e.sh
     queue: windows
 
+  - label: Windows test PS1 script that fails
+    command: .buildkite/commands/command-that-fails-internally.ps1
+    queue: windows
+
+  - label: Windows test PS1 script that call script that fails
+    command: .buildkite/commands/command-that-calls-other-ps1-failing.ps1
+    queue: windows
+
   - label: ":sleuth_or_spy: Lint"
     command: make lint
     notify:
