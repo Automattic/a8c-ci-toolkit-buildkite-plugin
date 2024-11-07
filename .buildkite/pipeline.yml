@@ -12,12 +12,15 @@ steps:
     command: |
       echo "I'm about to exit 2. I expect this step to fail..."
       exit 2
+    queue: windows
 
   - label: Windows test Bash script
     command: .buildkite/commands/command-that-fails.sh
+    queue: windows
 
   - label: Windows test Bash script no set -e
     command: .buildkite/commands/command-that-fails-without-set-e.sh
+    queue: windows
 
   - label: ":sleuth_or_spy: Lint"
     command: make lint
