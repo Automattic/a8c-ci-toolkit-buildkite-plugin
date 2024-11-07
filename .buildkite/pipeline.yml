@@ -12,23 +12,28 @@ steps:
     command: |
       echo "I'm about to exit 2. I expect this step to fail..."
       exit 2
-    queue: windows
+    agents:
+      queue: windows
 
   - label: Windows test Bash script
     command: .buildkite/commands/command-that-fails.sh
-    queue: windows
+    agents:
+      queue: windows
 
   - label: Windows test Bash script no set -e
     command: .buildkite/commands/command-that-fails-without-set-e.sh
-    queue: windows
+    agents:
+      queue: windows
 
   - label: Windows test PS1 script that fails
     command: .buildkite/commands/command-that-fails-internally.ps1
-    queue: windows
+    agents:
+      queue: windows
 
   - label: Windows test PS1 script that call script that fails
     command: .buildkite/commands/command-that-calls-other-ps1-failing.ps1
-    queue: windows
+    agents:
+      queue: windows
 
   - label: ":sleuth_or_spy: Lint"
     command: make lint
