@@ -106,8 +106,14 @@ $mergedPath = "$env:PATH;$originalPath" -split ";" | Select-Object -Unique -Skip
 $env:PATH = ($mergedPath -join ";")
 Write-Host "PATH after refreshenv is $env:PATH"
 
+$nvmRCPath = '.nvmrc'
+if (Test-Path $nvmRCPath) {
+    Write-Host "No .nvmrc found. Skipping Node set up."
+    Exit 0
+}
+
 Write-Host "--- :node: Installing Node"
-$nvmVersion=(Get-Content -Path .nvmrc -Total 1)
+$nvmVersion=(Get-Content -Path $nvmRCPath -Total 1)
 Write-Host "Switching to nvm version defined in .nvmrc: $nvmVersion"
 
 nvm install $nvmVersion
