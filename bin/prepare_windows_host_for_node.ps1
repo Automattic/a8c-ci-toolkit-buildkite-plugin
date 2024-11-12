@@ -107,7 +107,7 @@ $env:PATH = ($mergedPath -join ";")
 Write-Host "PATH after refreshenv is $env:PATH"
 
 $nvmRCPath = '.nvmrc'
-if (Test-Path $nvmRCPath) {
+if (-not (Test-Path $nvmRCPath)) {
     Write-Host "No .nvmrc found. Skipping Node set up."
     Exit 0
 }
