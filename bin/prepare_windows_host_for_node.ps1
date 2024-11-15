@@ -9,7 +9,7 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     $roles = $principal.Identity.Groups | ForEach-Object {
         $_.Translate([Security.Principal.NTAccount]).Value
     }
-    Write-Host "+++ Your roles are:"
+    Write-Host "Your roles are:"
     $roles | ForEach-Object { Write-Host "  - $_" }
 }
 
