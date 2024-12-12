@@ -1,5 +1,7 @@
 #!/bin/bash -eu
 
+echo "GRADLE_RO_DEP_CACHE: $GRADLE_RO_DEP_CACHE"
+
 # The key is shared with `bin/save_gradle_dependency_cache`
 GRADLE_DEPENDENCY_CACHE_KEY="${GRADLE_DEPENDENCY_CACHE_PROJECT_PREFIX}_GRADLE_DEPENDENCY_CACHE"
 
