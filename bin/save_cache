@@ -45,6 +45,7 @@ if [[ "$SHOULD_FORCE" == '--force' ]]; then
 fi
 
 if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
+	SECONDS=0
 	echo "No existing cache entry for $CACHE_KEY – storing in cache"
 
 	echo "	Compressing"
@@ -73,6 +74,10 @@ if ! aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/
 
 	echo "	Cleaning Up"
 	rm "$CACHE_KEY"
+
+	duration=$SECONDS
+	echo "Cache entry successfully saved"
+	echo "	Duration: $((duration / 60)) minutes and $((duration % 60)) seconds"
 else
 	echo "This file is already cached – skipping upload"
 fi
