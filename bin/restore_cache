@@ -16,6 +16,7 @@ fi
 echo "Using $S3_BUCKET_NAME as cache bucket"
 
 if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
+	SECONDS=0
 	echo "Restoring cache entry $CACHE_KEY"
 
 	echo "	Downloading"
@@ -34,6 +35,9 @@ if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/nu
 
 	echo "	Cleaning Up"
 	rm "$CACHE_KEY"
+
+	duration=$SECONDS
+	echo "Cache entry successfully restored - duration: $((duration / 60)) minutes and $((duration % 60)) seconds"
 else
 	echo "No cache entry found for '$CACHE_KEY'"
 fi
