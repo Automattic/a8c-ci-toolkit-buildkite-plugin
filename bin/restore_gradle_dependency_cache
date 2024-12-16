@@ -1,7 +1,5 @@
 #!/bin/bash -eu
 
-echo "GRADLE_RO_DEP_CACHE: $GRADLE_RO_DEP_CACHE"
-
 # The key is shared with `bin/save_gradle_dependency_cache`
 GRADLE_DEPENDENCY_CACHE_KEY="${BUILDKITE_PIPELINE_SLUG}_GRADLE_DEPENDENCY_CACHE"
 
