@@ -39,7 +39,8 @@ if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/nu
 	rm "$CACHE_KEY"
 
 	duration=$SECONDS
-	echo "Cache entry successfully restored - duration: $((duration / 60)) minutes and $((duration % 60)) seconds"
+	echo "Cache entry successfully restored"
+	echo "	Duration: $((duration / 60)) minutes and $((duration % 60)) seconds"
 	echo "	Cache Size: $COMPRESSED_CACHE_SIZE (Compressed) -> $UNCOMPRESSED_CACHE_SIZE (Uncompressed)"
 else
 	echo "No cache entry found for '$CACHE_KEY'"
