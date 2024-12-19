@@ -6,10 +6,11 @@ GRADLE_DEPENDENCY_CACHE_KEY="${BUILDKITE_PIPELINE_SLUG}_GRADLE_DEPENDENCY_CACHE"
 echo "Restoring Gradle dependency cache..."
 
 DEP_CACHE_BASE_FOLDER=$(dirname "$GRADLE_RO_DEP_CACHE")
+DEP_CACHE_FOLDER_NAME=$(basename "$GRADLE_RO_DEP_CACHE")
 
 # `save_cache` & `restore_cache` scripts only work if they are called from the same directory
 pushd "$DEP_CACHE_BASE_FOLDER"
-restore_cache "$GRADLE_DEPENDENCY_CACHE_KEY"
+restore_cache "$GRADLE_DEPENDENCY_CACHE_KEY" "$DEP_CACHE_FOLDER_NAME"
 popd
 
 echo "---"
