@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- `lint_localized_strings_format` will bypass CocoaPods if a `Podfile.lock` is not found [#136]
 
 ### Bug Fixes
 
