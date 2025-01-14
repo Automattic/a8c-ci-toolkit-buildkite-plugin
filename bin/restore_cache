@@ -1,7 +1,6 @@
 #!/bin/bash -eu
 
 CACHE_KEY=$1
-CACHE_FILE=${2:-} # Optional - defaults to empty if not provided, and the uncompressed cache size not measured (or reported).
 
 bytes_to_mb() {
 	local bytes=$1
@@ -36,12 +35,9 @@ if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/nu
 		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet
 	fi
 
-	COMPRESSED_CACHE_SIZE=$(wc -c < "$CACHE_KEY")
+	CACHE_SIZE=$(wc -c < "$CACHE_KEY")
 	echo "	Decompressing"
 	tar -xf "$CACHE_KEY"
-	if [ -n "$CACHE_FILE" ]; then
-		UNCOMPRESSED_CACHE_SIZE=$(du -sb "$CACHE_FILE" | awk '{print $1}')
-	fi
 
 	echo "	Cleaning Up"
 	rm "$CACHE_KEY"
@@ -49,10 +45,7 @@ if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/nu
 	duration=$SECONDS
 	echo "Cache entry successfully restored"
 	echo "	Duration: $((duration / 60)) minutes and $((duration % 60)) seconds"
-	echo "	Cache Size (Compressed): $(bytes_to_mb "$COMPRESSED_CACHE_SIZE") MB"
-	if [ -n "$CACHE_FILE" ]; then
-		echo "	Cache Size (Uncompressed): $(bytes_to_mb "$UNCOMPRESSED_CACHE_SIZE") MB"
-	fi
+	echo "	Cache Size: $(bytes_to_mb "$CACHE_SIZE") MB"
 else
 	echo "No cache entry found for '$CACHE_KEY'"
 fi

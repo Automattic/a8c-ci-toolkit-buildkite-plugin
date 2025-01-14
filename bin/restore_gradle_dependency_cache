@@ -9,11 +9,10 @@ echo "Restoring Gradle dependency cache..."
 GRADLE_DEP_CACHE="$GRADLE_HOME/dependency-cache"
 
 DEP_CACHE_BASE_FOLDER=$(dirname "$GRADLE_DEP_CACHE")
-DEP_CACHE_FOLDER_NAME=$(basename "$GRADLE_DEP_CACHE")
 
 # `save_cache` & `restore_cache` scripts only work if they are called from the same directory
 pushd "$DEP_CACHE_BASE_FOLDER"
-restore_cache "$GRADLE_DEPENDENCY_CACHE_KEY" "$DEP_CACHE_FOLDER_NAME"
+restore_cache "$GRADLE_DEPENDENCY_CACHE_KEY"
 
 if [ -d "$DEP_CACHE_FOLDER_NAME/modules-2/" ]; then
 	echo "Placing Gradle dependency cache..."
