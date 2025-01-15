@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- `run_swiftlint`: Error gracefully when `swiftlint_version` is missing in the `.swiftlint.yml` file [#139]
 
 ### Internal Changes
 
