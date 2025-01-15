@@ -42,12 +42,18 @@ _None._
 
 ### Bug Fixes
 
-- `Dependency Cache`: Fix Dependency Cache [#138]
-- `run_swiftlint`: Error gracefully when `swiftlint_version` is missing in the `.swiftlint.yml` file [#139]
+_None._
 
 ### Internal Changes
 
 _None._
+
+## 3.9.1
+
+### Bug Fixes
+
+- `Dependency Cache`: Fix Dependency Cache [#138]
+- `run_swiftlint`: Error gracefully when `swiftlint_version` is missing in the `.swiftlint.yml` file [#139]
 
 ## 3.9.0
 
