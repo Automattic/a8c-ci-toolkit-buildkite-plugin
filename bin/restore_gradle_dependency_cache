@@ -1,15 +1,25 @@
 #!/bin/bash -eu
 
 # The key is shared with `bin/save_gradle_dependency_cache`
-GRADLE_DEPENDENCY_CACHE_KEY="GRADLE_DEPENDENCY_CACHE"
+GRADLE_DEPENDENCY_CACHE_KEY="${BUILDKITE_PIPELINE_SLUG}_GRADLE_DEPENDENCY_CACHE_V2"
 
 echo "Restoring Gradle dependency cache..."
 
-DEP_CACHE_BASE_FOLDER=$(dirname "$GRADLE_RO_DEP_CACHE")
+# The directory is shared with `bin/save_gradle_dependency_cache`
+GRADLE_DEP_CACHE="$GRADLE_HOME/dependency-cache"
+
+DEP_CACHE_BASE_FOLDER=$(dirname "$GRADLE_DEP_CACHE")
 
 # `save_cache` & `restore_cache` scripts only work if they are called from the same directory
 pushd "$DEP_CACHE_BASE_FOLDER"
 restore_cache "$GRADLE_DEPENDENCY_CACHE_KEY"
+
+if [ -d "$DEP_CACHE_FOLDER_NAME/modules-2/" ]; then
+	echo "Placing Gradle dependency cache..."
+	mv "$DEP_CACHE_FOLDER_NAME/modules-2/"* caches/modules-2/
+	rm -r "$DEP_CACHE_FOLDER_NAME"
+fi
+
 popd
 
 echo "---"
