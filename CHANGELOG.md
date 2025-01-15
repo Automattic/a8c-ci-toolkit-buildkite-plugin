@@ -48,6 +48,12 @@ _None._
 
 _None._
 
+## 3.9.0
+
+### New Features
+
+- `Dependency Cache` Dependency Cache on CI per Project `without GRADLE_RO_DEP_CACHE` by @ParaskP7 in [#135]
+
 ## 3.8.0
 
 ### New Features
