@@ -21,6 +21,10 @@ if [[ $# -gt 0 ]]; then
 fi
 
 SWIFTLINT_VERSION="$(<.swiftlint.yml awk '/^swiftlint_version: / {print $2}')"
+if [ -z "$SWIFTLINT_VERSION" ]; then
+  echo "Your \`.swiftlint.yml\` file must contain a key for \`swiftlint_version:\` so that we know which version of SwiftLint to use to lint your codebase."
+  exit 1
+fi
 SWIFTLINT_DOCKER_CMD=(docker run --rm -v "$PWD":/workspace -w /workspace ghcr.io/realm/swiftlint:"$SWIFTLINT_VERSION" swiftlint)
 
 set +e
