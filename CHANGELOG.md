@@ -42,11 +42,18 @@ _None._
 
 ### Bug Fixes
 
+- `Dependency Cache`: Fix Dependency Cache [#138]
 - `run_swiftlint`: Error gracefully when `swiftlint_version` is missing in the `.swiftlint.yml` file [#139]
 
 ### Internal Changes
 
 _None._
+
+## 3.9.0
+
+### New Features
+
+- `Dependency Cache`: Dependency Cache on CI per Project `[without GRADLE_RO_DEP_CACHE]` [#135]
 
 ## 3.8.0
 
