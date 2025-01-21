@@ -22,6 +22,7 @@ Options:
   --project PATH            Specify the path to the Xcode project.
   --use-spm                 Use the Swift package manager at the root.
   --strict-package-check    Fail the installation if the \`Package.resolved\` file has uncommitted changes or is out of date.
+                            If specified more than once, the last value will be used.
 
 Examples:
   Install dependencies for an Xcode workspace:
@@ -41,18 +42,36 @@ XCODEPROJ_PATH=
 USE_SPM=false
 STRICT_PACKAGE_CHECK=false
 
+# Track the number of targets found in the arguments
+TARGET_COUNT=0
+
 while [[ $# -gt 0 ]]; do
   case ${1:-} in
     --workspace)
+      if [[ -n $XCWORKSPACE_PATH || -n $XCODEPROJ_PATH || $USE_SPM == "true" ]]; then
+        echo "Error: only one target can be used: --workspace, --project, or --use-spm"
+        exit 1
+      fi
       XCWORKSPACE_PATH="${2:?you need to provide a value after the --workspace option}"
+      TARGET_COUNT=$((TARGET_COUNT + 1))
       shift; shift
       ;;
     --project)
+      if [[ -n $XCWORKSPACE_PATH || -n $XCODEPROJ_PATH || $USE_SPM == "true" ]]; then
+        echo "Error: only one target can be used: --workspace, --project, or --use-spm"
+        exit 1
+      fi
       XCODEPROJ_PATH=${2:?you need to provide a value after the --project option}
+      TARGET_COUNT=$((TARGET_COUNT + 1))
       shift; shift
       ;;
     --use-spm)
+      if [[ -n $XCWORKSPACE_PATH || -n $XCODEPROJ_PATH || $USE_SPM == "true" ]]; then
+        echo "Error: only one target can be used: --workspace, --project, or --use-spm"
+        exit 1
+      fi
       USE_SPM=true
+      TARGET_COUNT=$((TARGET_COUNT + 1))
       shift
       ;;
     --strict-package-check)
@@ -65,6 +84,12 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Ensure one and only one mutually exclusive option is provided
+if [[ $TARGET_COUNT -eq 0 ]]; then
+  echo "Error: You must provide one of --workspace, --project, or --use-spm."
+  exit 1
+fi
 
 if [[ "$#" -gt 0 ]]; then
   echo "Unexpected extra arguments: $*" >&2
