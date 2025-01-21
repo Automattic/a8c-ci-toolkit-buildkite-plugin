@@ -14,25 +14,32 @@ print_usage() {
 XCWORKSPACE_PATH=
 XCODEPROJ_PATH=
 USE_SPM=false
+STRICT_PACKAGE_CHECK=false
 
-case ${1:-} in
-  --workspace)
-    XCWORKSPACE_PATH="${2:?you need to provide a value after the --workspace option}"
-    shift; shift
-    ;;
-  --project)
-    XCODEPROJ_PATH=${2:?you need to provide a value after the --project option}
-    shift; shift
-    ;;
-  --use-spm)
-    USE_SPM=true
-    shift
-    ;;
-  -h|--help)
-    print_usage
-    exit 0
-    ;;
-esac
+while [[ $# -gt 0 ]]; do
+  case ${1:-} in
+    --workspace)
+      XCWORKSPACE_PATH="${2:?you need to provide a value after the --workspace option}"
+      shift; shift
+      ;;
+    --project)
+      XCODEPROJ_PATH=${2:?you need to provide a value after the --project option}
+      shift; shift
+      ;;
+    --use-spm)
+      USE_SPM=true
+      shift
+      ;;
+    --strict-package-check)
+      STRICT_PACKAGE_CHECK="true"
+      shift
+      ;;
+    -h|--help)
+      print_usage
+      exit 0
+      ;;
+  esac
+done
 
 if [[ "$#" -gt 0 ]]; then
   echo "Unexpected extra arguments: $*" >&2
@@ -109,14 +116,25 @@ if [[ -d "${XCWORKSPACE_PATH}" ]]; then
   # (despite the help page of `xcodebuild` suggesting that it should work without `-scheme`). Since the dependency resolution doesn't really depend on the scheme
   # and we don't want to have to provide or guess it, using `-list` instead stops making `xcodebuild` complain about `-workspace` not being used in conjunction
   # with `-scheme` (even if in practice we don't care about the scheme list it returns)
-  xcodebuild -workspace "${XCWORKSPACE_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile -list
+  xcodebuild -workspace "${XCWORKSPACE_PATH}" -resolvePackageDependencies -skipPackageUpdates -list
 elif [[ -d "${XCODEPROJ_PATH}" ]]; then
   echo "~~~ Resolving Swift Packages with \`xcodebuild\`"
   echo "Using -project \"${XCODEPROJ_PATH}\""
-  xcodebuild -project "${XCODEPROJ_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile
+  xcodebuild -project "${XCODEPROJ_PATH}" -resolvePackageDependencies -skipPackageUpdates
 elif [[ "${USE_SPM}" == "true" ]]; then
   echo "~~~ Resolving packages with \`swift package\`"
   swift package resolve
+fi
+
+# If STRICT_PACKAGE_CHECK is enabled, check to see if the `Package.resolved` has uncommitted changes
+if [[ "$STRICT_PACKAGE_CHECK" == "true" ]]; then
+  CHANGES=$(git status --porcelain -- "$PACKAGE_RESOLVED_LOCATION")
+
+  if [[ -n "$CHANGES" ]]; then
+    echo "Uncommitted changes detected in $PACKAGE_RESOLVED_LOCATION:"
+    echo "$CHANGES"
+    exit 1
+  fi
 fi
 
 # `checkouts` can be removed because the system can quickly generate them
