@@ -85,12 +85,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Ensure one and only one mutually exclusive option is provided
-if [[ $TARGET_COUNT -eq 0 ]]; then
-  echo "Error: You must provide one of --workspace, --project, or --use-spm."
-  exit 1
-fi
-
 if [[ "$#" -gt 0 ]]; then
   echo "Unexpected extra arguments: $*" >&2
   print_usage
