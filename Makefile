@@ -12,7 +12,7 @@ buildkite-plugin-lint:
 
 shellcheck:
 	@echo ~~~ 🕵️ ShellCheck
-	$(docker_run) koalaman/shellcheck hooks/** bin/** --exclude=SC1071
+	$(docker_run) koalaman/shellcheck $(shell find hooks bin -type f -not -name "*.ps1") --exclude=SC1071
 
 rubocop:
 	@echo ~~~ 🕵️ Rubocop

@@ -7,10 +7,18 @@
 
 set -e
 
+echo "~~~ :file_cabinet: Loading Automattic plugin commands in the environment"
+
 HOOKS_ROOT=$( dirname "${BASH_SOURCE[0]}" )
 PLUGIN_ROOT=$( dirname "$HOOKS_ROOT" )
-PLUGIN_BIN="$PLUGIN_ROOT/bin"
 
+OS=$(uname -s)
+echo "FYI: Running on OS $OS"
+
+# Notice that we don't need any OS-specific treatment of the path format for UNIX vs Windows.
+# When Windows runs this script via bash, it handles the path separation conversion from / to \ internally.
+PLUGIN_BIN="${PLUGIN_ROOT}/bin"
+
+echo "Original PATH: $PATH"
 export PATH="$PATH:$PLUGIN_BIN"
-
-echo "~~~ :file_cabinet: Loaded Caching Plugin"
+echo "PATH updated to: $PATH"
