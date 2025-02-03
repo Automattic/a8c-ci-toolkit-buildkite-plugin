@@ -48,6 +48,12 @@ _None._
 
 _None._
 
+## 3.10.0
+
+### New Features
+
+- Add command to prepare a Windows host to run CI for a Node app [#100]
+
 ## 3.9.1
 
 ### Bug Fixes
