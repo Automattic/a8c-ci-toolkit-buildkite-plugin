@@ -1,0 +1,65 @@
+#!/bin/bash
+
+set -euo pipefail
+
+sarif_file="${1:-}"
+
+[[ $BUILDKITE_REPO =~ ^(https?://|git@)([^/:]+)[/:](.*)$ ]] && slug=${BASH_REMATCH[3]%%.git}
+if [[ -z "${slug:-}" ]]; then
+  echo "Unable to determine the repo slug from the repo URL"
+  exit 1
+fi
+
+if [ -z "$sarif_file" ]; then
+  echo "Not enough arguments provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report>"
+  exit 1
+fi
+
+if [ ! -f "$sarif_file" ]; then
+  echo "Error: The specified sarif file '$sarif_file' does not exist or is not a regular file."
+  exit 1
+fi
+
+if [ ! -r "$sarif_file" ]; then
+  echo "Error: The specified sarif file '$sarif_file' is not readable."
+  exit 1
+fi
+
+# Check that GITHUB_TOKEN is set
+if [ -z "${GITHUB_TOKEN:-}" ]; then
+  echo "Error: GITHUB_TOKEN is not defined."
+  exit 1
+fi
+
+sarif_base64_temp_file=$(mktemp)
+
+gzip -c "$sarif_file" | base64 > "$sarif_base64_temp_file"
+
+if [[ "${BUILDKITE_PULL_REQUEST:-false}" != "false" ]]; then
+  json=$(jq -n \
+    --arg commit_sha "$BUILDKITE_COMMIT" \
+    --arg pr_number "$BUILDKITE_PULL_REQUEST" \
+    --rawfile sarif "$sarif_base64_temp_file" \
+    '{
+     "commit_sha": $commit_sha,
+     "ref": ("refs/pull/"+$pr_number+"/head"),
+     "sarif": $sarif
+   }')
+elif [[ "$BUILDKITE_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
+  json=$(jq -n \
+    --arg commit_sha "$BUILDKITE_COMMIT" \
+    --arg branch "$BUILDKITE_BRANCH" \
+    --rawfile sarif "$sarif_base64_temp_file" \
+    '{
+     "commit_sha": $commit_sha,
+     "ref": ("refs/heads/"+$branch),
+     "sarif": $sarif
+   }')
+else
+  exit 0
+fi
+
+sarif_json_temp_file=$(mktemp)
+echo "$json" > "$sarif_json_temp_file"
+
+github_api "repos/$slug/code-scanning/sarifs" --data-binary "@$sarif_json_temp_file"

@@ -48,6 +48,70 @@ _None._
 
 _None._
 
+## 3.9.1
+
+### Bug Fixes
+
+- `Dependency Cache`: Fix Dependency Cache [#138]
+- `run_swiftlint`: Error gracefully when `swiftlint_version` is missing in the `.swiftlint.yml` file [#139]
+
+## 3.9.0
+
+### New Features
+
+- `Dependency Cache`: Dependency Cache on CI per Project `[without GRADLE_RO_DEP_CACHE]` [#135]
+
+## 3.8.0
+
+### New Features
+
+- `lint_localized_strings_format` will bypass CocoaPods if a `Podfile.lock` is not found [#136]
+
+## 3.7.1
+
+### Bug Fixes
+
+- Fix logic in our `github_api` helper to auto-detecting the GitHub host [#127] [#128]
+- Fix not working SARIF upload on non-PR branches [#124]
+
+## 3.7.0
+
+### New Features
+
+- Add a script for commenting dependencies diff on PRs in Android projects [#120]
+- Append summarized list to dependency diff comment [#122]
+
+### Bug Fixes
+
+- Don't require passing owner and repo names to `upload_sarif_to_github` [#121]
+
+## 3.6.2
+
+### Bug Fixes
+
+- Fix passing main branch name when sending sarif file [#118]
+
+## 3.6.1
+
+### Bug Fixes
+
+- Check for $BUILDKITE_PULL_REQUEST = false when uploading sarif file [#116]
+
+### Internal Changes
+
+- Tooling change: Dangermattic setup [#113]
+
+## 3.6.0
+
+### New Features
+
+- Refactor `install_swiftpm_dependencies` to allow specifying `--workspace`/`--project`/`--use-spm` type of project explicitly, and improve implicit/automatic project type detection logic. [#105]
+- Introduce a command for uploading .sarif files to GitHub's registry [#111]
+
+### Bug Fixes
+
+- Make sure `install_swiftpm_dependencies` uses the correct `Package.resolved` file (`.xcworkspace` vs `.xcodeproj/project.xcworkspace`). [#105]
+
 ## 3.5.1
 
 ### Bug Fixes

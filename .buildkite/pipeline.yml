@@ -1,6 +1,94 @@
-steps:
-  - label: "🕵️ Lint"
-    command: make lint
+# yaml-language-server: $schema=https://raw.githubusercontent.com/buildkite/pipeline-schema/main/schema.json
+---
 
-  - label: "🔬 Test"
+# For convenience with the many install_swiftpm_dependencies steps, we declare agents and env for macOS in the root, then specialize the fewer remaining steps
+agents:
+  queue: mac
+env:
+  IMAGE_ID: xcode-15.4
+
+steps:
+  - label: ":sleuth_or_spy: Lint"
+    command: make lint
+    notify:
+      - github_commit_status:
+          context: Lint
+    agents:
+      queue: default
+
+  - label: ":microscope: Test"
     command: make test
+    notify:
+      - github_commit_status:
+          context: Test
+    agents:
+      queue: default
+
+  - label: ":radioactive_sign: Danger - PR Check"
+    command: danger
+    key: danger
+    if: build.pull_request.id != null
+    retry:
+      manual:
+        permit_on_passed: true
+    notify:
+      - github_commit_status:
+          context: Danger - PR Check
+    agents:
+      queue: linter
+
+  - group: ":swift: install_swiftpm_dependencies Tests"
+    steps:
+      - label: ":swift: Standalone Swift Package - Autodetect"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_package_automatic.sh
+        notify:
+          - github_commit_status:
+              context: "install_swiftpm_dependencies Tests: Standalone Swift Package - Autodetect"
+
+      - label: ":swift: Standalone Swift Package - Explicit"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_package_explicit.sh
+        notify:
+          - github_commit_status:
+              context: "install_swiftpm_dependencies Tests: Standalone Swift Package - Explicit"
+
+      - label: ":xcode: Xcode Project - Autodetect"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_project_automatic.sh
+        notify:
+          - github_commit_status:
+              context: "install_swiftpm_dependencies Tests: Xcode Project - Autodetect"
+
+      - label: ":xcode: Xcode Project - Explicit"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_project_explicit.sh
+        notify:
+          - github_commit_status:
+              context: "install_swiftpm_dependencies Tests: Xcode Project - Explicit"
+
+      - label: ":xcode: Xcode Project - No Package.resolved"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_project_no_package.sh
+        notify:
+          - github_commit_status:
+              context: "install_swiftpm_dependencies Tests: Xcode Project - No Package.resolved"
+
+      - label: ":xcode: Xcode Workspace - Autodetect"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_automatic.sh
+        notify:
+          - github_commit_status:
+              context: "install_swiftpm_dependencies Tests: Xcode Workspace - Autodetect"
+
+      - label: ":xcode: Xcode Workspace - Explicit"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_explicit.sh
+        notify:
+          - github_commit_status:
+              context: "install_swiftpm_dependencies Tests: Xcode Workspace - Explicit"
+
+      - label: ":xcode: Xcode Workspace and Project - Autodetect"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_and_project_automatic.sh
+        notify:
+          - github_commit_status:
+              context: "install_swiftpm_dependencies Tests: Xcode Workspace and Project - Autodetect"
+
+      - label: ":xcode: Xcode Workspace and Project - Explicit"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_and_project_explicit.sh
+        notify:
+          - github_commit_status:
+              context: "install_swiftpm_dependencies Tests: Xcode Workspace and Project - Explicit"

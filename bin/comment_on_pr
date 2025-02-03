@@ -126,20 +126,29 @@ $comment_body_id
 $arg_pr_comment
 EOF
 )
-json_payload=$(jq -c --null-input --arg body "$comment_body" '{body: $body}')
+
+# Write the comment body to a temporary file to fix possible "Argument list too long" error
+comment_body_file=$(mktemp)
+echo "$comment_body" > "$comment_body_file"
+
+json_payload_file=$(mktemp)
+jq -c --null-input \
+  --rawfile body "$comment_body_file" \
+  '{ body: $body }' \
+  > "$json_payload_file"
 
 if [[ -n "$existing_comment_id" && "$opt_if_exist" == "update" ]]; then
     echo "Update the existing comment: $existing_comment_id"
     github_api "$issues_endpoint/comments/$existing_comment_id" \
         --fail-with-body -X PATCH \
         -H "Content-Type: application/json" \
-        -d "${json_payload}"
+        --data-binary @"$json_payload_file"
 elif [[ -n "$arg_pr_comment" ]]; then
     echo "Post a new comment"
     github_api "$issues_endpoint/${BUILDKITE_PULL_REQUEST}/comments" \
         --fail-with-body -X POST \
         -H "Content-Type: application/json" \
-        -d "${json_payload}"
+        --data-binary @"$json_payload_file"
 else
     # No comment body was given in CLI, so no new comment to post
     echo "No new comment to post"
