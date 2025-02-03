@@ -65,6 +65,7 @@ if (Test-Path $atpRegPath) {
 Write-Host "--- :lock_with_ink_pen: Downloading Code Signing Certificate"
 $EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate | jq -r '.SecretString' | Out-File 'certificate.bin'
 certutil -decode certificate.bin certificate.pfx
+Write-Host "Code signing certificate downloaded at: $((Get-Item 'certificate.pfx').FullName)"
 If ($LastExitCode -ne 0) { Exit $LastExitCode }
 
 # From https://stackoverflow.com/a/46760714
