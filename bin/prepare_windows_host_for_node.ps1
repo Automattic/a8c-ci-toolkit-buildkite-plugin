@@ -13,7 +13,7 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     $roles | ForEach-Object { Write-Host "  - $_" }
 }
 
-Write-Host "--- :windows: Setting up Windows for Node and Electorn builds"
+Write-Host "--- :windows: Setting up Windows for Node and Electron builds"
 
 Write-Host "Enable long path behavior"
 # See https://docs.microsoft.com/en-us/windows/desktop/fileio/naming-a-file#maximum-path-length-limitation
