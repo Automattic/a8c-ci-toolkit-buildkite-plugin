@@ -1,0 +1,124 @@
+#!/bin/bash -eu
+
+# This script checks if files are changed in a PR.
+#
+# Usage:
+#   pr_changed_files                                  # Check if any files changed
+#   pr_changed_files --includes <file-patterns...>    # Check if changes include files matching patterns
+#   pr_changed_files --only-in <file-patterns...>     # Check if changes are limited to given patterns
+#
+# Examples:
+#   # Check if any files changed
+#   pr_changed_files
+#
+#   # Check if only documentation files changed
+#   pr_changed_files --only-in "*.md" "docs/**"
+#
+#   # Check if any Swift files changed
+#   pr_changed_files --includes "*.swift"
+#
+# Returns:
+#   Prints "true" if the condition is met, "false" otherwise
+#   Always exits with code 0 to allow easy variable assignment
+
+if [[ ! "${BUILDKITE_PULL_REQUEST:-invalid}" =~ ^[0-9]+$ ]]; then
+    echo "Error: this tool can only be called from a Buildkite PR job" >&2
+    exit 1
+fi
+
+mode=""
+patterns=()
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --only-in)
+            if [[ -n "$mode" ]]; then
+                echo "Error: cannot specify both --only-in and --includes" >&2
+                exit 1
+            fi
+            mode="only-in"
+            shift
+            while [[ "$#" -gt 0 && "$1" != "--"* ]]; do
+                patterns+=("$1")
+                shift
+            done
+            ;;
+        --includes)
+            if [[ -n "$mode" ]]; then
+                echo "Error: cannot specify both --only-in and --includes" >&2
+                exit 1
+            fi
+            mode="includes"
+            shift
+            while [[ "$#" -gt 0 && "$1" != "--"* ]]; do
+                patterns+=("$1")
+                shift
+            done
+            ;;
+        --*) 
+            echo "Error: unknown option $1" >&2
+            exit 1
+            ;;
+        *)
+            echo "Error: unexpected argument $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Get list of changed files
+changed_files=$(git --no-pager diff --name-only --merge-base "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | sort)
+
+if [[ -z "$mode" ]]; then
+    # No arguments = any change
+    if [[ -n "$changed_files" ]]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+    exit 0
+fi
+
+if [[ ${#patterns[@]} -eq 0 ]]; then
+    echo "Error: must specify at least one file pattern" >&2
+    exit 1
+fi
+
+# No files changed
+if [[ -z "$changed_files" ]]; then
+    if [[ "$mode" == "only-in" ]]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+    exit 0
+fi
+
+if [[ "$mode" == "only-in" ]]; then
+    # Check if all changed files match at least one pattern
+    for file in $changed_files; do
+        matches_any=false
+        for pattern in "${patterns[@]}"; do
+            if [[ "$file" == $pattern ]]; then
+                matches_any=true
+                break
+            fi
+        done
+        if [[ "$matches_any" == "false" ]]; then
+            echo "false"
+            exit 0
+        fi
+    done
+    echo "true"
+elif [[ "$mode" == "includes" ]]; then
+    # Check if any changed file matches any pattern
+    for file in $changed_files; do
+        for pattern in "${patterns[@]}"; do
+            if [[ "$file" == $pattern ]]; then
+                echo "true"
+                exit 0
+            fi
+        done
+    done
+    echo "false"
+fi
