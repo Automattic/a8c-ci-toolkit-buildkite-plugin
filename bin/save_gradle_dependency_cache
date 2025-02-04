@@ -24,5 +24,3 @@ pushd "$DEP_CACHE_BASE_FOLDER"
 # For now we are using a single key - we might expand on this later by using dependency catalog version
 save_cache "$DEP_CACHE_FOLDER_NAME" "$GRADLE_DEPENDENCY_CACHE_KEY" --force
 popd
-
-echo "---"
