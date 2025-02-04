@@ -48,6 +48,12 @@ _None._
 
 _None._
 
+## 3.10.1
+
+### Bug Fixes
+
+- Do not echo three dashes at the end of restore cache script [#146]
+
 ## 3.10.0
 
 ### New Features
