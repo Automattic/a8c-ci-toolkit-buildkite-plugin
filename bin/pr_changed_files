@@ -99,7 +99,8 @@ if [[ "$mode" == "only-in" ]]; then
     for file in $changed_files; do
         matches_any=false
         for pattern in "${patterns[@]}"; do
-            if [[ "$file" == $pattern ]]; then
+            # shellcheck disable=SC2053
+            if [[ "$file" == $pattern ]]; then # glob match with pattern
                 matches_any=true
                 break
             fi
@@ -114,7 +115,8 @@ elif [[ "$mode" == "includes" ]]; then
     # Check if any changed file matches any pattern
     for file in $changed_files; do
         for pattern in "${patterns[@]}"; do
-            if [[ "$file" == $pattern ]]; then
+            # shellcheck disable=SC2053
+            if [[ "$file" == $pattern ]]; then # glob match with pattern
                 echo "true"
                 exit 0
             fi
