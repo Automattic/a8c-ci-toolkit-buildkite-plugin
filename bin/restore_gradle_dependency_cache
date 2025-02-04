@@ -22,5 +22,3 @@ if [ -d "$DEP_CACHE_FOLDER_NAME/modules-2/" ]; then
 fi
 
 popd
-
-echo "---"
