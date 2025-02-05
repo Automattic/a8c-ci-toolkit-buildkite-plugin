@@ -12,7 +12,7 @@
 #   pr_changed_files
 #
 #   # Check if only documentation files changed. Could be useful to decide to skip UI tests for example
-#   pr_changed_files --only-in "*.md" "docs/**"
+#   pr_changed_files --only-in "*.md" "docs/*"
 #
 #   # Check if any Swift files changed, e.g. to decide if we should run Swiftlint
 #   pr_changed_files --includes "*.swift" ".swiftlint.yml"
