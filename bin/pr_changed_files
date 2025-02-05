@@ -35,24 +35,12 @@ EXCLUSIVE_OPTIONS_ERROR="Error: either specify --only-in or --includes; cannot s
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --only-in)
+        --only-in | --includes)
             if [[ -n "$mode" ]]; then
                 echo "$EXCLUSIVE_OPTIONS_ERROR" >&2
                 exit 1
             fi
-            mode="only-in"
-            shift
-            while [[ "$#" -gt 0 && "$1" != "--"* ]]; do
-                patterns+=("$1")
-                shift
-            done
-            ;;
-        --includes)
-            if [[ -n "$mode" ]]; then
-                echo "$EXCLUSIVE_OPTIONS_ERROR" >&2
-                exit 1
-            fi
-            mode="includes"
+            mode="${1%--}"
             shift
             while [[ "$#" -gt 0 && "$1" != "--"* ]]; do
                 patterns+=("$1")
