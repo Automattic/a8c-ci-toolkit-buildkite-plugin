@@ -59,7 +59,8 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Get list of changed files
-changed_files=$(git --no-pager diff --name-only --merge-base "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | sort)
+# Use -z to get null-terminated output and avoid escaping issues
+changed_files=$(git --no-pager diff --name-only -z --merge-base "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | tr '\0' '\n' | sort)
 
 if [[ -z "$mode" ]]; then
     # No arguments = any change
@@ -88,11 +89,14 @@ fi
 
 if [[ "$mode" == "only-in" ]]; then
     # Check if all changed files match at least one pattern
-    for file in "$changed_files"; do
+    while IFS= read -r file; do
+        [[ -z "$file" ]] && continue
+        # Remove any escaping of special characters
+        file="${file//\\/}"
         matches_any=false
         for pattern in "${patterns[@]}"; do
             # shellcheck disable=SC2053
-            if [[ "$file" == $pattern ]]; then # glob match with pattern
+            if [[ "$file" == ${pattern} ]]; then
                 matches_any=true
                 break
             fi
@@ -101,18 +105,21 @@ if [[ "$mode" == "only-in" ]]; then
             echo "false"
             exit 0
         fi
-    done
+    done <<< "$changed_files"
     echo "true"
 elif [[ "$mode" == "includes" ]]; then
     # Check if any changed file matches any pattern
-    for file in $changed_files; do
+    while IFS= read -r file; do
+        [[ -z "$file" ]] && continue
+        # Remove any escaping of special characters
+        file="${file//\\/}"
         for pattern in "${patterns[@]}"; do
             # shellcheck disable=SC2053
-            if [[ "$file" == $pattern ]]; then # glob match with pattern
+            if [[ "$file" == ${pattern} ]]; then
                 echo "true"
                 exit 0
             fi
         done
-    done
+    done <<< "$changed_files"
     echo "false"
 fi
