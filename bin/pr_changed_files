@@ -58,13 +58,15 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
-# Get list of changed files
-# Use -z to get null-terminated output and avoid escaping issues
-changed_files=$(git --no-pager diff --name-only -z --merge-base "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | tr '\0' '\n' | sort)
+# Get list of changed files as an array
+changed_files=()
+while IFS= read -r file; do
+    changed_files+=("$file")
+done < <(git --no-pager diff --name-only --merge-base "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | sort)
 
 if [[ -z "$mode" ]]; then
     # No arguments = any change
-    if [[ -n "$changed_files" ]]; then
+    if [[ ${#changed_files[@]} -gt 0 ]]; then
         echo "true"
     else
         echo "false"
@@ -78,7 +80,7 @@ if [[ ${#patterns[@]} -eq 0 ]]; then
 fi
 
 # No files changed
-if [[ -z "$changed_files" ]]; then
+if [[ ${#changed_files[@]} -eq 0 ]]; then
     if [[ "$mode" == "only-in" ]]; then
         echo "true"
     else
@@ -89,10 +91,7 @@ fi
 
 if [[ "$mode" == "only-in" ]]; then
     # Check if all changed files match at least one pattern
-    while IFS= read -r file; do
-        [[ -z "$file" ]] && continue
-        # Remove any escaping of special characters
-        file="${file//\\/}"
+    for file in "${changed_files[@]}"; do
         matches_any=false
         for pattern in "${patterns[@]}"; do
             # shellcheck disable=SC2053 # We don't quote the rhs in the condition on the next line because we want to interpret pattern as a glob pattern
@@ -105,14 +104,11 @@ if [[ "$mode" == "only-in" ]]; then
             echo "false"
             exit 0
         fi
-    done <<< "$changed_files"
+    done
     echo "true"
 elif [[ "$mode" == "includes" ]]; then
     # Check if any changed file matches any pattern
-    while IFS= read -r file; do
-        [[ -z "$file" ]] && continue
-        # Remove any escaping of special characters
-        file="${file//\\/}"
+    for file in "${changed_files[@]}"; do
         for pattern in "${patterns[@]}"; do
             # shellcheck disable=SC2053 # We don't quote the rhs in the condition on the next line because we want to interpret pattern as a glob pattern
             if [[ "$file" == ${pattern} ]]; then
@@ -120,6 +116,6 @@ elif [[ "$mode" == "includes" ]]; then
                 exit 0
             fi
         done
-    done <<< "$changed_files"
+    done
     echo "false"
 fi
