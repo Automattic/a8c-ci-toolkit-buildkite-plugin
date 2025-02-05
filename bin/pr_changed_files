@@ -40,7 +40,7 @@ while [[ "$#" -gt 0 ]]; do
                 echo "$EXCLUSIVE_OPTIONS_ERROR" >&2
                 exit 1
             fi
-            mode="${1%--}"
+            mode="${1#--}"
             shift
             while [[ "$#" -gt 0 && "$1" != "--"* ]]; do
                 patterns+=("$1")
