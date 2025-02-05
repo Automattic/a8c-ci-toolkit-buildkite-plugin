@@ -11,15 +11,16 @@
 #   # Check if any files changed
 #   pr_changed_files
 #
-#   # Check if only documentation files changed
+#   # Check if only documentation files changed. Could be useful to decide to skip UI tests for example
 #   pr_changed_files --only-in "*.md" "docs/**"
 #
-#   # Check if any Swift files changed
-#   pr_changed_files --includes "*.swift"
+#   # Check if any Swift files changed, e.g. to decide if we should run Swiftlint
+#   pr_changed_files --includes "*.swift" ".swiftlint.yml"
 #
 # Returns:
 #   Prints "true" if the condition is met, "false" otherwise
-#   Always exits with code 0 to allow easy variable assignment
+#   Exits with code 0 regardless of if the condition was met or not, to allow easy variable assignment.
+#   Only exits with non-zero if the command invocation itself was incorrect (called outside of a PR context, incorrect arguments…)
 
 if [[ ! "${BUILDKITE_PULL_REQUEST:-invalid}" =~ ^[0-9]+$ ]]; then
     echo "Error: this tool can only be called from a Buildkite PR job" >&2
@@ -99,7 +100,7 @@ fi
 
 if [[ "$mode" == "only-in" ]]; then
     # Check if all changed files match at least one pattern
-    for file in $changed_files; do
+    for file in "$changed_files"; do
         matches_any=false
         for pattern in "${patterns[@]}"; do
             # shellcheck disable=SC2053
