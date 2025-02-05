@@ -29,11 +29,14 @@ fi
 mode=""
 patterns=()
 
+# Define error message for mutually exclusive options
+EXCLUSIVE_OPTIONS_ERROR="Error: either specify --only-in or --includes; cannot specify both"
+
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --only-in)
             if [[ -n "$mode" ]]; then
-                echo "Error: cannot specify both --only-in and --includes" >&2
+                echo "$EXCLUSIVE_OPTIONS_ERROR" >&2
                 exit 1
             fi
             mode="only-in"
@@ -45,7 +48,7 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         --includes)
             if [[ -n "$mode" ]]; then
-                echo "Error: cannot specify both --only-in and --includes" >&2
+                echo "$EXCLUSIVE_OPTIONS_ERROR" >&2
                 exit 1
             fi
             mode="includes"
