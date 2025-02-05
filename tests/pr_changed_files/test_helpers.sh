@@ -2,6 +2,10 @@
 
 set -o pipefail
 
+# Add bin directory to PATH
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+export PATH="$REPO_ROOT/bin:$PATH"
+
 # Create a temporary git repository for testing
 create_tmp_repo_dir() {
     local temp_dir
