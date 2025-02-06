@@ -101,17 +101,17 @@ steps:
           - github_commit_status:
               context: "pr_changed_files Tests: Basic Changes"
 
-      - label: ":github: pr_changed_files Tests - Includes"
-        command: tests/pr_changed_files/test_includes_patterns.sh
+      - label: ":github: pr_changed_files Tests - Any Match"
+        command: tests/pr_changed_files/test_any_match_patterns.sh
         notify:
           - github_commit_status:
-              context: "pr_changed_files Tests: Includes"
+              context: "pr_changed_files Tests: Any Match"
 
-      - label: ":github: pr_changed_files Tests - Only In"
-        command: tests/pr_changed_files/test_only_in_patterns.sh
+      - label: ":github: pr_changed_files Tests - All Match"
+        command: tests/pr_changed_files/test_all_match_patterns.sh
         notify:
           - github_commit_status:
-              context: "pr_changed_files Tests: Only In"
+              context: "pr_changed_files Tests: All Match"
 
       - label: ":github: pr_changed_files Tests - Edge Cases"
         command: tests/pr_changed_files/test_edge_cases.sh

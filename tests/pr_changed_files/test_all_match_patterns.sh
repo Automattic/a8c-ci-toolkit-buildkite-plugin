@@ -4,7 +4,7 @@ set -o pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/test_helpers.sh"
 
-echo "--- :git: Testing only-in pattern matching"
+echo "--- :git: Testing all-match pattern matching"
 
 # Create test repository
 repo_path=$(create_tmp_repo_dir)
@@ -26,11 +26,11 @@ git add .
 git commit -m "Add doc files"
 
 # [Test] All changes in docs
-result=$(pr_changed_files --only-in "docs/*")
+result=$(pr_changed_files --all-match "docs/*")
 assert_output "true" "$result" "Should return true when all changes match patterns"
 
 # [Test] All changes in docs with explicit patterns including spaces and special chars
-result=$(pr_changed_files --only-in "docs/read me.md" "docs/guide with spaces.md" "docs/special\!\@\#\$chars.md")
+result=$(pr_changed_files --all-match "docs/read me.md" "docs/guide with spaces.md" "docs/special\!\@\#\$chars.md")
 assert_output "true" "$result" "Should return true when all changes match patterns with spaces and special chars"
 
 # [Test] Changes outside pattern
@@ -39,11 +39,11 @@ echo "swift" > "src/swift/special\!\@\#\$chars.swift"
 git add .
 git commit -m "Add swift file"
 
-result=$(pr_changed_files --only-in "docs/*")
+result=$(pr_changed_files --all-match "docs/*")
 assert_output "false" "$result" "Should return false when changes exist outside patterns"
 
 # [Test] Multiple patterns, all matching
-result=$(pr_changed_files --only-in "docs/*" "src/swift/main with spaces.swift" "src/swift/special\!\@\#\$chars.swift")
+result=$(pr_changed_files --all-match "docs/*" "src/swift/main with spaces.swift" "src/swift/special\!\@\#\$chars.swift")
 assert_output "true" "$result" "Should return true when all changes match multiple patterns"
 
-echo "✅ Only-in pattern tests passed"
+echo "✅ All-match pattern tests passed" 

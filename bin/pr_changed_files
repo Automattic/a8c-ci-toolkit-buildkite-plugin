@@ -4,18 +4,18 @@
 #
 # Usage:
 #   pr_changed_files                                  # Check if any files changed
-#   pr_changed_files --includes <file-patterns...>    # Check if changes include files matching patterns
-#   pr_changed_files --only-in <file-patterns...>     # Check if changes are limited to given patterns
+#   pr_changed_files --any-match <file-patterns...>   # Check if changes include files matching patterns
+#   pr_changed_files --all-match <file-patterns...>   # Check if changes are limited to given patterns
 #
 # Examples:
 #   # Check if any files changed
 #   pr_changed_files
 #
 #   # Check if only documentation files changed. Could be useful to decide to skip UI tests for example
-#   pr_changed_files --only-in "*.md" "docs/*"
+#   pr_changed_files --all-match "*.md" "docs/*"
 #
 #   # Check if any Swift files changed, e.g. to decide if we should run Swiftlint
-#   pr_changed_files --includes "*.swift" ".swiftlint.yml"
+#   pr_changed_files --any-match "*.swift" ".swiftlint.yml"
 #
 # Returns:
 #   Prints "true" if the condition is met, "false" otherwise
@@ -31,11 +31,11 @@ mode=""
 patterns=()
 
 # Define error message for mutually exclusive options
-EXCLUSIVE_OPTIONS_ERROR="Error: either specify --only-in or --includes; cannot specify both"
+EXCLUSIVE_OPTIONS_ERROR="Error: either specify --all-match or --any-match; cannot specify both"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --only-in | --includes)
+        --all-match | --any-match)
             if [[ -n "$mode" ]]; then
                 echo "$EXCLUSIVE_OPTIONS_ERROR" >&2
                 exit 1
@@ -85,7 +85,7 @@ fi
 
 # No files changed
 if [[ ${#changed_files[@]} -eq 0 ]]; then
-    if [[ "$mode" == "only-in" ]]; then
+    if [[ "$mode" == "all-match" ]]; then
         echo "true"
     else
         echo "false"
@@ -93,7 +93,7 @@ if [[ ${#changed_files[@]} -eq 0 ]]; then
     exit 0
 fi
 
-if [[ "$mode" == "only-in" ]]; then
+if [[ "$mode" == "all-match" ]]; then
     # Check if all changed files match at least one pattern
     for file in "${changed_files[@]}"; do
         matches_any=false
@@ -110,7 +110,7 @@ if [[ "$mode" == "only-in" ]]; then
         fi
     done
     echo "true"
-elif [[ "$mode" == "includes" ]]; then
+elif [[ "$mode" == "any-match" ]]; then
     # Check if any changed file matches any pattern
     for file in "${changed_files[@]}"; do
         for pattern in "${patterns[@]}"; do
