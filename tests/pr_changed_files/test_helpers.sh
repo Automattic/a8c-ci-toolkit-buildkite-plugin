@@ -17,12 +17,22 @@ create_tmp_repo_dir() {
 init_test_repo() {
     local repo_dir="$1"
     ORIGINAL_DIR=$(pwd)
-    pushd "$repo_dir"
+    
+    # Create a bare repo to act as remote
+    mkdir -p "$repo_dir/remote"
+    git init --bare "$repo_dir/remote"
+    
+    # Create the working repo
+    mkdir -p "$repo_dir/local"
+    pushd "$repo_dir/local"
 
     # Initialize git repo
     git init
     git config user.email "test@example.com"
     git config user.name "Test User"
+
+    # Add remote
+    git remote add origin "$repo_dir/remote"
 
     # Create and commit initial files on main branch
     echo "initial" > initial.txt
@@ -34,6 +44,9 @@ init_test_repo() {
     echo "base" > base.txt
     git add base.txt
     git commit -m "Base branch commit"
+    
+    # Push base branch to remote
+    git push -u origin base
 
     # Create PR branch
     git checkout -b pr
@@ -42,7 +55,7 @@ init_test_repo() {
 # Clean up the temporary repository
 cleanup_git_repo() {
     # Return to original directory if we're still in the temp dir
-    if [[ "$(pwd)" == "$1" ]]; then
+    if [[ "$(pwd)" == "$1/local" ]]; then
         cd "$ORIGINAL_DIR"
     fi
     rm -rf "$1"

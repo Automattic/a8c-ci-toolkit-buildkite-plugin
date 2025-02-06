@@ -27,6 +27,12 @@ if [[ ! "${BUILDKITE_PULL_REQUEST:-invalid}" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
+# Ensure we have the base branch locally
+git fetch origin "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" >/dev/null 2>&1 || {
+    echo "Error: failed to fetch base branch '$BUILDKITE_PULL_REQUEST_BASE_BRANCH'" >&2
+    exit 1
+}
+
 mode=""
 patterns=()
 
