@@ -54,4 +54,4 @@ git commit -m "Add file with swift in name"
 result=$(pr_changed_files --any-match "*.swift")
 assert_output "true" "$result" "Should only match exact patterns"
 
-echo "✅ Any-match pattern tests passed" 
+echo "✅ Any-match pattern tests passed"

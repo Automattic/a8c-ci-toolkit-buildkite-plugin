@@ -99,18 +99,25 @@ if [[ ${#changed_files[@]} -eq 0 ]]; then
     exit 0
 fi
 
+# Returns 0 if the file matches any of the patterns, 1 otherwise
+file_matches_any_pattern() {
+    local file="$1"
+    shift
+    local patterns=("$@")
+
+    for pattern in "${patterns[@]}"; do
+        # shellcheck disable=SC2053 # We don't quote the rhs in the condition on the next line because we want to interpret pattern as a glob pattern
+        if [[ "$file" == ${pattern} ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 if [[ "$mode" == "all-match" ]]; then
     # Check if all changed files match at least one pattern
     for file in "${changed_files[@]}"; do
-        matches_any=false
-        for pattern in "${patterns[@]}"; do
-            # shellcheck disable=SC2053 # We don't quote the rhs in the condition on the next line because we want to interpret pattern as a glob pattern
-            if [[ "$file" == ${pattern} ]]; then
-                matches_any=true
-                break
-            fi
-        done
-        if [[ "$matches_any" == "false" ]]; then
+        if ! file_matches_any_pattern "$file" "${patterns[@]}"; then
             echo "false"
             exit 0
         fi
@@ -119,13 +126,10 @@ if [[ "$mode" == "all-match" ]]; then
 elif [[ "$mode" == "any-match" ]]; then
     # Check if any changed file matches any pattern
     for file in "${changed_files[@]}"; do
-        for pattern in "${patterns[@]}"; do
-            # shellcheck disable=SC2053 # We don't quote the rhs in the condition on the next line because we want to interpret pattern as a glob pattern
-            if [[ "$file" == ${pattern} ]]; then
-                echo "true"
-                exit 0
-            fi
-        done
+        if file_matches_any_pattern "$file" "${patterns[@]}"; then
+            echo "true"
+            exit 0
+        fi
     done
     echo "false"
 fi

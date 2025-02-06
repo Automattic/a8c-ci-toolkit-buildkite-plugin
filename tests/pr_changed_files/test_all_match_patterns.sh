@@ -46,4 +46,4 @@ assert_output "false" "$result" "Should return false when changes exist outside 
 result=$(pr_changed_files --all-match "docs/*" "src/swift/main with spaces.swift" "src/swift/special\!\@\#\$chars.swift")
 assert_output "true" "$result" "Should return true when all changes match multiple patterns"
 
-echo "✅ All-match pattern tests passed" 
+echo "✅ All-match pattern tests passed"
