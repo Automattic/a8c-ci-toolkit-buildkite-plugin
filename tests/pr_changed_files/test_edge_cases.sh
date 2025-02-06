@@ -32,11 +32,13 @@ if pr_changed_files --any-match 2>/dev/null; then
     exit 1
 fi
 
+# [Test] Flag followed by another flag
+output=$(pr_changed_files --any-match --something 2>&1 || true)
+assert_output "Error: must specify at least one file pattern" "$output" "Should fail with correct error when flag is followed by another flag"
+
 # [Test] Mutually exclusive options
-if pr_changed_files --any-match "*.txt" --all-match "*.md" 2>/dev/null; then
-    echo "Should fail when using both --any-match and --all-match"
-    exit 1
-fi
+output=$(pr_changed_files --any-match "*.txt" --all-match "*.md" 2>&1 || true)
+assert_output "Error: either specify --all-match or --any-match; cannot specify both" "$output" "Should fail with correct error when using mutually exclusive options"
 
 # [Test] Files with spaces and special characters
 mkdir -p "folder with spaces/nested\!\@\#\$folder"

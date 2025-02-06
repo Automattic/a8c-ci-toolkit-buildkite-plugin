@@ -68,6 +68,11 @@ while [[ "$#" -gt 0 ]]; do
             fi
             mode="${1#--}"
             shift
+            # Check if there are any patterns after the flag
+            if [[ "$#" -eq 0 || "$1" == "--"* ]]; then
+                echo "Error: must specify at least one file pattern" >&2
+                exit 1
+            fi
             while [[ "$#" -gt 0 && "$1" != "--"* ]]; do
                 patterns+=("$1")
                 shift
@@ -97,21 +102,6 @@ done < <(git --no-pager diff --name-only --merge-base "$BUILDKITE_PULL_REQUEST_B
 if [[ -z "$mode" ]]; then
     # No arguments = any change
     if [[ ${#changed_files[@]} -gt 0 ]]; then
-        echo "true"
-    else
-        echo "false"
-    fi
-    exit 0
-fi
-
-if [[ ${#patterns[@]} -eq 0 ]]; then
-    echo "Error: must specify at least one file pattern" >&2
-    exit 1
-fi
-
-# No files changed
-if [[ ${#changed_files[@]} -eq 0 ]]; then
-    if [[ "$mode" == "all-match" ]]; then
         echo "true"
     else
         echo "false"
