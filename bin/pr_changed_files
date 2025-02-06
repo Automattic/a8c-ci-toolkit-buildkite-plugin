@@ -61,6 +61,10 @@ done
 # Get list of changed files as an array
 changed_files=()
 while IFS= read -r file; do
+    # Remove surrounding quotes if present and unescape special characters
+    file="${file#\"}"
+    file="${file%\"}"
+    file="${file//\\/}"
     changed_files+=("$file")
 done < <(git --no-pager diff --name-only --merge-base "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | sort)
 
