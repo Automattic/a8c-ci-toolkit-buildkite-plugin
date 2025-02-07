@@ -71,14 +71,14 @@ while [[ "$#" -gt 0 ]]; do
             mode="${1#--}"
             shift
             # Check if there are any patterns after the flag
-            if [[ "$#" -eq 0 || "$1" == "--"* ]]; then
-                echo "Error: must specify at least one file pattern" >&2
-                exit 1
-            fi
             while [[ "$#" -gt 0 && "$1" != "--"* ]]; do
                 patterns+=("$1")
                 shift
             done
+            if [[ "${#patterns[@]}" -eq 0 ]]; then
+                echo "Error: must specify at least one file pattern" >&2
+                exit 1
+            fi
             ;;
         --*) 
             echo "Error: unknown option $1" >&2
