@@ -67,7 +67,9 @@ assert_output() {
     local actual="$2"
     local message="${3:-}"
 
-    if [[ "$actual" != "$expected" ]]; then
+    if [[ "$actual" == "$expected" ]]; then
+        echo "🟢 Assertion succeeded: $message"
+    elif [[ "$actual" != "$expected" ]]; then
         echo "❌ Assertion failed: $message"
         echo "Expected: $expected"
         echo "Actual  : $actual"

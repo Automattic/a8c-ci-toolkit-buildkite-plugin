@@ -57,11 +57,23 @@ assert_output "true" "$result" "Should match files with special characters in pa
 result=$(pr_changed_files --all-match "folder with spaces/*")
 assert_output "true" "$result" "Should handle directory patterns with spaces"
 
+# [Test] No changes between branches
+git checkout -b no_changes base
+result=$(pr_changed_files)
+assert_output "false" "$result" "Should handle no changes between branches"
+
+# [Test] Empty commit
+git checkout -b empty_commit base
+git commit --allow-empty -m "Empty commit"
+result=$(pr_changed_files)
+assert_output "false" "$result" "Should handle empty commit"
+
 # [Test] Empty repository state
 git checkout --orphan empty
 git rm -rf .
+git commit --allow-empty -m "Empty initial commit"
 
-result=$(pr_changed_files)
+result=$(pr_changed_files 2>/dev/null)
 assert_output "false" "$result" "Should handle empty repository state"
 
-echo "✅ Edge cases tests passed"
+echo -e "\n✅ Edge cases tests passed"
