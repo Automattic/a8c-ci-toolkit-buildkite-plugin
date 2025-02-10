@@ -4,18 +4,12 @@
 #
 # Usage:
 #   pr_changed_files                                  # Check if any files changed
-#   pr_changed_files --any-match <file-patterns...>   # Check if changes include files matching patterns
 #   pr_changed_files --all-match <file-patterns...>   # Check if changes are limited to given patterns
+#   pr_changed_files --any-match <file-patterns...>   # Check if changes include files matching patterns
 #
 # Behavior:
 #   With no arguments:
 #     Returns "true" if the PR contains any changes, "false" otherwise
-#
-#   With --any-match:
-#     Returns "true" if ANY changed file matches ANY of the patterns
-#     Returns "false" if NONE of the changed files match ANY pattern
-#     Note: Will return "true" even if the PR includes other files not matching the patterns.
-#           This mode is especially useful to check if the PR _includes_ (aka _contains at least_) particular files/folders
 #
 #   With --all-match:
 #     Returns "true" if ALL changed files match AT LEAST ONE of the patterns
@@ -23,21 +17,27 @@
 #     Note: Will return "true" even if not all patterns are matched by the changed files.
 #           This mode is especially useful to check if the PR _only_ touches a particular subset of files/folders (but nothing else)
 #
+#   With --any-match:
+#     Returns "true" if ANY changed file matches ANY of the patterns
+#     Returns "false" if NONE of the changed files match ANY pattern
+#     Note: Will return "true" even if the PR includes other files not matching the patterns.
+#           This mode is especially useful to check if the PR _includes_ (aka _contains at least_) particular files/folders
+#
 # Examples with expected outputs:
 #   # Check if any files changed, returning "true" if PR has changes, "false" otherwise
 #   $ pr_changed_files
-#
-#   # Check if any Swift files changed (to decide if we should run SwiftLint)
-#   $ pr_changed_files --any-match "*.swift" ".swiftlint.yml"
-#   → "true"  if PR changes `src/main.swift` and `README.md` (AT LEAST one file matches one of the patterns)
-#   → "true"  if PR changes `.swiftlint.yml`
-#   → "false" if PR only changes `README.md` (none of files match any of the patterns)
 #
 #   # Check if only documentation files changed (to skip UI tests for example)
 #   $ pr_changed_files --all-match "*.md" "docs/*"
 #   → "true"  if PR only changes `docs/guide.md` and `README.md`
 #   → "true"  if PR only changes `docs/image.png` (not all patterns need to match, ok if no *.md)
 #   → "false" if PR changes `docs/guide.md` and `src/main.swift` (ALL files need to match at least one pattern)
+#
+#   # Check if any Swift files changed (to decide if we should run SwiftLint)
+#   $ pr_changed_files --any-match "*.swift" ".swiftlint.yml"
+#   → "true"  if PR changes `src/main.swift` and `README.md` (AT LEAST one file matches one of the patterns)
+#   → "true"  if PR changes `.swiftlint.yml`
+#   → "false" if PR only changes `README.md` (none of files match any of the patterns)
 #
 # Returns:
 #   Prints "true" if the condition is met, "false" otherwise
