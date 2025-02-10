@@ -34,7 +34,7 @@
 #   → "false" if PR only changes `README.md` (none of files match any of the patterns)
 #
 #   # Check if only documentation files changed (to skip UI tests for example)
-#   $ pr_changed_files --all-match "*.md" "docs/**"
+#   $ pr_changed_files --all-match "*.md" "docs/*"
 #   → "true"  if PR only changes `docs/guide.md` and `README.md`
 #   → "true"  if PR only changes `docs/image.png` (not all patterns need to match, ok if no *.md)
 #   → "false" if PR changes `docs/guide.md` and `src/main.swift` (ALL files need to match at least one pattern)
@@ -115,9 +115,7 @@ fi
 file_matches_any_pattern() {
     local file="$1"
     shift
-    local patterns=("$@")
-
-    for pattern in "${patterns[@]}"; do
+    for pattern in "$@"; do
         # shellcheck disable=SC2053 # We don't quote the rhs in the condition on the next line because we want to interpret pattern as a glob pattern
         if [[ "$file" == ${pattern} ]]; then
             return 0
