@@ -41,9 +41,9 @@ output=$(pr_changed_files --any-match "*.txt" --all-match "*.md" 2>&1 || true)
 assert_output "Error: either specify --all-match or --any-match; cannot specify both" "$output" "Should fail with correct error when using mutually exclusive options"
 
 # [Test] Files with spaces and special characters
-mkdir -p "folder with spaces/nested\!\@\#\$folder"
-echo "test" > "folder with spaces/file with spaces.txt"
-echo "test" > "folder with spaces/nested\!\@\#\$folder/file_with_\!\@\#.txt"
+mkdir -p 'folder with spaces/nested!\@*#$folder'
+echo "test" > 'folder with spaces/file with spaces.txt'
+echo "test" > 'folder with spaces/nested!\@*#$folder/file_with_!@*#$chars.txt'
 git add .
 git commit -m "Add files with special characters"
 
@@ -51,10 +51,10 @@ result=$(pr_changed_files)
 assert_output "true" "$result" "Should handle files with spaces and special characters"
 
 # [Test] Pattern matching with spaces and special characters
-result=$(pr_changed_files --any-match "*spaces.txt")
+result=$(pr_changed_files --any-match '*spaces.txt')
 assert_output "true" "$result" "Should match files with special characters in path"
 
-result=$(pr_changed_files --all-match "folder with spaces/*")
+result=$(pr_changed_files --all-match 'folder with spaces/*')
 assert_output "true" "$result" "Should handle directory patterns with spaces"
 
 # [Test] No changes between branches
