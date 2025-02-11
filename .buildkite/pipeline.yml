@@ -50,6 +50,18 @@ steps:
           - mac
           - windows
 
+  - group: ":c: get_glibc_version Tests Windows Debug"
+    steps:
+      - label: ":c: :windows: Test get_glibc_version"
+        command: |
+          echo "Current directory contents:"
+          ls
+          echo "Attempting to run test script..."
+          ./tests/validate_get_glibc_version_format_windows
+          echo "If you are reading this, then the tests script run and exited"
+        agents:
+          queue: windows
+
   - group: ":swift: install_swiftpm_dependencies Tests"
     steps:
       - label: ":swift: Standalone Swift Package - Autodetect"
