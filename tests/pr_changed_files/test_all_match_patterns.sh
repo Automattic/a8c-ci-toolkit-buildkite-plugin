@@ -17,11 +17,11 @@ export BUILDKITE_PULL_REQUEST_BASE_BRANCH="base"
 # Initialize the repository
 init_test_repo "$repo_path"
 
-# Create test files
+# Create test files (using single quotes to avoid special chars being interpreted by the shell)
 mkdir -p docs src/swift
-echo "doc" > "docs/read me.md"
-echo "doc2" > "docs/guide with spaces.md"
-echo "doc3" > "docs/special\!\@\#\$chars.md"
+echo "doc1" > 'docs/read me.md'
+echo "doc2" > 'docs/guide with spaces.md'
+echo "doc3" > 'docs/special\!@*#$chars.md'
 git add .
 git commit -m "Add doc files"
 
@@ -30,12 +30,17 @@ result=$(pr_changed_files --all-match "docs/*")
 assert_output "true" "$result" "Should return true when all changes match patterns"
 
 # [Test] All changes in docs with explicit patterns including spaces and special chars
-result=$(pr_changed_files --all-match 'docs/read me.md' 'docs/guide with spaces.md' 'docs/special\\!\\@\\#\$chars.md')
+# Note: we need to escape the '\` and `*` special chars in the pattern to match them literally instead of as special characters
+result=$(pr_changed_files --all-match 'docs/read me.md' 'docs/guide with spaces.md' 'docs/special\\!@\*#$chars.md')
 assert_output "true" "$result" "Should return true when all changes match patterns with spaces and special chars"
 
+# [Test] All changes in docs with globbing patterns including spaces and special chars
+result=$(pr_changed_files --all-match 'docs/read me.md' 'docs/guide with spaces.md' 'docs/special\\!*.md')
+assert_output "true" "$result" "Should return true when all changes match patterns with spaces and special chars, even when using globbing"
+
 # [Test] Changes outside pattern
-echo "swift" > "src/swift/main with spaces.swift"
-echo "swift" > "src/swift/special\!\@\#\$chars.swift"
+echo "swift" > 'src/swift/main with spaces.swift'
+echo "swift" > 'src/swift/special!\@#*$chars.swift'
 git add .
 git commit -m "Add swift file"
 
@@ -43,7 +48,12 @@ result=$(pr_changed_files --all-match "docs/*")
 assert_output "false" "$result" "Should return false when changes exist outside patterns"
 
 # [Test] Multiple patterns, all matching
-result=$(pr_changed_files --all-match 'docs/*' 'src/swift/main with spaces.swift' 'src/swift/special\\!\\@\\#\$chars.swift')
+# Note: we need to escape the '\` and `*` special chars in the pattern to match them literally instead of as special characters
+result=$(pr_changed_files --all-match 'docs/*' 'src/swift/main with spaces.swift' 'src/swift/special\!\\@#\*$chars.swift')
 assert_output "true" "$result" "Should return true when all changes match multiple patterns"
+
+# [Test] Multiple patterns, all matching, including some using globbing
+result=$(pr_changed_files --all-match 'docs/*' 'src/swift/main with spaces.swift' 'src/swift/special*chars.swift')
+assert_output "true" "$result" "Should return true when all changes match multiple patterns, including some using globbing"
 
 echo "✅ All-match pattern tests passed"
