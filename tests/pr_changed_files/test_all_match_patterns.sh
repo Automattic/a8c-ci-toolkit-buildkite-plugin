@@ -30,7 +30,7 @@ result=$(pr_changed_files --all-match "docs/*")
 assert_output "true" "$result" "Should return true when all changes match patterns"
 
 # [Test] All changes in docs with explicit patterns including spaces and special chars
-result=$(pr_changed_files --all-match "docs/read me.md" "docs/guide with spaces.md" "docs/special\!\@\#\$chars.md")
+result=$(pr_changed_files --all-match 'docs/read me.md' 'docs/guide with spaces.md' 'docs/special\\!\\@\\#\$chars.md')
 assert_output "true" "$result" "Should return true when all changes match patterns with spaces and special chars"
 
 # [Test] Changes outside pattern
@@ -43,7 +43,7 @@ result=$(pr_changed_files --all-match "docs/*")
 assert_output "false" "$result" "Should return false when changes exist outside patterns"
 
 # [Test] Multiple patterns, all matching
-result=$(pr_changed_files --all-match "docs/*" "src/swift/main with spaces.swift" "src/swift/special\!\@\#\$chars.swift")
+result=$(pr_changed_files --all-match 'docs/*' 'src/swift/main with spaces.swift' 'src/swift/special\\!\\@\\#\$chars.swift')
 assert_output "true" "$result" "Should return true when all changes match multiple patterns"
 
 echo "✅ All-match pattern tests passed"
