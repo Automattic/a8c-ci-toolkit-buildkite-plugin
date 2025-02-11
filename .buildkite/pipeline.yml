@@ -40,7 +40,7 @@ steps:
   - group: ":c: get_glibc_version Tests"
     steps:
       - label: ":c: Test get_glibc_version on {{matrix}}"
-        command: bin/get_glibc_version
+        command: ./tests/validate_get_glibc_version_format
         agents:
           queue: "{{matrix}}"
         matrix:

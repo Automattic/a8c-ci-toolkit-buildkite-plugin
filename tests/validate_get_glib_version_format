@@ -1,0 +1,29 @@
+#!/bin/bash -eu
+
+case $OSTYPE in
+  linux*)
+    exp="linux"
+    ;;
+  darwin*)
+    exp="macos"
+    ;;
+  msys*|cygwin*|Windows_NT*)
+    exp="win"
+    ;;
+  *)
+    echo "❌ Unknown OS type: $OSTYPE"
+    exit 1
+    ;;
+esac
+echo "Detected OS type: $OSTYPE"
+
+glibc_version=$(bin/get_glibc_version)
+echo "Computed GLIBC version is $glibc_version"
+
+if [[ "$glibc_version" =~ ^$exp ]]; then
+  echo "Computed GLIBC version ($glibc_version) format matches expected format ($exp)"
+else
+  echo "~~~ :x: Test failed"
+  echo "^^^ +++ Computed GLIBC version ($glibc_version) format does not match expected format ($exp)!"
+  exit 1
+fi
