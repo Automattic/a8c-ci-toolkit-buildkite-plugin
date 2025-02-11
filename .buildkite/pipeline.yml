@@ -64,6 +64,11 @@ steps:
           queue: windows
       - label: ":c: :windows: Test get_glibc_version - Direct call"
         command: |
+          ./tests/validate_get_glibc_version_format_windows
+        agents:
+          queue: windows
+      - label: ":c: :windows: Test get_glibc_version - Direct call"
+        command: |
           & "C:\Program Files\Git\bin\bash.exe" .\tests\validate_get_glibc_version_format_windows
         agents:
           queue: windows
