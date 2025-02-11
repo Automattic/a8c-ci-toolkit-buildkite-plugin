@@ -4,7 +4,23 @@ PLATFORM=$(uname -s)
 ARCHITECTURE=$(uname -m)
 RUBY_VERSION=$(rbenv version-name 2>/dev/null || cat .ruby-version)
 GEMFILE_HASH=$(hash_file Gemfile.lock)
-CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$PLATFORM-$ARCHITECTURE-ruby$RUBY_VERSION-$GEMFILE_HASH"
+# Many of our projects require nokogiri, which may give trouble across Linux platforms.
+# To avoid this, add the libc version to the cache key.
+LIBC_VERSION=$(ruby -e '
+  require "rbconfig"
+  os = RbConfig::CONFIG["host_os"]
+  if os =~ /linux/
+    print `ldd --version | head -n 1 | grep -o "[0-9]\+\.[0-9]\+" || echo "unknown"`
+  elsif os =~ /darwin/
+    print "macos-" + `sw_vers -productVersion 2>/dev/null || echo "unknown"`
+  elsif os =~ /mswin|mingw|windows/
+    # Get Windows version using PowerShell
+    print "win-" + `powershell -Command "[System.Environment]::OSVersion.Version.ToString()" 2>/dev/null || echo "unknown"`
+  else
+    print "unknown"
+  end
+')
+CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$PLATFORM-$ARCHITECTURE-libc$LIBC_VERSION-ruby$RUBY_VERSION-$GEMFILE_HASH"
 
 restore_cache "$CACHEKEY"
 
