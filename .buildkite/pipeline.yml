@@ -44,10 +44,10 @@ steps:
         agents:
           queue: "{{matrix}}"
         matrix:
-          - default
           - android
-          - tumblr-metal
+          - default
           - mac
+          - tumblr-metal
           # Could not find a way to run on Windows with the same call as the others.
           # See syntax in the dedicated step below.
           # - windows
