@@ -40,16 +40,13 @@ steps:
   - group: ":c: get_glibc_version Tests"
     steps:
       - label: ":c: Test get_glibc_version on {{matrix}}"
-        command: |
-          echo "--- :ruby: Check Ruby version"
-          ruby -v
-          echo "+++ :c: Check glibc version"
-          bin/get_glibc_version
+        command: bin/get_glibc_version
         agents:
           queue: "{{matrix}}"
         matrix:
-          # - default - Just a note: The default queue has no Ruby, and the command needs Ruby
+          - default
           - android
+          - tumblr-metal
           - mac
           - windows
 
