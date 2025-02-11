@@ -56,6 +56,7 @@ steps:
         command: |
           echo "Current directory contents:"
           ls
+          Get-Item ./tests/validate_get_glibc_version_format_windows
           echo "Attempting to run test script..."
           ./tests/validate_get_glibc_version_format_windows
           echo "If you are reading this, then the tests script run and exited"
