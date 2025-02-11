@@ -11,7 +11,7 @@ if [ "$VERBOSE" = true ]; then
 fi
 
 if [ "$VERBOSE" = true ]; then
-  echo "~~~ :c: Check GLIBC version"
+  echo "~~~ :c: Check libc version"
 fi
 
 if [[ "$os_type" == "linux"* ]]; then

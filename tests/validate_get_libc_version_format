@@ -17,14 +17,14 @@ case $OSTYPE in
 esac
 echo "Detected OS type: $OSTYPE"
 
-glibc_version=$(bin/get_glibc_version)
-echo "Computed GLIBC version is $glibc_version"
+libc_version=$(bin/get_libc_version)
+echo "Computed libc version is $libc_version"
 exp="$os_exp-[0-9]+\.[0-9]+(\.[0-9]+)?"
 
-if [[ "$glibc_version" =~ ^$exp ]]; then
-  echo "Computed GLIBC version ($glibc_version) format matches expected format ($exp)"
+if [[ "$libc_version" =~ ^$exp ]]; then
+  echo "Computed libc version ($libc_version) format matches expected format ($exp)"
 else
   echo "~~~ :x: Test failed"
-  echo "^^^ +++ Computed GLIBC version ($glibc_version) format does not match expected format ($exp)!"
+  echo "^^^ +++ Computed libc version ($libc_version) format does not match expected format ($exp)!"
   exit 1
 fi

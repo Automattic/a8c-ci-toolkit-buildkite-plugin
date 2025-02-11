@@ -4,9 +4,11 @@ PLATFORM=$(uname -s)
 ARCHITECTURE=$(uname -m)
 RUBY_VERSION=$(rbenv version-name 2>/dev/null || cat .ruby-version)
 GEMFILE_HASH=$(hash_file Gemfile.lock)
-# Many of our projects require nokogiri, which may give trouble across Linux platforms.
-# To avoid this, add the libc version to the cache key.
-LIBC_VERSION=$(grep -q "nokogiri" Gemfile.lock && "-libc$(bin/get_glibc_version)" || echo "")
+# Many of our projects require nokogiri, which may result in issues if the
+# cache is built on an environment with a different libc version than the one
+# where it is downloaded. To avoid issues, add the libc version to the cache
+# key if the Gemfile.lock includes nokogiri.
+LIBC_VERSION=$(grep -q "nokogiri" Gemfile.lock && "-libc$(bin/get_libc_version)" || echo "")
 CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$PLATFORM-$ARCHITECTURE$LIBC_VERSION-ruby$RUBY_VERSION-$GEMFILE_HASH"
 
 restore_cache "$CACHEKEY"

@@ -37,10 +37,10 @@ steps:
     agents:
       queue: linter
 
-  - group: ":c: get_glibc_version Tests"
+  - group: ":c: get_libc_version Tests"
     steps:
-      - label: ":c: Test get_glibc_version on {{matrix}}"
-        command: ./tests/validate_get_glibc_version_format
+      - label: ":c: Test get_libc_version on {{matrix}}"
+        command: ./tests/validate_get_libc_version_format
         agents:
           queue: "{{matrix}}"
         matrix:
@@ -52,9 +52,9 @@ steps:
           # See syntax in the dedicated step below.
           # - windows
 
-      - label: ":c: :windows: Test get_glibc_version on Windows"
+      - label: ":c: :windows: Test get_libc_version on Windows"
         command: |
-          & "C:\Program Files\Git\bin\bash.exe" .\tests\validate_get_glibc_version_format
+          & "C:\Program Files\Git\bin\bash.exe" .\tests\validate_get_libc_version_format
         agents:
           queue: windows
 
