@@ -11,8 +11,8 @@ if os =~ /linux/
   puts '~~~ ldd version | head -n 1'
   puts `ldd --version | head -n 1`
   puts '~~~ ldd version | head -n 1 | grep -o ...'
-  puts `ldd --version | head -n 1 | grep -o "[0-9]\+\.[0-9]\+"`
-  version = "linux-#{`ldd --version | head -n 1 | grep -o "[0-9]\+\.[0-9]\+" || echo "unknown"`}"
+  puts `ldd --version | head -n 1 | grep -o "[0-9][0-9]*\.[0-9][0-9]*"`
+  version = "linux-#{`ldd --version | head -n 1 | grep -o "[0-9][0-9]*\.[0-9][0-9]*" || echo "unknown"`}"
 elsif os =~ /darwin/
   version = "macos-#{`sw_vers -productVersion 2>/dev/null || echo "unknown"`}"
 elsif os =~ /mswin|mingw|windows/
