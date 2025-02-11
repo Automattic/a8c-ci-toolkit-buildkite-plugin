@@ -40,7 +40,10 @@ steps:
   - group: ":c: get_glibc_version Tests"
     steps:
       - label: ":c: Test get_glibc_version on {{matrix}}"
-        command:
+        command: |
+          echo "--- :ruby: Check Ruby version"
+          ruby -v
+          echo "+++ :c: Check glibc version"
           bin/get_glibc_version
         agents:
           queue: "{{matrix}}"
