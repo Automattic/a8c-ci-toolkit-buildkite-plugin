@@ -92,3 +92,29 @@ steps:
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Xcode Workspace and Project - Explicit"
+
+  - group: ":github: pr_changed_files Tests"
+    steps:
+      - label: ":github: pr_changed_files Tests - Basic Changes"
+        command: tests/pr_changed_files/test_basic_changes.sh
+        notify:
+          - github_commit_status:
+              context: "pr_changed_files Tests: Basic Changes"
+
+      - label: ":github: pr_changed_files Tests - Any Match"
+        command: tests/pr_changed_files/test_any_match_patterns.sh
+        notify:
+          - github_commit_status:
+              context: "pr_changed_files Tests: Any Match"
+
+      - label: ":github: pr_changed_files Tests - All Match"
+        command: tests/pr_changed_files/test_all_match_patterns.sh
+        notify:
+          - github_commit_status:
+              context: "pr_changed_files Tests: All Match"
+
+      - label: ":github: pr_changed_files Tests - Edge Cases"
+        command: tests/pr_changed_files/test_edge_cases.sh
+        notify:
+          - github_commit_status:
+              context: "pr_changed_files Tests: Edge Cases"

@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Add `pr_changed_files` command to detect changes made in a Pull Request [#148]
 
 ### Bug Fixes
 

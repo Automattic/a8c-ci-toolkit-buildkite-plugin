@@ -1,0 +1,141 @@
+#!/bin/bash -eu
+
+# This script checks if files are changed in a PR.
+#
+# Usage:
+#   pr_changed_files                                  # Check if any files changed
+#   pr_changed_files --all-match <file-patterns...>   # Check if changes are limited to given patterns
+#   pr_changed_files --any-match <file-patterns...>   # Check if changes include files matching patterns
+#
+# Behavior:
+#   With no arguments:
+#     Returns "true" if the PR contains any changes, "false" otherwise
+#
+#   With --all-match:
+#     Returns "true" if ALL changed files match AT LEAST ONE of the patterns
+#     Returns "false" if ANY changed file doesn't match ANY pattern
+#     Note: Will return "true" even if not all patterns are matched by the changed files.
+#           This mode is especially useful to check if the PR _only_ touches a particular subset of files/folders (but nothing else)
+#
+#   With --any-match:
+#     Returns "true" if ANY changed file matches ANY of the patterns
+#     Returns "false" if NONE of the changed files match ANY pattern
+#     Note: Will return "true" even if the PR includes other files not matching the patterns.
+#           This mode is especially useful to check if the PR _includes_ (aka _contains at least_) particular files/folders
+#
+# Examples with expected outputs:
+#   # Check if any files changed, returning "true" if PR has changes, "false" otherwise
+#   $ pr_changed_files
+#
+#   # Check if only documentation files changed (to skip UI tests for example)
+#   $ pr_changed_files --all-match "*.md" "docs/*"
+#   → "true"  if PR only changes `docs/guide.md` and `README.md`
+#   → "true"  if PR only changes `docs/image.png` (not all patterns need to match, ok if no *.md)
+#   → "false" if PR changes `docs/guide.md` and `src/main.swift` (ALL files need to match at least one pattern)
+#
+#   # Check if any Swift files changed (to decide if we should run SwiftLint)
+#   $ pr_changed_files --any-match "*.swift" ".swiftlint.yml"
+#   → "true"  if PR changes `src/main.swift` and `README.md` (AT LEAST one file matches one of the patterns)
+#   → "true"  if PR changes `.swiftlint.yml`
+#   → "false" if PR only changes `README.md` (none of files match any of the patterns)
+#
+# Returns:
+#   Prints "true" if the condition is met, "false" otherwise
+#   Exits with code 0 regardless of if the condition was met or not, to allow easy variable assignment.
+#   Only exits with non-zero if the command invocation itself was incorrect (called outside of a PR context, incorrect arguments…)
+
+if [[ ! "${BUILDKITE_PULL_REQUEST:-invalid}" =~ ^[0-9]+$ ]]; then
+    echo "Error: this tool can only be called from a Buildkite PR job" >&2
+    exit 1
+fi
+
+# Ensure we have the base branch locally
+git fetch origin "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" >/dev/null 2>&1 || {
+    echo "Error: failed to fetch base branch '$BUILDKITE_PULL_REQUEST_BASE_BRANCH'" >&2
+    exit 1
+}
+
+mode=""
+patterns=()
+
+# Define error message for mutually exclusive options
+EXCLUSIVE_OPTIONS_ERROR="Error: either specify --all-match or --any-match; cannot specify both"
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --all-match | --any-match)
+            if [[ -n "$mode" ]]; then
+                echo "$EXCLUSIVE_OPTIONS_ERROR" >&2
+                exit 1
+            fi
+            mode="${1#--}"
+            shift
+            # Check if there are any patterns after the flag
+            while [[ "$#" -gt 0 && "$1" != "--"* ]]; do
+                patterns+=("$1")
+                shift
+            done
+            if [[ "${#patterns[@]}" -eq 0 ]]; then
+                echo "Error: must specify at least one file pattern" >&2
+                exit 1
+            fi
+            ;;
+        --*) 
+            echo "Error: unknown option $1" >&2
+            exit 1
+            ;;
+        *)
+            echo "Error: unexpected argument $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Get list of changed files as an array
+changed_files=()
+while IFS= read -r -d '' file; do
+  changed_files+=("$file")
+done < <(git --no-pager diff --name-only -z --merge-base "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | sort)
+
+if [[ -z "$mode" ]]; then
+    # No arguments = any change
+    if [[ ${#changed_files[@]} -gt 0 ]]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+    exit 0
+fi
+
+# Returns 0 if the file matches any of the patterns, 1 otherwise
+file_matches_any_pattern() {
+    local file="$1"
+    shift
+    for pattern in "$@"; do
+        # shellcheck disable=SC2053 # We don't quote the rhs in the condition on the next line because we want to interpret pattern as a glob pattern
+        if [[ "$file" == ${pattern} ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+if [[ "$mode" == "all-match" ]]; then
+    # Check if all changed files match at least one pattern
+    for file in "${changed_files[@]}"; do
+        if ! file_matches_any_pattern "$file" "${patterns[@]}"; then
+            echo "false"
+            exit 0
+        fi
+    done
+    echo "true"
+elif [[ "$mode" == "any-match" ]]; then
+    # Check if any changed file matches any pattern
+    for file in "${changed_files[@]}"; do
+        if file_matches_any_pattern "$file" "${patterns[@]}"; then
+            echo "true"
+            exit 0
+        fi
+    done
+    echo "false"
+fi
