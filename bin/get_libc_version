@@ -1,5 +1,10 @@
 #!/bin/bash -eu
 
+#
+# Returns the system's libc version, or a close proxy of it.
+# Useful for commands like install_gems which use a number of system information to compute the key for the cache they lookup.
+#
+
 VERBOSE=${1:-false}
 
 if [ "$VERBOSE" = true ]; then
