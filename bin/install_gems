@@ -8,7 +8,11 @@ GEMFILE_HASH=$(hash_file Gemfile.lock)
 # cache is built on an environment with a different libc version than the one
 # where it is downloaded. To avoid issues, add the libc version to the cache
 # key if the Gemfile.lock includes nokogiri.
-LIBC_VERSION=$(grep -q "nokogiri" Gemfile.lock && "-libc$(bin/get_libc_version)" || echo "")
+if grep -q "nokogiri" Gemfile.lock; then
+  LIBC_VERSION="-libc$($(dirname "${BASH_SOURCE[0]}")/get_libc_version)"
+else
+  LIBC_VERSION=''
+fi
 CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$PLATFORM-$ARCHITECTURE$LIBC_VERSION-ruby$RUBY_VERSION-$GEMFILE_HASH"
 
 restore_cache "$CACHEKEY"
