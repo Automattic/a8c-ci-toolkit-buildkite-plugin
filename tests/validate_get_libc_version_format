@@ -11,7 +11,7 @@ case $OSTYPE in
     os_exp="win"
     ;;
   *)
-    echo "❌ Unknown OS type: $OSTYPE"
+    echo "Unknown OS type: $OSTYPE"
     exit 1
     ;;
 esac
