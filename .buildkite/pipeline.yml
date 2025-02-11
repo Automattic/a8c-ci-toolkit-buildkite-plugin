@@ -37,6 +37,19 @@ steps:
     agents:
       queue: linter
 
+  - group: ":c: get_glibc_version Tests"
+    steps:
+      - label: ":c: Test get_glibc_version on {{matrix}}"
+        command:
+          bin/get_glibc_version
+        agents:
+          queue: "{{matrix}}"
+        matrix:
+          # - default - Just a note: The default queue has no Ruby, and the command needs Ruby
+          - android
+          - mac
+          - windows
+
   - group: ":swift: install_swiftpm_dependencies Tests"
     steps:
       - label: ":swift: Standalone Swift Package - Autodetect"
