@@ -76,3 +76,19 @@ assert_output() {
         exit 1
     fi
 }
+
+# Helper to assert expected return code
+assert_return_code() {
+    local expected="$1"
+    local actual="$2"
+    local message="${3:-}"
+
+    if [[ "$actual" == "$expected" ]]; then
+        echo "🟢 Return code assertion succeeded: $message"
+    else
+        echo "❌ Return code assertion failed: $message"
+        echo "Expected: $expected"
+        echo "Actual  : $actual"
+        exit 1
+    fi
+}

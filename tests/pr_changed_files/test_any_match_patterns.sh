@@ -1,4 +1,4 @@
-#!/bin/bash -eu
+#!/bin/bash -u
 
 set -o pipefail
 
@@ -27,35 +27,42 @@ git add .
 git commit -m "Add test files"
 
 # [Test] Match specific extension
-result=$(pr_changed_files --any-match '*.swift')
-assert_output "true" "$result" "Should match .swift files"
+pr_changed_files --any-match '*.swift'
+result=$?
+assert_return_code 0 $result "Should match .swift files"
 
 # [Test] Match multiple patterns
-result=$(pr_changed_files --any-match 'docs/*.md' '*.rb')
-assert_output "true" "$result" "Should match multiple patterns"
+pr_changed_files --any-match 'docs/*.md' '*.rb'
+result=$?
+assert_return_code 0 $result "Should match multiple patterns"
 
 # [Test] Match files with spaces and special characters
-result=$(pr_changed_files --any-match 'docs/read me.md' 'docs/special!@\*#$chars.md')
-assert_output "true" "$result" "Should match files with spaces and special characters"
+pr_changed_files --any-match 'docs/read me.md' 'docs/special!@\*#$chars.md'
+result=$?
+assert_return_code 0 $result "Should match files with spaces and special characters"
 
 # [Test] Match files with spaces and special characters, even when using globbing
-result=$(pr_changed_files --any-match 'docs/read me.md' 'docs/special*chars.md')
-assert_output "true" "$result" "Should match files with spaces and special characters, even when using globbing"
+pr_changed_files --any-match 'docs/read me.md' 'docs/special*chars.md'
+result=$?
+assert_return_code 0 $result "Should match files with spaces and special characters, even when using globbing"
 
 # [Test] No matches
-result=$(pr_changed_files --any-match '*.js')
-assert_output "false" "$result" "Should not match non-existent patterns"
+pr_changed_files --any-match '*.js'
+result=$?
+assert_return_code 1 $result "Should not match non-existent patterns"
 
 # [Test] Directory pattern
-result=$(pr_changed_files --any-match 'docs/*')
-assert_output "true" "$result" "Should match directory patterns"
+pr_changed_files --any-match 'docs/*'
+result=$?
+assert_return_code 0 $result "Should match directory patterns"
 
 # [Test] Exact pattern matching
 echo "swiftfile" > swiftfile.txt
 git add swiftfile.txt
 git commit -m "Add file with swift in name"
 
-result=$(pr_changed_files --any-match '*.swift')
-assert_output "true" "$result" "Should only match exact patterns"
+pr_changed_files --any-match '*.swift'
+result=$?
+assert_return_code 0 $result "Should only match exact patterns"
 
 echo "✅ Any-match pattern tests passed"
