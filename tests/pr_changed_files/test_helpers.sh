@@ -92,3 +92,14 @@ assert_return_code() {
         exit 1
     fi
 }
+
+assert_equal() {
+    local expected="$1"
+    local actual="$2"
+    local message="${3:-}"
+    
+    if [[ "$expected" != "$actual" ]]; then
+        echo "❌ Assertion failed: Expected '$expected' but got '$actual' ${message:+($message)}" >&2
+        return 1
+    fi
+}

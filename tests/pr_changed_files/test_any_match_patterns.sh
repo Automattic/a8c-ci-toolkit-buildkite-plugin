@@ -26,10 +26,11 @@ echo "ruby" > 'src/ruby/main.rb'
 git add .
 git commit -m "Add test files"
 
-# [Test] Match specific extension
-pr_changed_files --any-match '*.swift'
+# [Test] Match specific extension - check output string
+output=$(pr_changed_files --any-match '*.swift')
 result=$?
 assert_return_code 0 $result "Should match .swift files"
+assert_output "true" "$output" "Should output 'true' string when matching .swift files"
 
 # [Test] Match multiple patterns
 pr_changed_files --any-match 'docs/*.md' '*.rb'
@@ -46,10 +47,11 @@ pr_changed_files --any-match 'docs/read me.md' 'docs/special*chars.md'
 result=$?
 assert_return_code 0 $result "Should match files with spaces and special characters, even when using globbing"
 
-# [Test] No matches
-pr_changed_files --any-match '*.js'
+# [Test] No matches - check output string
+output=$(pr_changed_files --any-match '*.js')
 result=$?
 assert_return_code 1 $result "Should not match non-existent patterns"
+assert_output "false" "$output" "Should output 'false' string when no patterns match"
 
 # [Test] Directory pattern
 pr_changed_files --any-match 'docs/*'

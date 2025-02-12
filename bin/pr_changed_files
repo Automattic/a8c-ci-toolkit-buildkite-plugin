@@ -102,8 +102,10 @@ done < <(git --no-pager diff --name-only -z --merge-base "$BUILDKITE_PULL_REQUES
 if [[ -z "$mode" ]]; then
     # No arguments = any change
     if [[ ${#changed_files[@]} -gt 0 ]]; then
+        echo "true"
         exit 0
     else
+        echo "false"
         exit 1
     fi
 fi
@@ -125,16 +127,20 @@ if [[ "$mode" == "all-match" ]]; then
     # Check if all changed files match at least one pattern
     for file in "${changed_files[@]}"; do
         if ! file_matches_any_pattern "$file" "${patterns[@]}"; then
+            echo "false"
             exit 1
         fi
     done
+    echo "true"
     exit 0
 elif [[ "$mode" == "any-match" ]]; then
     # Check if any changed file matches any pattern
     for file in "${changed_files[@]}"; do
         if file_matches_any_pattern "$file" "${patterns[@]}"; then
+            echo "true"
             exit 0
         fi
     done
+    echo "false"
     exit 1
 fi
