@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- Add `pr_changed_files` command to detect changes made in a Pull Request [#148]
+_None._
 
 ### Bug Fixes
 
@@ -47,6 +47,12 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 3.11.0
+
+### New Features
+
+- Add `pr_changed_files` command to detect changes made in a Pull Request [#148]
 
 ## 3.10.1
 
