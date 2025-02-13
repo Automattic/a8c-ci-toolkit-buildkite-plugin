@@ -12,39 +12,53 @@
 #   1: Condition is not met (no files changed / patterns not matched)
 # 255: Error in command invocation (bad parameters, not in PR context, etc.)
 #
+# Output:
+#   In addition to exit codes, the script also outputs "true" or "false" to stdout
+#   when the condition is met or not met respectively.
+#
+# Typical usage patterns:
+#   # To assign the result to a variable — use `|| true` if your shell has `set -e` enabled
+#   $ DOC_UPDATED=$(pr_changed_files --any-match docs/* *.md || true)
+#
+#   # To use in an `if` condition — use `>/dev/null` to avoid the true/false output
+#   $ if pr_changed_files --any-match docs/* *.md >/dev/null; then
+#       echo "Documentation was updated"
+#     fi
+#
 # Behavior:
 #   With no arguments:
-#     Returns 0 if the PR contains any changes, 1 otherwise
+#     Returns exit code 0 (outputs "true") if the PR contains any changes
+#     Returns exit code 1 (outputs "false") if no changes
 #
 #   With --all-match:
-#     Returns 0 if ALL changed files match AT LEAST ONE of the patterns
-#     Returns 1 if ANY changed file doesn't match ANY pattern
+#     Returns exit code 0 (outputs "true") if ALL changed files match AT LEAST ONE of the patterns
+#     Returns exit code 1 (outputs "false") if ANY changed file doesn't match ANY pattern
 #     Note: Will return 0 even if not all patterns are matched by the changed files.
 #           This mode is especially useful to check if the PR _only_ touches a particular subset of files/folders (but nothing else)
 #
 #   With --any-match:
-#     Returns 0 if ANY changed file matches ANY of the patterns
-#     Returns 1 if NONE of the changed files match ANY pattern
+#     Returns exit code 0 (outputs "true") if ANY changed file matches ANY of the patterns
+#     Returns exit code 1 (outputs "false") if NONE of the changed files match ANY pattern
 #     Note: Will return 0 even if the PR includes other files not matching the patterns.
 #           This mode is especially useful to check if the PR _includes_ (aka _contains at least_) particular files/folders
 #
 # Examples with expected outputs:
 #   # Check if any files changed
 #   $ pr_changed_files
-#   → exit code 0 if PR has changes
-#   → exit code 1 if PR has no changes
+#   → exit code 0 (outputs "true") if PR has changes
+#   → exit code 1 (outputs "false") if PR has no changes
 #
 #   # Check if only documentation files changed (to skip UI tests for example)
 #   $ pr_changed_files --all-match "*.md" "docs/*"
-#   → exit code 0 if PR only changes `docs/guide.md` and `README.md`
-#   → exit code 0 if PR only changes `docs/image.png` (not all patterns need to match, ok if no *.md)
-#   → exit code 1 if PR changes `docs/guide.md` and `src/main.swift` (ALL files need to match at least one pattern)
+#   → exit code 0 (outputs "true") if PR only changes `docs/guide.md` and `README.md`
+#   → exit code 0 (outputs "true") if PR only changes `docs/image.png` (not all patterns need to match, ok if no *.md)
+#   → exit code 1 (outputs "false") if PR changes `docs/guide.md` and `src/main.swift` (ALL files need to match at least one pattern)
 #
 #   # Check if any Swift files changed (to decide if we should run SwiftLint)
 #   $ pr_changed_files --any-match "*.swift" ".swiftlint.yml"
-#   → exit code 0 if PR changes `src/main.swift` and `README.md` (AT LEAST one file matches one of the patterns)
-#   → exit code 0 if PR changes `.swiftlint.yml`
-#   → exit code 1 if PR only changes `README.md` (none of files match any of the patterns)
+#   → exit code 0 (outputs "true") if PR changes `src/main.swift` and `README.md` (AT LEAST one file matches one of the patterns)
+#   → exit code 0 (outputs "true") if PR changes `.swiftlint.yml`
+#   → exit code 1 (outputs "false") if PR only changes `README.md` (none of files match any of the patterns)
 
 if [[ ! "${BUILDKITE_PULL_REQUEST:-invalid}" =~ ^[0-9]+$ ]]; then
     echo "Error: this tool can only be called from a Buildkite PR job" >&2
