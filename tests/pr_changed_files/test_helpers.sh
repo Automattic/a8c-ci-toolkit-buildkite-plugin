@@ -61,45 +61,40 @@ cleanup_git_repo() {
     rm -rf "$1"
 }
 
-# Helper to assert expected output
-assert_output() {
-    local expected="$1"
-    local actual="$2"
-    local message="${3:-}"
+# Helper to assert both return code and output
+# Arguments:
+#   $1 - Expected return code
+#   $2 - Actual return code
+#   $3 - Actual output
+#   $4 - Expected output
+#   $5 - Optional message to display with the assertion result
+assert_result() {
+    local expected_code="$1"
+    local actual_code="$2"
+    local actual_output="$3"
+    local expected_output="$4"
+    local message="$5"
 
-    if [[ "$actual" == "$expected" ]]; then
-        echo "🟢 Assertion succeeded: $message"
-    elif [[ "$actual" != "$expected" ]]; then
-        echo "❌ Assertion failed: $message"
-        echo "Expected: $expected"
-        echo "Actual  : $actual"
-        exit 1
-    fi
+    assert_equal "$expected_code" "$actual_code" "$message"
+    assert_equal "$expected_output" "$actual_output" "$message"
 }
 
-# Helper to assert expected return code
-assert_return_code() {
-    local expected="$1"
-    local actual="$2"
-    local message="${3:-}"
-
-    if [[ "$actual" == "$expected" ]]; then
-        echo "🟢 Return code assertion succeeded: $message"
-    else
-        echo "❌ Return code assertion failed: $message"
-        echo "Expected: $expected"
-        echo "Actual  : $actual"
-        exit 1
-    fi
-}
-
+# Helper function to assert that two values are equal
+# Arguments:
+#   $1 - Expected value
+#   $2 - Actual value 
+#   $3 - Optional message to display with the assertion result
 assert_equal() {
     local expected="$1"
     local actual="$2"
     local message="${3:-}"
-    
-    if [[ "$expected" != "$actual" ]]; then
-        echo "❌ Assertion failed: Expected '$expected' but got '$actual' ${message:+($message)}" >&2
-        return 1
+
+    if [[ "$actual" == "$expected" ]]; then
+        echo "🟢 Assertion ('$actual') succeeded: $message"
+    elif [[ "$actual" != "$expected" ]]; then
+        echo "❌ Assertion failed ($actual != $expected): $message"
+        echo "Expected: $expected"
+        echo "Actual  : $actual"
+        exit 1
     fi
 }
