@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Add new command to install Windows 10 SDK on Windows CI machines [#144]
 
 ### Bug Fixes
 
