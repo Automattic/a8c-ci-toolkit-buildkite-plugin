@@ -3,18 +3,6 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "Current working directory: $PWD"
 
-if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
-    Write-Host "--- :bug: Running as Administrator"
-} else {
-    Write-Host "--- :bug: Running as not Administrator"
-    $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-    $roles = $principal.Identity.Groups | ForEach-Object {
-        $_.Translate([Security.Principal.NTAccount]).Value
-    }
-    Write-Host "Your roles are:"
-    $roles | ForEach-Object { Write-Host "  - $_" }
-}
-
 Write-Host "--- :windows: Setting up Windows for Node and Electron builds"
 
 Write-Host "Enable long path behavior"
