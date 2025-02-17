@@ -79,3 +79,18 @@ $EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-sign
 certutil -decode certificate.bin certificate.pfx
 Write-Host "Code signing certificate downloaded at: $((Get-Item 'certificate.pfx').FullName)"
 If ($LastExitCode -ne 0) { Exit $LastExitCode }
+
+Write-Host "--- :windows: Checking whether to install Windows 10 SDK..."
+
+# When using Electron Forge and electron2appx, building Appx requires the Windows 10 SDK
+#
+# See https://github.com/hermit99/electron-windows-store/tree/v2.1.2?tab=readme-ov-file#usage
+
+$windowsSDKVersionFile = ".windows-10-sdk-version"
+if (Test-Path $windowsSDKVersionFile) {
+    Write-Host "Found $windowsSDKVersionFile file, installing Windows 10 SDK..."
+    & "$PSScriptRoot\install_windows_10_sdk.ps1"
+    If ($LastExitCode -ne 0) { Exit $LastExitCode }
+} else {
+    Write-Host "No $windowsSDKVersionFile file found, skipping Windows 10 SDK installation."
+}
