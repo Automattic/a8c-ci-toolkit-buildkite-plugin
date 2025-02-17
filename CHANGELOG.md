@@ -39,9 +39,10 @@ _None._
 
 ### New Features
 
-- Add new command to install Windows 10 SDK on Windows CI machines [#144]
+- Add new command to install Windows 10 SDK on Windows CI machines, `install_windows_10_sdk.ps1` [#144]
 - `prepare_windows_host_for_node.ps1` has been deprecated in favor of the better name `prepare_windows_host_for_app_distribution` [#144]
 - `prepare_windows_host_for_app_distribution` automatically installs the Windows 10 SDK if version file is found [#144]
+- Add new command to run `refreshenv` on Windows preserving the `PATH`, `path_aware_refreshenv` [#144]
 
 ### Bug Fixes
 
