@@ -1,9 +1,9 @@
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
 
-Write-Host "Current working directory: $PWD"
+Write-Host "--- :windows: Setting up Windows for app distribution"
 
-Write-Host "--- :windows: Setting up Windows for Node and Electron builds"
+Write-Host "Current working directory: $PWD"
 
 Write-Host "Enable long path behavior"
 # See https://docs.microsoft.com/en-us/windows/desktop/fileio/naming-a-file#maximum-path-length-limitation
@@ -50,12 +50,6 @@ if (Test-Path $atpRegPath) {
     Set-ItemProperty -Path $atpRegPath -Name 'ForceDefenderPassiveMode' -Value '1' -Type 'DWORD'
 }
 
-Write-Host "--- :lock_with_ink_pen: Downloading Code Signing Certificate"
-$EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate | jq -r '.SecretString' | Out-File 'certificate.bin'
-certutil -decode certificate.bin certificate.pfx
-Write-Host "Code signing certificate downloaded at: $((Get-Item 'certificate.pfx').FullName)"
-If ($LastExitCode -ne 0) { Exit $LastExitCode }
-
 # From https://stackoverflow.com/a/46760714
 Write-Host "--- :windows: Setting up Package Manager"
 $env:ChocolateyInstall = Convert-Path "$((Get-Command choco).Path)\..\.."
@@ -79,3 +73,9 @@ if ($developerMode.State -eq 'Enabled') {
       Write-Host "Failed to enable Developer Mode. Continuing without it..."
     }
 }
+
+Write-Host "--- :lock_with_ink_pen: Downloading Code Signing Certificate"
+$EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate | jq -r '.SecretString' | Out-File 'certificate.bin'
+certutil -decode certificate.bin certificate.pfx
+Write-Host "Code signing certificate downloaded at: $((Get-Item 'certificate.pfx').FullName)"
+If ($LastExitCode -ne 0) { Exit $LastExitCode }
