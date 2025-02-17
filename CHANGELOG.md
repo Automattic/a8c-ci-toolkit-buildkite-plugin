@@ -34,11 +34,14 @@ _None._
 
 ### Breaking Changes
 
-_None._
+- `prepare_windows_host_for_node.ps1` no longer install Node.js.
+  Clients should use [`nvm-buildkite-plugin`](https://github.com/Automattic/nvm-buildkite-plugin) instead [#144]
 
 ### New Features
 
 - Add new command to install Windows 10 SDK on Windows CI machines [#144]
+- `prepare_windows_host_for_node.ps1` has been deprecated in favor of the better name `prepare_windows_host_for_app_distribution` [#144]
+- `prepare_windows_host_for_app_distribution` automatically installs the Windows 10 SDK if version file is found [#144]
 
 ### Bug Fixes
 
