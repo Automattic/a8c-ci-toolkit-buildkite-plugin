@@ -74,11 +74,14 @@ if ($developerMode.State -eq 'Enabled') {
     }
 }
 
-Write-Host "--- :lock_with_ink_pen: Downloading Code Signing Certificate"
-$EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate | jq -r '.SecretString' | Out-File 'certificate.bin'
-certutil -decode certificate.bin certificate.pfx
-Write-Host "Code signing certificate downloaded at: $((Get-Item 'certificate.pfx').FullName)"
-If ($LastExitCode -ne 0) { Exit $LastExitCode }
+Write-Host "--- :lock_with_ink_pen: Download Code Signing Certificate"
+$certificateBinPath = "certificate.bin"
+$EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate `
+  | jq -r '.SecretString' `
+  | Out-File $certificateBinPath
+$certificatePfxPath = "certificate.pfx"
+certutil -decode $certificateBinPath $certificatePfxPath
+Write-Host "Code signing certificate downloaded at: $((Get-Item $certificatePfxPath).FullName)"
 
 Write-Host "--- :windows: Checking whether to install Windows 10 SDK..."
 
