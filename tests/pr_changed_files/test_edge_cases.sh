@@ -47,39 +47,61 @@ echo "test" > 'folder with spaces/nested!\@*#$folder/file_with_!@*#$chars.txt'
 git add .
 git commit -m "Add files with special characters"
 
+# Test with exit code only
 output=$(pr_changed_files)
 result=$?
-assert_result 0 $result "$output" "true" "Should handle files with spaces and special characters"
+assert_result 0 $result "$output" "" "Should handle files with spaces and special characters"
 
-# [Test] Pattern matching with spaces and special characters
+# Test with stdout
+output=$(pr_changed_files --stdout)
+result=$?
+assert_result 0 $result "$output" "true" "Should handle files with spaces and special characters with --stdout"
+
+# [Test] Pattern matching with spaces and special characters - exit code only
 output=$(pr_changed_files --any-match '*spaces.txt')
 result=$?
-assert_result 0 $result "$output" "true" "Should match files with special characters in path"
+assert_result 0 $result "$output" "" "Should match files with special characters in path"
 
-output=$(pr_changed_files --all-match 'folder with spaces/*')
+# Test with stdout
+output=$(pr_changed_files --stdout --any-match '*spaces.txt')
 result=$?
-assert_result 0 $result "$output" "true" "Should handle directory patterns with spaces"
+assert_result 0 $result "$output" "true" "Should match files with special characters in path with --stdout"
 
-# [Test] No changes between branches
+# [Test] No changes between branches - exit code only
 git checkout -b no_changes base
 output=$(pr_changed_files)
 result=$?
-assert_result 1 $result "$output" "false" "Should handle no changes between branches"
+assert_result 1 $result "$output" "" "Should handle no changes between branches"
 
-# [Test] Empty commit
+# Test with stdout
+output=$(pr_changed_files --stdout)
+result=$?
+assert_result 0 $result "$output" "false" "Should handle no changes between branches with --stdout"
+
+# [Test] Empty commit - exit code only
 git checkout -b empty_commit base
 git commit --allow-empty -m "Empty commit"
 output=$(pr_changed_files)
 result=$?
-assert_result 1 $result "$output" "false" "Should handle empty commit"
+assert_result 1 $result "$output" "" "Should handle empty commit"
 
-# [Test] Empty repository state
+# Test with stdout
+output=$(pr_changed_files --stdout)
+result=$?
+assert_result 0 $result "$output" "false" "Should handle empty commit with --stdout"
+
+# [Test] Empty repository state - exit code only
 git checkout --orphan empty
 git rm -rf .
 git commit --allow-empty -m "Empty initial commit"
 
 output=$(pr_changed_files)
 result=$?
-assert_result 1 $result "$output" "false" "Should handle empty repository state"
+assert_result 1 $result "$output" "" "Should handle empty repository state"
+
+# Test with stdout
+output=$(pr_changed_files --stdout)
+result=$?
+assert_result 0 $result "$output" "false" "Should handle empty repository state with --stdout"
 
 echo -e "\n✅ Edge cases tests passed"

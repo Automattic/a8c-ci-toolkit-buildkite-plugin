@@ -17,18 +17,28 @@ export BUILDKITE_PULL_REQUEST_BASE_BRANCH="base"
 # Initialize the repository
 init_test_repo "$repo_path"
 
-# [Test] No changes
+# [Test] No changes - exit code only
 output=$(pr_changed_files)
 result=$?
-assert_result 1 $result "$output" "false" "Should return 1 and output 'false' when no files changed"
+assert_result 1 $result "$output" "" "Should return 1 when no files changed"
 
-# [Test] Single file change
+# [Test] No changes - with stdout
+output=$(pr_changed_files --stdout)
+result=$?
+assert_result 0 $result "$output" "false" "Should output 'false' and return 0 with --stdout when no files changed"
+
+# [Test] Single file change - exit code only
 echo "change" > new.txt
 git add new.txt
 git commit -m "Add new file"
 
 output=$(pr_changed_files)
 result=$?
-assert_result 0 $result "$output" "true" "Should return 0 and output 'true' when files changed"
+assert_result 0 $result "$output" "" "Should return 0 when files changed"
+
+# [Test] Single file change - with stdout
+output=$(pr_changed_files --stdout)
+result=$?
+assert_result 0 $result "$output" "true" "Should output 'true' and return 0 with --stdout when files changed"
 
 echo "✅ Basic changes tests passed"

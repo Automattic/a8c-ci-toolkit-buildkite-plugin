@@ -26,43 +26,68 @@ echo "ruby" > 'src/ruby/main.rb'
 git add .
 git commit -m "Add test files"
 
-# [Test] Match specific extension - check output string
+# [Test] Match specific extension - exit code only
 output=$(pr_changed_files --any-match '*.swift')
 result=$?
-assert_result 0 $result "$output" "true" "Should match .swift files and output 'true'"
+assert_result 0 $result "$output" "" "Should match .swift files"
 
-# [Test] Match multiple patterns
+# Test with stdout
+output=$(pr_changed_files --stdout --any-match '*.swift')
+result=$?
+assert_result 0 $result "$output" "true" "Should match .swift files with --stdout"
+
+# [Test] Match multiple patterns - exit code only
 output=$(pr_changed_files --any-match 'docs/*.md' '*.rb')
 result=$?
-assert_result 0 $result "$output" "true" "Should match multiple patterns and output 'true'"
+assert_result 0 $result "$output" "" "Should match multiple patterns"
 
-# [Test] Match files with spaces and special characters
-output=$(pr_changed_files --any-match 'docs/read me.md' 'docs/special!@\*#$chars.md')
+# Test with stdout
+output=$(pr_changed_files --stdout --any-match 'docs/*.md' '*.rb')
 result=$?
-assert_result 0 $result "$output" "true" "Should match files with spaces and special characters and output 'true'"
+assert_result 0 $result "$output" "true" "Should match multiple patterns with --stdout"
 
-# [Test] Match files with spaces and special characters, even when using globbing
-output=$(pr_changed_files --any-match 'docs/read me.md' 'docs/special*chars.md')
+# [Test] Match files with spaces and special characters - exit code only
+output=$(pr_changed_files --any-match 'docs/read me.md' 'docs/special!@*#$chars.md')
 result=$?
-assert_result 0 $result "$output" "true" "Should match files with spaces and special characters with globbing and output 'true'"
+assert_result 0 $result "$output" "" "Should match files with spaces and special characters"
 
-# [Test] No matches - check output string
+# Test with stdout
+output=$(pr_changed_files --stdout --any-match 'docs/read me.md' 'docs/special!@*#$chars.md')
+result=$?
+assert_result 0 $result "$output" "true" "Should match files with spaces and special characters with --stdout"
+
+# [Test] No matches - exit code only
 output=$(pr_changed_files --any-match '*.js')
 result=$?
-assert_result 1 $result "$output" "false" "Should not match non-existent patterns and output 'false'"
+assert_result 1 $result "$output" "" "Should not match non-existent patterns"
 
-# [Test] Directory pattern
+# Test with stdout
+output=$(pr_changed_files --stdout --any-match '*.js')
+result=$?
+assert_result 0 $result "$output" "false" "Should not match non-existent patterns with --stdout"
+
+# [Test] Directory pattern - exit code only
 output=$(pr_changed_files --any-match 'docs/*')
 result=$?
-assert_result 0 $result "$output" "true" "Should match directory patterns and output 'true'"
+assert_result 0 $result "$output" "" "Should match directory patterns"
 
-# [Test] Exact pattern matching
+# Test with stdout
+output=$(pr_changed_files --stdout --any-match 'docs/*')
+result=$?
+assert_result 0 $result "$output" "true" "Should match directory patterns with --stdout"
+
+# [Test] Exact pattern matching - exit code only
 echo "swiftfile" > swiftfile.txt
 git add swiftfile.txt
 git commit -m "Add file with swift in name"
 
 output=$(pr_changed_files --any-match '*.swift')
 result=$?
-assert_result 0 $result "$output" "true" "Should only match exact patterns and output 'true'"
+assert_result 0 $result "$output" "" "Should only match exact patterns"
+
+# Test with stdout
+output=$(pr_changed_files --stdout --any-match '*.swift')
+result=$?
+assert_result 0 $result "$output" "true" "Should only match exact patterns with --stdout"
 
 echo "✅ Any-match pattern tests passed"

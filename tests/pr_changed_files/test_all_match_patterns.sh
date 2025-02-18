@@ -25,22 +25,37 @@ echo "doc3" > 'docs/special\!@*#$chars.md'
 git add .
 git commit -m "Add doc files"
 
-# [Test] All changes in docs
+# [Test] All changes in docs - exit code only
 output=$(pr_changed_files --all-match 'docs/*')
 result=$?
-assert_result 0 $result "$output" "true" "Should return 0 and output 'true' when all changes match patterns"
+assert_result 0 $result "$output" "" "Should match when all changes are in docs"
 
-# [Test] All changes in docs with explicit patterns including spaces and special chars
+# Test with stdout
+output=$(pr_changed_files --stdout --all-match 'docs/*')
+result=$?
+assert_result 0 $result "$output" "true" "Should match when all changes are in docs with --stdout"
+
+# [Test] All changes in docs with explicit patterns including spaces and special chars - exit code only
 output=$(pr_changed_files --all-match 'docs/read me.md' 'docs/guide with spaces.md' 'docs/special\\!@\*#$chars.md')
 result=$?
-assert_result 0 $result "$output" "true" "Should return 0 and output 'true' when all changes match patterns with spaces and special chars"
+assert_result 0 $result "$output" "" "Should match when all changes match patterns with spaces and special chars"
 
-# [Test] All changes in docs with globbing patterns including spaces and special chars
+# Test with stdout
+output=$(pr_changed_files --stdout --all-match 'docs/read me.md' 'docs/guide with spaces.md' 'docs/special\\!@\*#$chars.md')
+result=$?
+assert_result 0 $result "$output" "true" "Should match when all changes match patterns with spaces and special chars with --stdout"
+
+# [Test] All changes in docs with globbing patterns including spaces and special chars - exit code only
 output=$(pr_changed_files --all-match 'docs/read me.md' 'docs/guide with spaces.md' 'docs/special\\!*.md')
 result=$?
-assert_result 0 $result "$output" "true" "Should return 0 and output 'true' when all changes match patterns with globbing"
+assert_result 0 $result "$output" "" "Should match when all changes match patterns with globbing"
 
-# [Test] Changes outside pattern
+# Test with stdout
+output=$(pr_changed_files --stdout --all-match 'docs/read me.md' 'docs/guide with spaces.md' 'docs/special\\!*.md')
+result=$?
+assert_result 0 $result "$output" "true" "Should match when all changes match patterns with globbing with --stdout"
+
+# [Test] Changes outside pattern - exit code only
 echo "swift" > 'src/swift/main with spaces.swift'
 echo "swift" > 'src/swift/special!\@#*$chars.swift'
 git add .
@@ -48,26 +63,31 @@ git commit -m "Add swift file"
 
 output=$(pr_changed_files --all-match 'docs/*')
 result=$?
-assert_result 1 $result "$output" "false" "Should return 1 and output 'false' when changes exist outside patterns"
+assert_result 1 $result "$output" "" "Should not match when changes exist outside patterns"
 
-# [Test] Multiple patterns, all matching
+# Test with stdout
+output=$(pr_changed_files --stdout --all-match 'docs/*')
+result=$?
+assert_result 0 $result "$output" "false" "Should not match when changes exist outside patterns with --stdout"
+
+# [Test] Multiple patterns, all matching - exit code only
 output=$(pr_changed_files --all-match 'docs/*' 'src/swift/main with spaces.swift' 'src/swift/special\!\\@#\*$chars.swift')
 result=$?
-assert_result 0 $result "$output" "true" "Should return 0 and output 'true' when all changes match multiple patterns"
+assert_result 0 $result "$output" "" "Should match when all changes match multiple patterns"
 
-# [Test] Multiple patterns, all matching, including some using globbing
+# Test with stdout
+output=$(pr_changed_files --stdout --all-match 'docs/*' 'src/swift/main with spaces.swift' 'src/swift/special\!\\@#\*$chars.swift')
+result=$?
+assert_result 0 $result "$output" "true" "Should match when all changes match multiple patterns with --stdout"
+
+# [Test] Multiple patterns, all matching, including some using globbing - exit code only
 output=$(pr_changed_files --all-match 'docs/*' 'src/swift/main with spaces.swift' 'src/swift/special*chars.swift')
 result=$?
-assert_result 0 $result "$output" "true" "Should return 0 and output 'true' when all changes match patterns with globbing"
+assert_result 0 $result "$output" "" "Should match when all changes match patterns with globbing"
 
-# [Test] Changes outside pattern - check output string
-echo "swift" > 'src/swift/main with spaces.swift'
-echo "swift" > 'src/swift/special!\@#*$chars.swift'
-git add .
-git commit -m "Add swift file"
-
-output=$(pr_changed_files --all-match 'docs/*')
+# Test with stdout
+output=$(pr_changed_files --stdout --all-match 'docs/*' 'src/swift/main with spaces.swift' 'src/swift/special*chars.swift')
 result=$?
-assert_result 1 $result "$output" "false" "Should return 1 and output 'false' when changes exist outside patterns"
+assert_result 0 $result "$output" "true" "Should match when all changes match patterns with globbing with --stdout"
 
 echo "✅ All-match pattern tests passed"
