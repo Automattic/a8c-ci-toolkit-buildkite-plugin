@@ -65,14 +65,14 @@ cleanup_git_repo() {
 # Arguments:
 #   $1 - Expected return code
 #   $2 - Actual return code
-#   $3 - Actual output
-#   $4 - Expected output
+#   $3 - Expected output
+#   $4 - Actual output
 #   $5 - Optional message to display with the assertion result
 assert_result() {
     local expected_code="$1"
     local actual_code="$2"
-    local actual_output="$3"
-    local expected_output="$4"
+    local expected_output="$3"
+    local actual_output="$4"
     local message="$5"
 
     assert_equal "$expected_code" "$actual_code" "Exit code - $message"

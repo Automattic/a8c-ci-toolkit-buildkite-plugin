@@ -20,12 +20,12 @@ init_test_repo "$repo_path"
 # [Test] No changes - exit code only
 output=$(pr_changed_files)
 result=$?
-assert_result 1 $result "$output" "" "Should return 1 when no files changed"
+assert_result 1 $result "" "$output" "Should return 1 when no files changed"
 
 # [Test] No changes - with stdout
 output=$(pr_changed_files --stdout)
 result=$?
-assert_result 0 $result "$output" "false" "Should output 'false' and return 0 with --stdout when no files changed"
+assert_result 0 $result "false" "$output" "Should output 'false' and return 0 with --stdout when no files changed"
 
 # [Test] Single file change - exit code only
 echo "change" > new.txt

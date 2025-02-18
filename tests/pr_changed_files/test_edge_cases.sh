@@ -21,24 +21,24 @@ init_test_repo "$repo_path"
 unset BUILDKITE_PULL_REQUEST
 output=$(pr_changed_files 2>&1)
 result=$?
-assert_result 255 $result "$output" "Error: this tool can only be called from a Buildkite PR job" "Should fail when not in PR environment"
+assert_result 255 $result "Error: this tool can only be called from a Buildkite PR job" "$output" "Should fail when not in PR environment"
 
 export BUILDKITE_PULL_REQUEST="123"
 
 # [Test] No patterns provided
 output=$(pr_changed_files --any-match 2>&1)
 result=$?
-assert_result 255 $result "$output" "Error: must specify at least one file pattern" "Should fail when no patterns provided"
+assert_result 255 $result "Error: must specify at least one file pattern" "$output" "Should fail when no patterns provided"
 
 # [Test] Flag followed by another flag
 output=$(pr_changed_files --any-match --something 2>&1)
 result=$?
-assert_result 255 $result "$output" "Error: must specify at least one file pattern" "Should fail with correct error when flag is followed by another flag"
+assert_result 255 $result "Error: must specify at least one file pattern" "$output" "Should fail with correct error when flag is followed by another flag"
 
 # [Test] Mutually exclusive options
 output=$(pr_changed_files --any-match "*.txt" --all-match "*.md" 2>&1)
 result=$?
-assert_result 255 $result "$output" "Error: either specify --all-match or --any-match; cannot specify both" "Should fail with correct error when using mutually exclusive options"
+assert_result 255 $result "Error: either specify --all-match or --any-match; cannot specify both" "$output" "Should fail with correct error when using mutually exclusive options"
 
 # [Test] Files with spaces and special characters
 mkdir -p 'folder with spaces/nested!\@*#$folder'

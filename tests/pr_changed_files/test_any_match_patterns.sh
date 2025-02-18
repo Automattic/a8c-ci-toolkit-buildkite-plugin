@@ -29,12 +29,12 @@ git commit -m "Add test files"
 # [Test] Match specific extension - exit code only
 output=$(pr_changed_files --any-match '*.swift')
 result=$?
-assert_result 0 $result "$output" "" "Should match .swift files"
+assert_result 0 $result "" "$output" "Should match .swift files"
 
 # Test with stdout
 output=$(pr_changed_files --stdout --any-match '*.swift')
 result=$?
-assert_result 0 $result "$output" "true" "Should match .swift files with --stdout"
+assert_result 0 $result "true" "$output" "Should match .swift files with --stdout"
 
 # [Test] Match multiple patterns - exit code only
 output=$(pr_changed_files --any-match 'docs/*.md' '*.rb')
