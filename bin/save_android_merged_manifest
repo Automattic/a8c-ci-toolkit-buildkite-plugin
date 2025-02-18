@@ -1,0 +1,32 @@
+#!/bin/bash -eu
+
+MODULE=$1
+
+echo "Current directory is: $(pwd)"
+echo "Current directory contents are: $(ls -la)"
+
+# The key is shared with `bin/restore_android_merged_manifest`
+ANDROID_MERGED_MANIFEST_KEY="${BUILDKITE_PIPELINE_SLUG}_ANDROID_MERGED_MANIFEST_${MODULE}"
+
+echo "Saving Android merged manifest..."
+
+# The directory is shared with `bin/restore_android_merged_manifest`
+ANDROID_MERGED_MANIFEST="${HOME}/.android/merged_manifest/${MODULE}"
+echo "ANDROID_MERGED_MANIFEST: ${ANDROID_MERGED_MANIFEST}"
+
+mkdir -p "$ANDROID_MERGED_MANIFEST"
+
+cp -r ./"${MODULE}"/build/intermediates/merged_manifest/. "$ANDROID_MERGED_MANIFEST" \
+
+MERGED_MANIFEST_BASE_FOLDER=$(dirname "$ANDROID_MERGED_MANIFEST")
+echo "MERGED_MANIFEST_BASE_FOLDER: ${MERGED_MANIFEST_BASE_FOLDER}"
+MERGED_MANIFEST_FOLDER_NAME=$(basename "$ANDROID_MERGED_MANIFEST")
+echo "MERGED_MANIFEST_FOLDER_NAME: ${MERGED_MANIFEST_FOLDER_NAME}"
+
+# `save_cache` & `restore_cache` scripts only work if they are called from the same directory
+pushd "$MERGED_MANIFEST_BASE_FOLDER"
+echo "Current directory is: $(pwd)"
+echo "Current directory contents are: $(ls -la)"
+echo "Directory contents of 'MODULE': $(ls -la "${MODULE}")"
+save_cache "$MERGED_MANIFEST_FOLDER_NAME" "$ANDROID_MERGED_MANIFEST_KEY" --force
+popd
