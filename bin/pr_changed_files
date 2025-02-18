@@ -6,6 +6,7 @@
 #   pr_changed_files                                  # Check if any files changed
 #   pr_changed_files --all-match <file-patterns...>   # Check if changes are limited to given patterns
 #   pr_changed_files --any-match <file-patterns...>   # Check if changes include files matching patterns
+#   pr_changed_files [--stdout] ...                   # Add --stdout to output "true"/"false" to stdout
 #
 # Exit codes:
 #   0: Condition is met (files changed / patterns matched)
@@ -13,17 +14,17 @@
 # 255: Error in command invocation (bad parameters, not in PR context, etc.)
 #
 # Output:
-#   In addition to exit codes, the script also outputs "true" or "false" to stdout
-#   when the condition is met or not met respectively.
+#   If the flag --stdout is used, the script will output "true" or "false" to stdout
+#   when the condition is met or not met respectively, and will return exit code 0.
 #
 # Typical usage patterns:
-#   # To assign the result to a variable — use `|| true` if your shell has `set -e` enabled
-#   $ DOC_UPDATED=$(pr_changed_files --any-match docs/* *.md || true)
-#
-#   # To use in an `if` condition — use `>/dev/null` to avoid the true/false output
-#   $ if pr_changed_files --any-match docs/* *.md >/dev/null; then
+#   # Using exit codes
+#   $ if pr_changed_files --any-match docs/* *.md; then
 #       echo "Documentation was updated"
 #     fi
+#
+#   # Using stdout output
+#   $ DOCS_UPDATED=$(pr_changed_files --stdout --any-match docs/* *.md)
 #
 # Behavior:
 #   With no arguments:
@@ -73,12 +74,17 @@ git fetch origin "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" >/dev/null 2>&1 || {
 
 mode=""
 patterns=()
+use_stdout="false"
 
 # Define error message for mutually exclusive options
 EXCLUSIVE_OPTIONS_ERROR="Error: either specify --all-match or --any-match; cannot specify both"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
+        --stdout)
+            use_stdout="true"
+            shift
+            ;;
         --all-match | --any-match)
             if [[ -n "$mode" ]]; then
                 echo "$EXCLUSIVE_OPTIONS_ERROR" >&2
@@ -113,14 +119,26 @@ while IFS= read -r -d '' file; do
   changed_files+=("$file")
 done < <(git --no-pager diff --name-only -z --merge-base "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | sort)
 
+exit_result() {
+    local result=$1
+    if [[ "$use_stdout" == "true" ]]; then
+        if [[ "$result" -eq 0 ]]; then
+            echo "true"
+        else
+            echo "false"
+        fi
+        exit 0
+    fi
+
+    exit $result
+}
+
 if [[ -z "$mode" ]]; then
     # No arguments = any change
     if [[ ${#changed_files[@]} -gt 0 ]]; then
-        echo "true"
-        exit 0
+        exit_result 0
     else
-        echo "false"
-        exit 1
+        exit_result 1
     fi
 fi
 
@@ -141,20 +159,16 @@ if [[ "$mode" == "all-match" ]]; then
     # Check if all changed files match at least one pattern
     for file in "${changed_files[@]}"; do
         if ! file_matches_any_pattern "$file" "${patterns[@]}"; then
-            echo "false"
-            exit 1
+            exit_result 1
         fi
     done
-    echo "true"
-    exit 0
+    exit_result 0
 elif [[ "$mode" == "any-match" ]]; then
     # Check if any changed file matches any pattern
     for file in "${changed_files[@]}"; do
         if file_matches_any_pattern "$file" "${patterns[@]}"; then
-            echo "true"
-            exit 0
+            exit_result 0
         fi
     done
-    echo "false"
-    exit 1
+    exit_result 1
 fi
