@@ -130,7 +130,7 @@ exit_result() {
         exit 0
     fi
 
-    exit $result
+    exit "$result"
 }
 
 if [[ -z "$mode" ]]; then
