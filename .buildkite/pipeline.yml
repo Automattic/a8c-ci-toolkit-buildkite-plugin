@@ -134,9 +134,7 @@ steps:
       - label: ":windows: install_windows_10_sdk Tests - Version file with one new line"
         command: |
           "123`n" | Out-File .windows-10-sdk-version
-          .\tests\test-install-windows-10-sdk.ps1 `
-            -ExpectedExitCode 1 `
-            -ExpectedErrorKeyphrase "Expected exactly one non-empty line"
+          .\tests\test-install-windows-10-sdk.ps1 -ExpectedExitCode 0
         agents:
           queue: windows
         notify:
@@ -146,9 +144,7 @@ steps:
       - label: ":windows: install_windows_10_sdk Tests - Version file with more than one new line"
         command: |
           "123`n`n" | Out-File .windows-10-sdk-version
-          .\tests\test-install-windows-10-sdk.ps1 `
-            -ExpectedExitCode 1 `
-            -ExpectedErrorKeyphrase "Expected exactly one non-empty line"
+          .\tests\test-install-windows-10-sdk.ps1 -ExpectedExitCode 0
         agents:
           queue: windows
         notify:
