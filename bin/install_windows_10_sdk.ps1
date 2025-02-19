@@ -24,7 +24,7 @@ if ($windows10SDKVersion.Count -ne 1) {
 }
 
 if ($windows10SDKVersion -notmatch '^\d+$') {
-  Write-Output "[!] Invalid version format."
+  Write-Output "[!] Invalid version file format."
   Write-Output "Expected an integer, got: '$windows10SDKVersion'"
   exit 1
 }
@@ -49,7 +49,7 @@ If (-not (Test-Path $buildToolsPath)) {
   Write-Output "[!] Failed to download Visual Studio Build Tools"
   Exit 1
 } else {
-  Write-Output "Successfully downloaded Visual Studio Build Toosl at $buildToolsPath."
+  Write-Output "Successfully downloaded Visual Studio Build Tools at $buildToolsPath."
 }
 
 # Install the Windows SDK and other required components
