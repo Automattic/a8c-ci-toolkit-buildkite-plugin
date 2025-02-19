@@ -9,7 +9,21 @@ if (-not (Test-Path $windowsSDKVersionFile)) {
   exit 1
 }
 
-$windows10SDKVersion = Get-Content $windowsSDKVersionFile
+$windows10SDKVersion = Get-Content $windowsSDKVersionFile `
+  | Where-Object { $_ -match '\S' }  # Remove empty lines
+
+if ($windows10SDKVersion.Count -ne 1) {
+  Write-Output "[!] Invalid version file format."
+  Write-Output "Expected exactly one non-empty line, got:"
+  Write-Output ($windows10SDKVersion -join "`n")  # The join poperly formats multiple lines
+  exit 1
+}
+
+if ($windows10SDKVersion -notmatch '^\d+$') {
+  Write-Output "[!] Invalid version format."
+  Write-Output "Expected an integer, got: '$windows10SDKVersion'"
+  exit 1
+}
 
 Write-Host "Will attempt to set up Windows 10 ($windows10SDKVersion) SDK and Visual Studio Build Tools..."
 
