@@ -2,7 +2,7 @@
 
 ## Documentation Requirements
 
-When editing or creating files in /bin:
+When editing or creating files in `/bin`:
 - Every shell script must have comprehensive header documentation
 - Documentation must include: description, usage, parameters, examples
 - For complex logic, provide detailed examples of different use cases
@@ -36,7 +36,7 @@ When editing or creating files in /bin:
 #
 # Returns:
 #   [Description of exit codes and their meanings]
-
+#
 # Requirements:
 #   [List of required external commands/programs]
 #   [Any platform-specific requirements]
@@ -45,8 +45,8 @@ When editing or creating files in /bin:
 ## Shell Script Standards
 
 For all bash shell scripts:
-- Ensure compatibility with bash 3.2.57
-- Follow shellcheck recommendations
+- Ensure compatibility with `bash 3.2.57`
+- Follow `shellcheck` recommendations
 - Use proper error handling and input validation
 - Document cross-platform considerations
 
@@ -60,74 +60,74 @@ For all bash shell scripts:
 - Always use `$()` instead of backticks to execute commands
 - Quote all variable expansions
 - Use `[[ ]]` for conditional expressions
-- Use local variables in functions
+- Use `local` variables in functions
 - Include proper error handling
 - Document all dependencies and requirements
 
 ## Bash 3.2 Compatibility
 
 For all bash shell scripts, avoid using:
-- Associative arrays (declare -A)
-- mapfile/readarray command
-- coproc keyword
-- &> redirection operator
-- case fall-through ;& operator
-- case continue ;;& operator
-- {a..b..c} brace expansion with step
-- case-modification operators in ${parameter^}, ${parameter,}
+- Associative arrays (`declare -A`)
+- `mapfile`/`readarray` command
+- `coproc` keyword
+- `&>` redirection operator
+- Case fall-through `;& operator`
+- Case continue `;;& operator`
+- `{a..b..c}` brace expansion with step
+- Case-modification operators in `${parameter^}`, `${parameter,}`
 
 ## Cross-Platform Considerations
 
 ### For all bash shell scripts
 
-- Use POSIX-compliant syntax and commands.
-- Ensure the script is at least compatible with macOS and Linux.
-- Make your best effort to make the bash scripts also compatible with Windows if possible, in addition to macOS and Linux. If it's not possible, document that in the script's header documentation.
-- If the script would behave differently on different platforms despite your best efforts to make it behave the same way cross-platform, document any such platform-specific behavior in the script header documentation.
+- Use POSIX-compliant syntax and commands
+- Ensure the script is at least compatible with macOS and Linux
+- Make your best effort to make the bash scripts also compatible with Windows if possible, in addition to macOS and Linux. If it's not possible, document that in the script's header documentation
+- If the script would behave differently on different platforms despite your best efforts to make it behave the same way cross-platform, document any such platform-specific behavior in the script header documentation
 
 ### For bash scripts compatible with macOS and Linux
 
 You can assume the following external commands/programs will be available on the machine the script is intended to run:
 
-- jq
-- curl
-- aws
-- git
-- awk
-- sed
-- grep
-- sort
-- tee
-- uname
-- which
-- xargs
-- buildkite-agent
-- chmod
-- ssh-add
-- ssh-keyscan
+- `jq`
+- `curl`
+- `aws`
+- `git`
+- `awk`
+- `sed`
+- `grep`
+- `sort`
+- `tee`
+- `uname`
+- `which`
+- `xargs`
+- `buildkite-agent`
+- `chmod`
+- `ssh-add`
+- `ssh-keyscan`
 
 ### For bash scripts related to iOS tools and intended to be run on macOS systems
 
 You can assume the following external commands/programs will be available on the machine where the script is run, as long as you document in the script's header documentation that the script assumes it will run on a Mac CI agent:
 
-- bundle
-- gem
-- pod
-- ruby
+- `bundle`
+- `gem`
+- `pod`
+- `ruby`
 
 ### For bash scripts related to Android tools and intended to be run on Linux systems
 
 You can assume the following external commands/programs will be available on the machine where the script is run, as long as you document in the script's header documentation that the script assumes it will run on an Android CI agent:
 
-- gradle
-- java
+- `gradle`
+- `java`
 
 ### For bash scripts related to Node.js tools and intended to be run on Linux or macOS systems
 
 You can assume the following external commands/programs will be available on the machine where the script is run, as long as you document in the script's header documentation that the script assumes it will run on a Linux CI agent and use the `automattic/nvm-buildkite-plugin` to install the correct version of Node.js:
 
-- npm
-- node
+- `npm`
+- `node`
 
 ### For any bash script that needs to have external commands/programs available not listed above
 
@@ -141,8 +141,7 @@ For scripts using `sha1sum`, suggest to switch the implementation to use checksu
 ## Script Validation
 
 Before committing new scripts, ensure:
-
-- ShellCheck passes with no warnings
+- `shellcheck` passes with no warnings
 - Header documentation is complete
 - Platform requirements are documented
 - Helper commands are used where available
