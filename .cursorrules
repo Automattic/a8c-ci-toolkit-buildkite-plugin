@@ -36,6 +36,10 @@ When editing or creating files in /bin:
 #
 # Returns:
 #   [Description of exit codes and their meanings]
+
+# Requirements:
+#   [List of required external commands/programs]
+#   [Any platform-specific requirements]
 ```
 
 ## Shell Script Standards
@@ -49,11 +53,13 @@ For all bash shell scripts:
 ## Best Practices
 
 For all bash shell scripts:
-- Use set -e to exit on error
-- Use set -u to error on undefined variables
-- Use set -o pipefail for proper error handling
+- Use `set -e` to exit on error
+- Use `set -u` to error on undefined variables
+- Use `set -o pipefail` for proper error handling
+- Combine those options in a single `set -euo pipefail` command when appropriate
+- Always use `$()` instead of backticks to execute commands
 - Quote all variable expansions
-- Use [[ ]] for conditional expressions
+- Use `[[ ]]` for conditional expressions
 - Use local variables in functions
 - Include proper error handling
 - Document all dependencies and requirements
@@ -77,6 +83,7 @@ For all bash shell scripts, avoid using:
 - Use POSIX-compliant syntax and commands.
 - Ensure the script is at least compatible with macOS and Linux.
 - Make your best effort to make the bash scripts also compatible with Windows if possible, in addition to macOS and Linux. If it's not possible, document that in the script's header documentation.
+- If the script would behave differently on different platforms despite your best efforts to make it behave the same way cross-platform, document any such platform-specific behavior in the script header documentation.
 
 ### For bash scripts compatible with macOS and Linux
 
@@ -115,7 +122,7 @@ You can assume the following external commands/programs will be available on the
 - gradle
 - java
 
-### For bash scripts related to Node.js tools and intended to be run on Linux
+### For bash scripts related to Node.js tools and intended to be run on Linux or macOS systems
 
 You can assume the following external commands/programs will be available on the machine where the script is run, as long as you document in the script's header documentation that the script assumes it will run on a Linux CI agent and use the `automattic/nvm-buildkite-plugin` to install the correct version of Node.js:
 
@@ -130,3 +137,12 @@ Make sure to document the list of required commands in the script's header docum
 
 Always suggest using our `hash_file` helper command from this repository instead of using `shasum` or `sha256sum` directly, to ensure cross-platform compatibility.
 For scripts using `sha1sum`, suggest to switch the implementation to use checksums provided by `hash_file` instead.
+
+## Script Validation
+
+Before committing new scripts, ensure:
+
+- ShellCheck passes with no warnings
+- Header documentation is complete
+- Platform requirements are documented
+- Helper commands are used where available
