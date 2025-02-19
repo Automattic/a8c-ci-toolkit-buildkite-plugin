@@ -5,10 +5,13 @@ param (
 
 $ErrorActionPreference = "Stop"
 
+$emojiGreenCheck = "$([char]0x2705)"
+$emojiRedCross = "$([char]0x274C)"
+
 Write-Output "Running test-install-windows-10-sdk.ps1 with ExpectedExitCode=$ExpectedExitCode and ExpectedErrorKeyphrase=$ExpectedErrorKeyphrase"
 
 if (($ExpectedExitCode -eq 0) -and ($ExpectedErrorKeyphrase -ne "")) {
-  Write-Output "Expected call to succeed, but given an error keyphrase to check."
+  Write-Output "$emojiRedCross Expected call to succeed (expected error code = 0), but given an error keyphrase to check."
   exit 1
 }
 
@@ -16,12 +19,12 @@ $output = & "$PSScriptRoot\..\bin\install_windows_10_sdk.ps1" -DryRun
 $exitCode = $LASTEXITCODE
 
 if ($exitCode -ne $ExpectedExitCode) {
-  Write-Output "Expected exit code $ExpectedExitCode, got $exitCode"
+  Write-Output "$emojiRedCross Expected exit code $ExpectedExitCode, got $exitCode"
   Write-Output "Output was:"
   Write-Output "$output"
   exit 1
 } else {
-  Write-Output "✅ Exit code matches expected value ($ExpectedExitCode)"
+  Write-Output "$emojiGreenCheck Exit code matches expected value ($ExpectedExitCode)"
 }
 
 # Only check error keyphrase if exit code is not 0
@@ -36,10 +39,10 @@ if ($ExpectedErrorKeyphrase -eq "") {
 }
 
 if ($output -notmatch $ExpectedErrorKeyphrase) {
-  Write-Output "Expected error to contain '$ExpectedErrorKeyphrase', but got:"
+  Write-Output "$emojiRedCross Expected error to contain '$ExpectedErrorKeyphrase', but got:"
   Write-Output "$output"
   exit 1
 } else {
-  Write-Output "✅ Error keyphrase matches expected value ($ExpectedErrorKeyphrase)"
+  Write-Output "$emojiGreenCheck Error keyphrase matches expected value ($ExpectedErrorKeyphrase)"
   Write-Output "Test completed."
 }
