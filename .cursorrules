@@ -1,0 +1,65 @@
+# Shell Script Documentation and Standards
+
+## Documentation Requirements
+When editing or creating files in /bin:
+- Every shell script must have comprehensive header documentation
+- Documentation must include: description, usage, parameters, examples
+- For complex logic, provide detailed examples of different use cases
+- Document all return values and exit codes
+- Keep documentation up to date with any changes
+
+## Shell Script Standards
+For all bash shell scripts:
+- Ensure compatibility with bash 3.2.57
+- Follow shellcheck recommendations
+- Use proper error handling and input validation
+- Document cross-platform considerations
+
+## Documentation Template
+```bash
+#!/bin/bash
+
+# Script: {filename}
+# 
+# Description:
+#   [Brief description of what the script does]
+#
+# Usage:
+#   {filename} [options] [arguments]
+#
+# Options:
+#   [List of options/flags with descriptions]
+#
+# Arguments:
+#   [List of positional arguments with descriptions]
+#
+# Examples:
+#   [Provide practical examples demonstrating different use cases]
+#
+# Notes:
+#   [Any important notes about script behavior, dependencies, or limitations]
+#
+# Returns:
+#   [Description of exit codes and their meanings]
+```
+
+## Bash 3.2 Compatibility
+Avoid using:
+- Associative arrays (declare -A)
+- mapfile/readarray command
+- coproc keyword
+- &> redirection operator
+- case fall-through ;& operator
+- case continue ;;& operator
+- {a..b..c} brace expansion with step
+- case-modification operators in ${parameter^}, ${parameter,}
+
+## Best Practices
+- Use set -e to exit on error
+- Use set -u to error on undefined variables
+- Use set -o pipefail for proper error handling
+- Quote all variable expansions
+- Use [[ ]] for conditional expressions
+- Use local variables in functions
+- Include proper error handling
+- Document all dependencies and requirements
