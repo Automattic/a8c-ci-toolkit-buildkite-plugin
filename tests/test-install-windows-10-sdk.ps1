@@ -5,6 +5,8 @@ param (
 
 $ErrorActionPreference = "Stop"
 
+# Ensure the output is UTF-8 encoded so we can use emojis...
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $emojiGreenCheck = "$([char]0x2705)"
 $emojiRedCross = "$([char]0x274C)"
 

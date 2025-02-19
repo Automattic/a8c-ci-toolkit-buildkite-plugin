@@ -160,7 +160,7 @@ steps:
           echo 'not an integer' > .windows-10-sdk-version
           .\tests\test-install-windows-10-sdk.ps1 `
             -ExpectedExitCode 1 `
-            -ExpectedErrorKeyphrase "Expected version to be an integer"
+            -ExpectedErrorKeyphrase "Expected an integer"
         agents:
           queue: windows
         notify:
