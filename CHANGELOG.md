@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Enhance `pr_changed_files` command to support both exit codes (default) and "true"/"false" string output (via `--stdout` flag) [#151]
 
 ### Bug Fixes
 
