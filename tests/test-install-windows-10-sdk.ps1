@@ -38,11 +38,11 @@ if ($ExpectedErrorKeyphrase -eq "") {
   exit 0
 }
 
-if ($output -notmatch $ExpectedErrorKeyphrase) {
+if ($output -match [regex]::Escape($ExpectedErrorKeyphrase)) {
+  Write-Output "$emojiGreenCheck Error keyphrase matches expected value ($ExpectedErrorKeyphrase)"
+  Write-Output "Test completed."
+} else {
   Write-Output "$emojiRedCross Expected error to contain '$ExpectedErrorKeyphrase', but got:"
   Write-Output "$output"
   exit 1
-} else {
-  Write-Output "$emojiGreenCheck Error keyphrase matches expected value ($ExpectedErrorKeyphrase)"
-  Write-Output "Test completed."
 }
