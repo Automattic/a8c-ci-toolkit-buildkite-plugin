@@ -118,3 +118,25 @@ steps:
         notify:
           - github_commit_status:
               context: "pr_changed_files Tests: Edge Cases"
+
+  - group: ":windows: install_windows_10_sdk Tests"
+    steps:
+      - label: ":windows: install_windows_10_sdk Tests - Standard version file"
+        command: |
+          echo '20348' > .windows-10-sdk-version
+          bin/install_windows_10_sdk.ps1
+        agents:
+          queue: windows
+        notify:
+          - github_commit_status:
+              context: "install_windows_10_sdk Tests - Standard version file"
+
+      - label: ":windows: install_windows_10_sdk Tests - Version file with new lines"
+        command: |
+          echo "20348\n\n" > .windows-10-sdk-version
+          bin/install_windows_10_sdk.ps1
+        agents:
+          queue: windows
+        notify:
+          - github_commit_status:
+              context: "install_windows_10_sdk Tests - Version file with new lines"
