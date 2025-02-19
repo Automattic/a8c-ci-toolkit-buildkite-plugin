@@ -5,7 +5,7 @@ param ( # parameters need to be defined at the top of the script
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
 
-Write-Host "--- :windows: Installing Windows 10 SDK and Visual Studio Build Tools"
+Write-Output "--- :windows: Installing Windows 10 SDK and Visual Studio Build Tools"
 
 $windowsSDKVersionFile = ".windows-10-sdk-version"
 if (-not (Test-Path $windowsSDKVersionFile)) {
