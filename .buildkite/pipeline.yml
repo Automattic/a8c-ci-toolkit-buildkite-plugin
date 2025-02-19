@@ -140,3 +140,13 @@ steps:
         notify:
           - github_commit_status:
               context: "install_windows_10_sdk Tests - Version file with new lines"
+
+      - label: ":windows: install_windows_10_sdk Tests - Version file with a word"
+        command: |
+          echo "not an integer" > .windows-10-sdk-version
+          bin/install_windows_10_sdk.ps1
+        agents:
+          queue: windows
+        notify:
+          - github_commit_status:
+              context: "install_windows_10_sdk Tests - Version file with a word"
