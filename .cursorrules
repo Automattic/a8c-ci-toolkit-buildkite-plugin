@@ -1,5 +1,40 @@
 # Shell Script Documentation and Standards
 
+## Shell Script Standards
+
+For all bash shell scripts:
+- Ensure compatibility with `bash 3.2.57`
+- Follow `shellcheck` recommendations
+- Use proper error handling and input validation
+- Document cross-platform considerations
+
+## Best Practices
+
+For all bash shell scripts:
+- Use `#!/bin/bash` as the first line of the script (a.k.a. shebang)
+- Use `set -e` to exit on error
+- Use `set -u` to error on undefined variables
+- Use `set -o pipefail` for proper error handling
+- Combine those options in a single `set -euo pipefail` command, or as part of the shebang line, as appropriate
+- Always use `$()` instead of backticks to execute commands
+- Quote all variable expansions
+- Use `[[ ]]` for conditional expressions
+- Use `local` variables in functions
+- Include proper error handling
+- Ensure the script file ends with a newline
+
+## Bash 3.2 Compatibility
+
+For all bash shell scripts, avoid using:
+- Associative arrays (`declare -A`)
+- `mapfile`/`readarray` command
+- `coproc` keyword
+- `&>` redirection operator
+- Case fall-through `;& operator`
+- Case continue `;;& operator`
+- `{a..b..c}` brace expansion with step
+- Case-modification operators in `${parameter^}`, `${parameter,}`
+
 ## Documentation Requirements
 
 When editing or creating files in `/bin`:
@@ -41,41 +76,6 @@ When editing or creating files in `/bin`:
 #   [List of required external commands/programs]
 #   [Any platform-specific requirements]
 ```
-
-## Shell Script Standards
-
-For all bash shell scripts:
-- Ensure compatibility with `bash 3.2.57`
-- Follow `shellcheck` recommendations
-- Use proper error handling and input validation
-- Document cross-platform considerations
-
-## Best Practices
-
-For all bash shell scripts:
-- Use `#!/bin/bash` as the first line of the script (a.k.a. shebang)
-- Use `set -e` to exit on error
-- Use `set -u` to error on undefined variables
-- Use `set -o pipefail` for proper error handling
-- Combine those options in a single `set -euo pipefail` command, or as part of the shebang line, as appropriate
-- Always use `$()` instead of backticks to execute commands
-- Quote all variable expansions
-- Use `[[ ]]` for conditional expressions
-- Use `local` variables in functions
-- Include proper error handling
-- Document all dependencies and requirements
-
-## Bash 3.2 Compatibility
-
-For all bash shell scripts, avoid using:
-- Associative arrays (`declare -A`)
-- `mapfile`/`readarray` command
-- `coproc` keyword
-- `&>` redirection operator
-- Case fall-through `;& operator`
-- Case continue `;;& operator`
-- `{a..b..c}` brace expansion with step
-- Case-modification operators in `${parameter^}`, `${parameter,}`
 
 ## Cross-Platform Considerations
 
