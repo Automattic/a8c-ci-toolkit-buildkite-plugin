@@ -15,13 +15,6 @@ if (-not (Test-Path $windowsSDKVersionFile)) {
 
 $windows10SDKVersion = (Get-Content -TotalCount 1 $windowsSDKVersionFile).Trim()
 
-if ($windows10SDKVersion.Count -ne 1) {
-  Write-Output "[!] Invalid version file format."
-  Write-Output "Expected exactly one non-empty line, got:"
-  Write-Output ($windows10SDKVersion -join "`n")  # The join poperly formats multiple lines
-  exit 1
-}
-
 if ($windows10SDKVersion -notmatch '^\d+$') {
   Write-Output "[!] Invalid version file format."
   Write-Output "Expected an integer, got: '$windows10SDKVersion'"
