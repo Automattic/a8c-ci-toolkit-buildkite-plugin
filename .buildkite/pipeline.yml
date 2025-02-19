@@ -123,7 +123,7 @@ steps:
     steps:
       - label: ":windows: install_windows_10_sdk Tests - Standard version file"
         command: |
-          echo '20348' > .windows-10-sdk-version
+          "123" | Out-File .windows-10-sdk-version
           .\tests\test-install-windows-10-sdk.ps1 -ExpectedExitCode 0
         agents:
           queue: windows
@@ -133,7 +133,7 @@ steps:
 
       - label: ":windows: install_windows_10_sdk Tests - Version file with one new line"
         command: |
-          echo "20348\n" > .windows-10-sdk-version
+          "123`n" | Out-File .windows-10-sdk-version
           .\tests\test-install-windows-10-sdk.ps1 `
             -ExpectedExitCode 1 `
             -ExpectedErrorKeyphrase "Expected exactly one non-empty line"
@@ -145,7 +145,7 @@ steps:
 
       - label: ":windows: install_windows_10_sdk Tests - Version file with more than one new line"
         command: |
-          echo "20348\n\n" > .windows-10-sdk-version
+          "123`n`n" | Out-File .windows-10-sdk-version
           .\tests\test-install-windows-10-sdk.ps1 `
             -ExpectedExitCode 1 `
             -ExpectedErrorKeyphrase "Expected exactly one non-empty line"
@@ -157,7 +157,7 @@ steps:
 
       - label: ":windows: install_windows_10_sdk Tests - Version file with a word"
         command: |
-          echo 'not an integer' > .windows-10-sdk-version
+          "not an integer" | Out-File .windows-10-sdk-version
           .\tests\test-install-windows-10-sdk.ps1 `
             -ExpectedExitCode 1 `
             -ExpectedErrorKeyphrase "Expected an integer"
