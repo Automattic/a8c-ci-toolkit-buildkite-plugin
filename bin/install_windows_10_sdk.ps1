@@ -1,3 +1,7 @@
+param ( # parameters need to be defined at the top of the script
+  [switch]$DryRun = $false
+)
+
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
 
@@ -26,6 +30,11 @@ if ($windows10SDKVersion -notmatch '^\d+$') {
 }
 
 Write-Host "Will attempt to set up Windows 10 ($windows10SDKVersion) SDK and Visual Studio Build Tools..."
+
+if ($DryRun) {
+  Write-Output "Running in dry run mode, finishing here."
+  exit 0
+}
 
 # Download the Visual Studio Build Tools Bootstrapper
 Write-Output "~~~ Downloading Visual Studio Build Tools..."
