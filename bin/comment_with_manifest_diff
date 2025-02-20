@@ -5,10 +5,11 @@
 # trunk version and the PR version to identify changes caused by updates to the project.
 #
 # Usage:
-#    ./comment_with_manifest_diff <MODULE>
+#    ./comment_with_manifest_diff <MODULE> <BUILD_VARIANT>
 #
 # Parameters:
 #    <MODULE>        : The project module whose manifest will be checked.
+#    <BUILD_VARIANT> : The build variant to inspect for manifest changes (e.g., "debug", "vanillaRelease).
 #
 # Steps:
 # 1. It copies the manifest reports for both the trunk and PR versions.
@@ -20,20 +21,21 @@
 # - The comment on the PR will include a detailed list of changes.
 #
 # Example:
-#    ./comment_with_manifest_diff app
+#    ./comment_with_manifest_diff app release
 #
-# This will analyze the `app` module and post the result to the PR.
+# This will analyze the `app` module on `release` build variant and post the result to the PR.
 
 set -euo pipefail
 
 MODULE="${1:-}"
+BUILD_VARIANT="${2:-}"
 
-ANDROID_MERGED_MANIFEST="${HOME}/.android/merged_manifest/${MODULE}"
-TRUNK_MANIFEST_PATH="${ANDROID_MERGED_MANIFEST}/jalapenoDebug/processJalapenoDebugMainManifest/AndroidManifest.xml"
-PR_MANIFEST_PATH="${MODULE}/build/intermediates/merged_manifest/jalapenoDebug/processJalapenoDebugMainManifest/AndroidManifest.xml"
+ANDROID_MERGED_MANIFEST="${HOME}/.android/merged_manifest/${MODULE}_${BUILD_VARIANT}"
+TRUNK_MANIFEST_PATH="${ANDROID_MERGED_MANIFEST}/AndroidManifest.xml"
+PR_MANIFEST_PATH="${MODULE}/build/intermediates/merged_manifest/${BUILD_VARIANT}/process${BUILD_VARIANT^}MainManifest/AndroidManifest.xml"
 
-if [ -z "$MODULE" ]; then
-  echo "Not enough arguments provided. Usage: ./comment_with_manifest_diff <MODULE>"
+if [ -z "$MODULE" ] || [ -z "$BUILD_VARIANT" ]; then
+  echo "Not enough arguments provided. Usage: ./comment_with_manifest_diff <MODULE> <BUILD_VARIANT>"
   exit 1
 fi
 
@@ -60,7 +62,7 @@ diff -u "$TRUNK_MANIFEST_FILE" "$PR_MANIFEST_FILE" > "$DIFF_MANIFEST_FILE" || tr
 generate_manifest_comment_body() {
   cat <<EOF
 
-The following changes in \`$MODULE\` AndroidManifest.xml were detected (configuration ):
+The following changes in \`$MODULE\` AndroidManifest.xml were detected (build variant: \`$BUILD_VARIANT\`):
 
 \`\`\`diff
 $(cat "$DIFF_MANIFEST_FILE")

@@ -1,17 +1,18 @@
 #!/bin/bash -eu
 
 MODULE=$1
+BUILD_VARIANT=$2
 
 echo "Current directory is: $(pwd)"
 echo "Current directory contents are: $(ls -la)"
 
 # The key is shared with `bin/save_android_merged_manifest`
-ANDROID_MERGED_MANIFEST_KEY="${BUILDKITE_PIPELINE_SLUG}_ANDROID_MERGED_MANIFEST_${MODULE}"
+ANDROID_MERGED_MANIFEST_KEY="${BUILDKITE_PIPELINE_SLUG}_ANDROID_MERGED_MANIFEST_${MODULE}_${BUILD_VARIANT}"
 
 echo "Restoring Android merged manifest..."
 
 # The directory is shared with `bin/save_android_merged_manifest`
-ANDROID_MERGED_MANIFEST="${HOME}/.android/merged_manifest/${MODULE}"
+ANDROID_MERGED_MANIFEST="${HOME}/.android/merged_manifest/${MODULE}_${BUILD_VARIANT}"
 echo "ANDROID_MERGED_MANIFEST: ${ANDROID_MERGED_MANIFEST}"
 
 mkdir -p "$ANDROID_MERGED_MANIFEST"
@@ -26,5 +27,5 @@ pushd "$MERGED_MANIFEST_BASE_FOLDER"
 restore_cache "$ANDROID_MERGED_MANIFEST_KEY"
 echo "Current directory is: $(pwd)"
 echo "Current directory contents are: $(ls -la)"
-echo "Directory contents of 'MODULE': $(ls -la "${MODULE}")"
+echo "Directory contents of 'MODULE_BUILD_VARIANT': $(ls -la "${MODULE}"_"${BUILD_VARIANT}")"
 popd
