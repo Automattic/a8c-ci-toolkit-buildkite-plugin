@@ -137,8 +137,8 @@ current_size=0
 
 # Templates for content formatting
 SECTION_HEADER="\n## %s changes\n\n"
-TLDR_TEMPLATE="<details><summary>list</summary>\n\n\`\`\`\n%s\n\`\`\`\n\n</details>"
-TREE_TEMPLATE="<details><summary>tree</summary>\n\n\`\`\`diff\n%s\n\`\`\`\n\n</details>"
+TLDR_TEMPLATE="<details><summary>list</summary>\n\n\`\`\`\n%s\n\`\`\`\n\n</details>\n"
+TREE_TEMPLATE="<details><summary>tree</summary>\n\n\`\`\`diff\n%s\n\`\`\`\n\n</details>\n"
 TREE_TOO_LARGE="\n ⚠️ %s tree is too large. [View it in Buildkite artifacts](${BUILDKITE_BUILD_URL}#${BUILDKITE_JOB_ID})\n"
 
 # Calculate total size needed for TLDRs
