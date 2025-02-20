@@ -30,6 +30,8 @@
 
 set -euo pipefail
 
+craft_comment_with_dependency_diff
+
 MODULE="${1:-}"
 CONFIGURATION="${2:-}"
 
@@ -130,69 +132,5 @@ if [ ! -s "$TLDR_DIFF_DEPENDENCIES_FILE" ] && [ ! -s "$TLDR_DIFF_BUILD_ENV_FILE"
     exit 0
 fi
 
-COMMENT_FILE="$DIFF_DEPENDENCIES_FOLDER/comment_body.txt"
-true > $COMMENT_FILE  # Clear the file
-MAX_COMMENT_SIZE=65400
-current_size=0
-
-# Templates for content formatting
-SECTION_HEADER="\n## %s changes\n\n"
-TLDR_TEMPLATE="<details><summary>list</summary>\n\n\`\`\`\n%s\n\`\`\`\n\n</details>\n"
-TREE_TEMPLATE="<details><summary>tree</summary>\n\n\`\`\`diff\n%s\n\`\`\`\n\n</details>\n"
-TREE_TOO_LARGE="\n ⚠️ %s tree is too large. [View it in Buildkite artifacts](${BUILDKITE_BUILD_URL}#${BUILDKITE_JOB_ID})\n"
-
-# Calculate total size needed for TLDRs
-# This assumes that TLDRs are never too large to fit in the comment
-tldr_size=0
-for section in "Project dependencies" "Build environment"; do
-    tldr_file="$TLDR_DIFF_DEPENDENCIES_FILE"
-    [[ $section == "Build environment" ]] && tldr_file="$TLDR_DIFF_BUILD_ENV_FILE"
-    
-    if [ -s "$tldr_file" ]; then
-        content=$(printf "$SECTION_HEADER$TLDR_TEMPLATE" "$section" "$(cat "$tldr_file")")
-        tldr_size=$(( tldr_size + ${#content} ))
-    fi
-done
-
-# Function to check if content would fit
-would_content_fit() {
-    echo "Debug: New content size: $1"
-    echo "Debug: TLDR total size: $tldr_size"
-    echo "Debug: Current size: $current_size"
-    echo "Debug: Max size: $MAX_COMMENT_SIZE"
-    if (( current_size + $1 < MAX_COMMENT_SIZE )); then
-        return 0  # Success/true - content will fit
-    else
-        return 1  # Failure/false - content won't fit
-    fi
-}
-
-# Print content in order
-for section in "Project dependencies" "Build environment"; do
-    tldr_file="$TLDR_DIFF_DEPENDENCIES_FILE"
-    tree_file="$DIFF_DEPENDENCIES_FILE"
-    [[ $section == "Build environment" ]] && tldr_file="$TLDR_DIFF_BUILD_ENV_FILE" && tree_file="$DIFF_BUILD_ENV_FILE"
-    
-    if [ -s "$tldr_file" ]; then
-        # Print section header and TLDR
-        printf "$SECTION_HEADER" "$section" >> $COMMENT_FILE
-        printf "$TLDR_TEMPLATE" "$(cat "$tldr_file")" >> $COMMENT_FILE
-        current_size=$(wc -c < "$COMMENT_FILE")
-        
-        # Try to add tree if it exists
-        if [ -s "$tree_file" ]; then
-            tree_content=$(cat "$tree_file")
-            echo "Debug: Raw tree size: ${#tree_content}"
-            content=$(printf "$TREE_TEMPLATE" "$tree_content")
-            echo "Debug: Formatted tree size: ${#content}"
-            if would_content_fit ${#content}; then
-                echo -e "$content" >> $COMMENT_FILE
-                current_size=$(wc -c < "$COMMENT_FILE")
-            else
-                printf "$TREE_TOO_LARGE" "$section" >> $COMMENT_FILE
-            fi
-        fi
-    fi
-done
 
 comment_on_pr --id "dependency-diff" --if-exist update "$COMMENT_FILE"
