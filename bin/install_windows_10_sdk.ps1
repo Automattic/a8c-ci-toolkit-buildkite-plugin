@@ -13,8 +13,7 @@ if (-not (Test-Path $windowsSDKVersionFile)) {
   exit 1
 }
 
-$windows10SDKVersion = Get-Content $windowsSDKVersionFile `
-  | Where-Object { $_ -match '\S' }  # Remove empty lines
+$windows10SDKVersion = (Get-Content -TotalCount 1 $windowsSDKVersionFile).Trim()
 
 if ($windows10SDKVersion.Count -ne 1) {
   Write-Output "[!] Invalid version file format."
