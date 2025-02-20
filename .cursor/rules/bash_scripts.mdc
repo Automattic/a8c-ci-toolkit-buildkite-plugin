@@ -1,3 +1,7 @@
+---
+description: Standards and Rules to follow when editing bash scripts in @bin/
+globs: bin/*
+---
 # Shell Script Documentation and Standards
 
 ## Shell Script Standards
@@ -37,10 +41,11 @@ For all bash shell scripts, avoid using:
 
 ## Documentation Requirements
 
-When editing or creating files in `/bin`:
+When editing or creating files:
 - Every shell script must have comprehensive header documentation
 - Documentation must include: description, usage, parameters, examples
 - For complex logic, provide detailed examples of different use cases
+- Use backticks (`) around command names, executables, and technical terms in documentation
 - Document all return values and exit codes
 - Keep documentation up to date with any changes
 
@@ -83,7 +88,7 @@ When editing or creating files in `/bin`:
 
 - Use POSIX-compliant syntax and commands
 - Ensure the script is at least compatible with macOS and Linux
-- Make your best effort to make the bash scripts also compatible with Windows if possible, in addition to macOS and Linux. If it's not possible, document that in the script's header documentation
+- Make your best effort to make the bash scripts also compatible with Windows if possible, in addition to macOS and Linux. If it's not possible, document that in the script's header documentation, and, if the features handled by the bash script would be useful and make sense for use cases where we'd still need a Windows agent, propose your help to the author of the original script to create a PowerShell counterpart of that script to provide the same functionality for when running on Windows agents.
 - If the script would behave differently on different platforms despite your best efforts to make it behave the same way cross-platform, document any such platform-specific behavior in the script header documentation
 
 ### For bash scripts compatible with macOS and Linux
