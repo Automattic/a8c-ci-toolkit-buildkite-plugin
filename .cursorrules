@@ -83,7 +83,7 @@ When editing or creating files in `/bin`:
 
 - Use POSIX-compliant syntax and commands
 - Ensure the script is at least compatible with macOS and Linux
-- Make your best effort to make the bash scripts also compatible with Windows if possible, in addition to macOS and Linux. If it's not possible, document that in the script's header documentation
+- Make your best effort to make the bash scripts also compatible with Windows if possible, in addition to macOS and Linux. If it's not possible, document that in the script's header documentation, and, if the features handled by the bash script would be useful and make sense for use cases where we'd still need a Windows agent, propose your help to the author of the original script to create a PowerShell counterpart of that script to provide the same functionality for when running on Windows agents.
 - If the script would behave differently on different platforms despite your best efforts to make it behave the same way cross-platform, document any such platform-specific behavior in the script header documentation
 
 ### For bash scripts compatible with macOS and Linux
