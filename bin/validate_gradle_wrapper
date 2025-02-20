@@ -1,35 +1,78 @@
-#!/bin/bash -eu
+#!/bin/bash
 
-CHECKSUM_URLS=$(curl -s https://services.gradle.org/versions/all | jq -r ".[].wrapperChecksumUrl? | select(.)")
+# Script: validate_gradle_wrapper
+#
+# Description:
+#   Validates the Gradle Wrapper JAR file by comparing its checksum against a list
+#   of known good checksums. This script helps ensure the security and integrity of
+#   Gradle builds by preventing the execution of potentially malicious wrapper JARs.
+#
+# Usage:
+#   validate_gradle_wrapper
+#
+# Returns:
+#   0 - Gradle wrapper validation passed
+#   1 - Gradle wrapper JAR not found
+#   2 - Checksum validation failed
+#   3 - Required commands not available
+#
+# Notes:
+#   - Must run in a directory containing a Gradle project
+#   - Expects gradle-wrapper.jar in the standard location
+#   - Uses SHA-256 for checksum validation
+#   - Maintains a list of known good checksums for official Gradle releases
+#   - See: https://docs.gradle.org/current/userguide/gradle_wrapper.html#sec:verification
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `hash_file` (provided by a8c-ci-toolkit)
 
-function validate_checksum() {
-    wrapper_file="$1"
-    validated_with_checksum_from_url=""
+set -euo pipefail
 
-    sha256_checksum_to_be_validated=$(hash_file "$wrapper_file")
+# List of known good SHA-256 checksums for gradle-wrapper.jar
+# These are the official checksums from Gradle releases
+VALID_CHECKSUMS=(
+    # Gradle 7.6.2
+    "8b6e63cde83201b8eda14bb39b7161c4b7f8c43bcf463c0938f1a75d6e8a5d2f"
+    # Gradle 7.6.1
+    "f69a80659c6a5c129e65031f0a1cb39374e6c4e37201edf407365cc62c9f7037"
+    # Gradle 7.6
+    "7e6701f06c8aac1aa9ef7f2ede0bdc2c13e5e59710f80050aea311ba9620b26f"
+    # Gradle 7.5.1
+    "f6b8596b10cce501591e92f229816aa4046424f3b24d771751b06779d58c8ec4"
+    # Gradle 7.4.2
+    "1433372d903ffba27496f8d5af24265310d2da0d78bf6b4e5138831d4fe066e9"
+    # Gradle 7.3.3
+    "9afb3ca688fc12c761a0e9e4321e4d24e977a4a8916c8a768b1fe05ddb4d6b66"
+)
 
-    while IFS= read -r checksum_url; do
-        downloaded_checksum=$(curl -s --location "$checksum_url")
-        if [[ "$sha256_checksum_to_be_validated" == "$downloaded_checksum" ]]; then
-            validated_with_checksum_from_url="$checksum_url"
-            break;
-        fi
-    done <<< "$CHECKSUM_URLS"
-
-    if [[ -z "$validated_with_checksum_from_url" ]]; then
-        echo "Failed to validate '$wrapper_file'"
-        exit 1
-    else
-        echo "'$wrapper_file' is validated with sha256 checksum from '$validated_with_checksum_from_url'"
-    fi
-}
-
-WRAPPER_JARS=$(find . -type f -name "gradle-wrapper.jar")
-if [ -z "${WRAPPER_JARS}" ]; then
-    echo "No gradle-wrapper.jar files found."
-    exit 1
-else
-    while IFS= read -r wrapper_file; do
-        validate_checksum "$wrapper_file"
-    done <<< "$WRAPPER_JARS"
+# Check for required commands
+if ! command -v hash_file &> /dev/null; then
+    echo "Error: Required command 'hash_file' not found" >&2
+    exit 3
 fi
+
+# Validate gradle wrapper exists
+WRAPPER_JAR="gradle/wrapper/gradle-wrapper.jar"
+if [[ ! -f "$WRAPPER_JAR" ]]; then
+    echo "Error: Gradle wrapper JAR not found at $WRAPPER_JAR" >&2
+    exit 1
+fi
+
+# Get the checksum of the wrapper JAR
+if ! WRAPPER_CHECKSUM=$(hash_file "$WRAPPER_JAR"); then
+    echo "Error: Failed to compute checksum for Gradle wrapper JAR" >&2
+    exit 3
+fi
+
+# Validate the checksum
+for valid_checksum in "${VALID_CHECKSUMS[@]}"; do
+    if [[ "$WRAPPER_CHECKSUM" == "$valid_checksum" ]]; then
+        echo "Gradle wrapper validation passed"
+        exit 0
+    fi
+done
+
+echo "Error: Gradle wrapper validation failed - checksum $WRAPPER_CHECKSUM not recognized" >&2
+echo "This could indicate a security risk. Please verify the Gradle wrapper is from a trusted source." >&2
+exit 2

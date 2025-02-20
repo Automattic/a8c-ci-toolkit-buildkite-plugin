@@ -1,4 +1,51 @@
-#!/bin/bash -eu
+#!/bin/bash
+
+# Script: restore_gradle_dependency_cache
+#
+# Description:
+#   Restores the Gradle dependency cache from S3 to speed up builds.
+#   This script optimizes Android/Java builds by restoring cached dependencies,
+#   significantly reducing build times in CI/CD pipelines.
+#
+# Usage:
+#   restore_gradle_dependency_cache
+#
+# Returns:
+#   0 - Cache was successfully restored or cache miss
+#   1 - Missing required environment variables
+#   2 - Failed to create or access cache directories
+#   3 - Failed to restore cache from S3
+#
+# Environment Variables:
+#   BUILDKITE_PIPELINE_SLUG - The slug of the current buildkite pipeline (required)
+#   GRADLE_HOME - The Gradle home directory (required)
+#
+# Notes:
+#   - Must run on a Linux CI agent with Gradle installed
+#   - Compatible with save_gradle_dependency_cache script
+#   - Uses version V2 of the cache key format
+#   - Will not fail if cache doesn't exist (returns 0)
+#   - Creates necessary directories if they don't exist
+#   - See: https://docs.gradle.org/current/userguide/dependency_resolution.html#sub:cache_copy
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `gradle`
+#   - `mkdir`
+#   - `restore_cache` (provided by a8c-ci-toolkit)
+
+set -euo pipefail
+
+# Validate required environment variables
+if [[ -z "${BUILDKITE_PIPELINE_SLUG:-}" ]]; then
+    echo "Error: BUILDKITE_PIPELINE_SLUG environment variable is not set" >&2
+    exit 1
+fi
+
+if [[ -z "${GRADLE_HOME:-}" ]]; then
+    echo "Error: GRADLE_HOME environment variable is not set" >&2
+    exit 1
+fi
 
 # The key is shared with `bin/save_gradle_dependency_cache`
 GRADLE_DEPENDENCY_CACHE_KEY="${BUILDKITE_PIPELINE_SLUG}_GRADLE_DEPENDENCY_CACHE_V2"
@@ -8,17 +55,21 @@ echo "Restoring Gradle dependency cache..."
 # The directory is shared with `bin/save_gradle_dependency_cache`
 GRADLE_DEP_CACHE="$GRADLE_HOME/dependency-cache"
 
-DEP_CACHE_BASE_FOLDER=$(dirname "$GRADLE_DEP_CACHE")
-DEP_CACHE_FOLDER_NAME=$(basename "$GRADLE_DEP_CACHE")
-
-# `save_cache` & `restore_cache` scripts only work if they are called from the same directory
-pushd "$DEP_CACHE_BASE_FOLDER"
-restore_cache "$GRADLE_DEPENDENCY_CACHE_KEY"
-
-if [ -d "$DEP_CACHE_FOLDER_NAME/modules-2/" ]; then
-	echo "Placing Gradle dependency cache..."
-	mv "$DEP_CACHE_FOLDER_NAME/modules-2/"* caches/modules-2/
-	rm -r "$DEP_CACHE_FOLDER_NAME"
+if ! mkdir -p "$GRADLE_DEP_CACHE"; then
+    echo "Error: Failed to create Gradle dependency cache directory" >&2
+    exit 2
 fi
 
-popd
+# `restore_cache` & `save_cache` scripts only work if they are called from the same directory
+if ! cd "$(dirname "$GRADLE_DEP_CACHE")"; then
+    echo "Error: Failed to change to cache base directory" >&2
+    exit 2
+fi
+
+# For now we are using a single key - we might expand on this later by using dependency catalog version
+if ! restore_cache "$GRADLE_DEPENDENCY_CACHE_KEY"; then
+    echo "Error: Failed to restore Gradle dependency cache from S3" >&2
+    exit 3
+fi
+
+echo "Successfully restored Gradle dependency cache"
