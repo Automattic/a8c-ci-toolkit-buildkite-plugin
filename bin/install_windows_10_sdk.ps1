@@ -1,3 +1,5 @@
+# Install the Windows 10 SDK and Visual Studio Build Tools.
+
 param (
   [switch]$DryRun = $false
 )
