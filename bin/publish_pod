@@ -1,21 +1,52 @@
-#!/bin/bash -eu
+#!/bin/bash
 
-# Usage: publish_pod [OPTIONS] PODSPEC_PATH
+# Script: publish_pod
 #
-# OPTIONS:
-#  `--patch-cocoapods`:
-#     Apply a patch to work around issues with older deployment targets — see https://github.com/CocoaPods/CocoaPods/issues/12033
-#  `--allow-warnings`, `--synchronous`:
-#     Those options are passed to `pod trunk push` verbatim.
+# Description:
+#   Publishes a CocoaPods podspec to the public CocoaPods trunk repository.
+#   Includes validation of version numbers against git tags and handles
+#   co-dependent pods in the same repository.
 #
-# Note: Use `--synchronous` if you have co-dependant podspecs in your repo and need to publish multiple pods at the same time.
-# Without this option, since the first pod you push will take time to propagate thru the CocoaPods CDNs, attempting to push
-# the other dependant pod(s) in your repo might fail to find the first pushed pod until it has propagated thru CDNs.
+# Usage:
+#   publish_pod [OPTIONS] PODSPEC_PATH
 #
+# Arguments:
+#   PODSPEC_PATH - Path to the podspec file to publish
+#
+# Options:
+#   --patch-cocoapods  - Apply patch for older deployment targets (see Notes)
+#   --allow-warnings   - Allow warnings during pod push
+#   --synchronous     - Wait for CDN propagation (recommended for co-dependent pods)
+#
+# Returns:
+#   0 - Pod was successfully published
+#   1 - Missing arguments or validation failed
+#   2 - Pod push failed
+#
+# Environment Variables:
+#   BUILDKITE_TAG - Git tag being built (optional, used for version validation)
+#
+# Notes:
+#   - Must run on a macOS CI agent with Xcode installed
+#   - Requires CocoaPods trunk authentication to be configured
+#   - The --synchronous option is recommended when publishing multiple co-dependent
+#     pods to ensure proper CDN propagation between pushes
+#   - The --patch-cocoapods option works around: https://github.com/CocoaPods/CocoaPods/issues/12033
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `bundle`
+#   - `pod` (via bundler)
+#   - `jq`
+#   - `xcrun`
+#   - `patch-cocoapods` (provided by a8c-ci-toolkit)
+
+set -euo pipefail
 
 PATCH_COCOAPODS="false"
 COCOAPODS_FLAGS=(--verbose)
 
+# Parse command line options
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
 		--patch-cocoapods)
@@ -29,23 +60,46 @@ while [[ "$#" -gt 0 ]]; do
 	shift
 done
 
-PODSPEC_PATH=$1
-
-# POD_NAME=$(bundle exec pod ipc spec "$PODSPEC_PATH" | jq -r '.name')
-POD_VERSION=$(bundle exec pod ipc spec "$PODSPEC_PATH" | jq -r '.version')
-
-if [ -n "$BUILDKITE_TAG" ] && [ "$BUILDKITE_TAG" != "$POD_VERSION" ]; then
-	echo "Tag $BUILDKITE_TAG does not match version $POD_VERSION from $PODSPEC_PATH."
+# Validate required arguments
+if [[ "$#" -lt 1 ]]; then
+	echo "Error: Missing podspec path argument" >&2
 	exit 1
 fi
 
-if [[ "${PATCH_COCOAPODS}" ==  'true' ]]; then
+PODSPEC_PATH=$1
+
+if [[ ! -f "$PODSPEC_PATH" ]]; then
+	echo "Error: Podspec file not found at $PODSPEC_PATH" >&2
+	exit 1
+fi
+
+# Extract pod version and validate against git tag if present
+if ! POD_VERSION=$(bundle exec pod ipc spec "$PODSPEC_PATH" | jq -r '.version'); then
+	echo "Error: Failed to extract pod version from podspec" >&2
+	exit 1
+fi
+
+if [[ -n "${BUILDKITE_TAG:-}" ]] && [[ "$BUILDKITE_TAG" != "$POD_VERSION" ]]; then
+	echo "Error: Tag $BUILDKITE_TAG does not match version $POD_VERSION from $PODSPEC_PATH" >&2
+	exit 1
+fi
+
+if [[ "${PATCH_COCOAPODS}" == 'true' ]]; then
 	echo "⚠️ Remove this step once this issue is fixed: https://github.com/CocoaPods/CocoaPods/issues/12033"
-	patch-cocoapods
+	if ! patch-cocoapods; then
+		echo "Error: Failed to apply CocoaPods patch" >&2
+		exit 1
+	fi
 fi
 
 # For some reason this fixes a failure in `lib lint`
 # https://github.com/Automattic/buildkite-ci/issues/7
-xcrun simctl list >> /dev/null
+if ! xcrun simctl list >> /dev/null; then
+	echo "Error: Failed to list simulators. Is Xcode properly installed?" >&2
+	exit 1
+fi
 
-bundle exec pod trunk push "${COCOAPODS_FLAGS[@]}" "$PODSPEC_PATH"
+if ! bundle exec pod trunk push "${COCOAPODS_FLAGS[@]}" "$PODSPEC_PATH"; then
+	echo "Error: Failed to publish pod to trunk" >&2
+	exit 2
+fi

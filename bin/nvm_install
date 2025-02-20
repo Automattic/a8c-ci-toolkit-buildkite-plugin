@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# Script: nvm_install
+#
+# Description:
+#   [DEPRECATED] This script has been replaced by the `automattic/nvm-buildkite-plugin`.
+#   It now only provides a helpful error message directing users to migrate.
+#
+# Usage:
+#   nvm_install
+#
+# Returns:
+#   1 - Always exits with error to indicate deprecation
+#
+# Notes:
+#   - This script is deprecated and will be removed in a future version
+#   - Users should migrate to using the `automattic/nvm-buildkite-plugin`
+#   - See migration guide at: https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/blob/trunk/MIGRATION.md#from-200-to-300
+
+set -euo pipefail
+
 echo 'The nvm_install utility has been removed and replaced by our nvm Buildkite plugin.'
 echo 'Please see this migration guide for details: https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/blob/trunk/MIGRATION.md#from-200-to-300'
 

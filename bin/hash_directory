@@ -1,21 +1,99 @@
-#!/bin/bash -eu
+#!/bin/bash
 
-DIRECTORY_PATH=$1
+# Script: hash_directory
+#
+# Description:
+#   Generates a deterministic SHA-256 hash of all files in a directory.
+#   The hash is computed by hashing each file, sorting by path, and then
+#   hashing the combined result. This ensures consistent hashes regardless
+#   of file order or system differences.
+#
+# Usage:
+#   hash_directory <directory_path>
+#
+# Arguments:
+#   directory_path - Path to the directory to hash
+#
+# Examples:
+#   hash_directory build/
+#   hash_directory ~/.gradle/caches/
+#   hash_directory ./Pods/
+#
+# Returns:
+#   0 - Successfully generated hash, outputs hash to stdout
+#   1 - Missing directory argument
+#   2 - Directory not found or not accessible
+#   3 - Required commands not available
+#   4 - Hash computation failed
+#
+# Notes:
+#   - The hash is deterministic (same hash for same content regardless of file order)
+#   - Files are processed in parallel for better performance
+#   - Compatible with both macOS and Linux
+#   - Empty directories will produce a consistent hash
+#   - Symlinks are followed
+#   - Hidden files (starting with .) are included
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following commands:
+#   - `find`
+#   - `sort`
+#   - One of:
+#     - `shasum` (on macOS)
+#     - `sha256sum` (on Linux)
 
-if [ -z "$1" ]; then
-	echo "You must pass a directory name to hash"
+set -euo pipefail
+
+# Validate input argument
+if [[ -z "${1:-}" ]]; then
+	echo "Error: You must pass a directory path to hash" >&2
 	exit 1
 fi
 
-# `shasum` is available on only macOS
-if command -v shasum &> /dev/null; then
-  sha_command=(shasum -a 256)
-else
-  sha_command=(sha256sum)
+# Validate directory exists and is accessible
+if [[ ! -d "$1" ]]; then
+	echo "Error: Directory '$1' not found" >&2
+	exit 2
 fi
 
-# - Find all files in the given directory
-# - Run `sha256sum` on each file found – the `+` flag does it in parallel for a huge speed boost.
-# - Sort the files by filename for deterministic hashing
-# - Take the hash of all of the output hashes (and file paths)
-find "${DIRECTORY_PATH%/}" -type f -exec "${sha_command[@]}" "{}" \+ | sort -k 2 | "${sha_command[@]}" | cut -f1 -d " "
+if [[ ! -r "$1" ]]; then
+	echo "Error: Directory '$1' is not readable" >&2
+	exit 2
+fi
+
+DIRECTORY_PATH=$1
+
+# Determine which hash command to use based on platform
+if command -v shasum &> /dev/null; then
+	sha_command=(shasum -a 256)
+elif command -v sha256sum &> /dev/null; then
+	sha_command=(sha256sum)
+else
+	echo "Error: Neither 'shasum' nor 'sha256sum' command found" >&2
+	exit 3
+fi
+
+# Validate find command is available
+if ! command -v find &> /dev/null; then
+	echo "Error: 'find' command not found" >&2
+	exit 3
+fi
+
+# Validate sort command is available
+if ! command -v sort &> /dev/null; then
+	echo "Error: 'sort' command not found" >&2
+	exit 3
+fi
+
+# Process:
+# 1. Find all files in the given directory
+# 2. Run sha256sum on each file found – the `+` flag does it in parallel for speed
+# 3. Sort the files by filename for deterministic hashing
+# 4. Take the hash of all of the output hashes (and file paths)
+if ! (find "${DIRECTORY_PATH%/}" -type f -exec "${sha_command[@]}" "{}" \+ | \
+	sort -k 2 | \
+	"${sha_command[@]}" | \
+	cut -f1 -d " "); then
+	echo "Error: Failed to compute hash for directory '$1'" >&2
+	exit 4
+fi

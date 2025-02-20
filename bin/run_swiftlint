@@ -1,48 +1,98 @@
-#!/bin/bash -eu
+#!/bin/bash
+
+# Script: run_swiftlint
+#
+# Description:
+#   Runs SwiftLint on Swift code using a Docker container to ensure consistent
+#   linting across different environments. Supports configurable strictness levels
+#   and reports issues as Buildkite annotations.
+#
+# Usage:
+#   run_swiftlint [--strict | --lenient]
+#
+# Options:
+#   --strict  - Enable strict mode for linting
+#   --lenient - Enable lenient mode for linting
+#
+# Returns:
+#   0 - No linting issues found
+#   1 - Invalid arguments or missing configuration
+#   2 - Linting issues found (warnings or errors)
+#
+# Notes:
+#   - Requires a .swiftlint.yml file in the current directory
+#   - The .swiftlint.yml must specify swiftlint_version
+#   - Uses Docker to run SwiftLint for consistent versioning
+#   - Reports both warnings and errors as Buildkite annotations
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `docker`
+#   - `awk`
+#   - `buildkite-agent`
+
+set -euo pipefail
 
 echo "--- :swift: Running SwiftLint"
 
 SWIFTLINT_ARGUMENTS=(--quiet --reporter relative-path)
 
+# Parse command line options
 while [[ "$#" -gt 0 ]]; do
-  case $1 in
-    --strict | --lenient)
-      SWIFTLINT_ARGUMENTS+=("$1")
-      shift
-      ;;
-    *) break ;;
-  esac
+    case $1 in
+        --strict | --lenient)
+            SWIFTLINT_ARGUMENTS+=("$1")
+            shift
+            ;;
+        *) break ;;
+    esac
 done
 
+# Validate arguments
 if [[ $# -gt 0 ]]; then
-  echo "Error: invalid arguments."
-  echo "Usage: $0 [--strict | --lenient]"
-  exit 1
+    echo "Error: Invalid arguments" >&2
+    echo "Usage: $0 [--strict | --lenient]" >&2
+    exit 1
 fi
 
-SWIFTLINT_VERSION="$(<.swiftlint.yml awk '/^swiftlint_version: / {print $2}')"
-if [ -z "$SWIFTLINT_VERSION" ]; then
-  echo "Your \`.swiftlint.yml\` file must contain a key for \`swiftlint_version:\` so that we know which version of SwiftLint to use to lint your codebase."
-  exit 1
+# Validate configuration file exists
+if [[ ! -f ".swiftlint.yml" ]]; then
+    echo "Error: No .swiftlint.yml file found in current directory" >&2
+    exit 1
 fi
-SWIFTLINT_DOCKER_CMD=(docker run --rm -v "$PWD":/workspace -w /workspace ghcr.io/realm/swiftlint:"$SWIFTLINT_VERSION" swiftlint)
 
+# Extract SwiftLint version from config
+SWIFTLINT_VERSION=$(<.swiftlint.yml awk '/^swiftlint_version: / {print $2}')
+if [[ -z "$SWIFTLINT_VERSION" ]]; then
+    echo "Error: Your .swiftlint.yml file must contain a key for 'swiftlint_version:' so that we know which version of SwiftLint to use to lint your codebase" >&2
+    exit 1
+fi
+
+# Prepare Docker command
+SWIFTLINT_DOCKER_CMD=(docker run --rm -v "$PWD":/workspace -w /workspace "ghcr.io/realm/swiftlint:$SWIFTLINT_VERSION" swiftlint)
+
+# Run SwiftLint
 set +e
 SWIFTLINT_OUTPUT=$("${SWIFTLINT_DOCKER_CMD[@]}" lint "${SWIFTLINT_ARGUMENTS[@]}")
 SWIFTLINT_EXIT_STATUS=$?
 set -e
 
+# Extract warnings and errors
 WARNINGS=$(echo -e "$SWIFTLINT_OUTPUT" | awk -F': ' '/: warning:/ {printf "- `%s`: %s\n", $1, $4}')
 ERRORS=$(echo -e "$SWIFTLINT_OUTPUT" | awk -F': ' '/: error:/ {printf "- `%s`: %s\n", $1, $4}')
 
-if [ -n "$WARNINGS" ]; then
-  echo "$WARNINGS"
-  printf "**SwiftLint Warnings**\n%b" "$WARNINGS" | buildkite-agent annotate --style 'warning'
+# Report warnings
+if [[ -n "$WARNINGS" ]]; then
+    echo "SwiftLint Warnings:"
+    echo "$WARNINGS"
+    printf "**SwiftLint Warnings**\n%b" "$WARNINGS" | buildkite-agent annotate --style 'warning'
 fi
 
-if [ -n "$ERRORS" ]; then
-  echo "$ERRORS"
-  printf "**SwiftLint Errors**\n%b" "$ERRORS" | buildkite-agent annotate --style 'error'
+# Report errors
+if [[ -n "$ERRORS" ]]; then
+    echo "SwiftLint Errors:"
+    echo "$ERRORS"
+    printf "**SwiftLint Errors**\n%b" "$ERRORS" | buildkite-agent annotate --style 'error'
 fi
 
 exit $SWIFTLINT_EXIT_STATUS

@@ -1,4 +1,43 @@
-#!/bin/bash -eu
+#!/bin/bash
+
+# Script: install_swiftpm_dependencies
+#
+# Description:
+#   Installs Swift Package Manager (SPM) dependencies for an Xcode project or Swift package.
+#   Supports both Xcode-managed dependencies (.xcworkspace/.xcodeproj) and pure SPM projects.
+#   Includes caching support to speed up dependency resolution.
+#
+# Usage:
+#   install_swiftpm_dependencies [--workspace PATH | --project PATH | --use-spm]
+#
+# Arguments:
+#   --workspace PATH  Path to .xcworkspace file managing SPM dependencies
+#   --project PATH   Path to .xcodeproj file managing SPM dependencies
+#   --use-spm        Use pure SPM mode (Package.swift at root)
+#   -h, --help       Show this help message
+#
+# Returns:
+#   0 - Dependencies installed successfully
+#   1 - Invalid arguments or missing Package.resolved
+#   2 - Unexpected arguments provided
+#   3 - Dependency resolution failed
+#
+# Notes:
+#   - Must run on a macOS CI agent with Xcode installed
+#   - Requires appropriate SSH access for private dependencies
+#   - Caches dependencies to speed up future builds
+#   - Will attempt to auto-detect project type if no flags provided
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `xcodebuild`
+#   - `swift`
+#   - `hash_file` (provided by a8c-ci-toolkit)
+#   - `restore_cache` (provided by a8c-ci-toolkit)
+#   - `save_cache` (provided by a8c-ci-toolkit)
+#   - `add_host_to_ssh_known_hosts` (provided by a8c-ci-toolkit)
+
+set -euo pipefail
 
 print_usage() {
   echo "Usage:"
@@ -35,7 +74,7 @@ case ${1:-} in
 esac
 
 if [[ "$#" -gt 0 ]]; then
-  echo "Unexpected extra arguments: $*" >&2
+  echo "Error: Unexpected extra arguments: $*" >&2
   print_usage
   exit 2
 fi
@@ -54,17 +93,17 @@ if [[ -z "${XCWORKSPACE_PATH}" && -z "${XCODEPROJ_PATH}" && "${USE_SPM}" != "tru
     XCWORKSPACE_PATH="${FOUND_ROOT_WORKSPACE_PATHS[0]}"
     echo " --> Found a single \`.xcworkspace\` file, and no \`Package.swift\` in the root of the repo."
     echo "     Defaulting to \`--workspace \"${XCWORKSPACE_PATH}\"\`."
-  elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && ${#FOUND_ROOT_PROJECT_PATHS[@] } -eq 1 && ! -f "Package.swift" ]]; then
+  elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && ${#FOUND_ROOT_PROJECT_PATHS[@]} -eq 1 && ! -f "Package.swift" ]]; then
     XCODEPROJ_PATH="${FOUND_ROOT_PROJECT_PATHS[0]}"
     echo " --> Found an \`.xcodeproj\`, and no \`Package.swift\` nor \`.xcworkspace\`in the root of the repo."
     echo "     Defaulting to \`--project \"${XCODEPROJ_PATH}\`"
-  elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && ${#FOUND_ROOT_PROJECT_PATHS[@] } -eq 0 && -f "Package.swift" ]]; then
+  elif [[ ${#FOUND_ROOT_WORKSPACE_PATHS[@]} -eq 0 && ${#FOUND_ROOT_PROJECT_PATHS[@]} -eq 0 && -f "Package.swift" ]]; then
     echo " --> Found a \`Package.swift\`, and no \`.xcworkspace\` or \`.xcodeproj\` in the root of the repo."
     echo "     Defaulting to \`--use-spm\`"
     USE_SPM=true
   else
-    echo " -!- No valid --workspace, --project or --use-spm flag provided, and cannot guess which one to use either, so aborting."
-    echo "     Please call $0 with an explicit \`--workspace PATH\`, \`--project PATH\` or \`--use-spm\` flag to disambiguate."
+    echo "Error: No valid --workspace, --project or --use-spm flag provided, and cannot guess which one to use." >&2
+    echo "       Please call $0 with an explicit \`--workspace PATH\`, \`--project PATH\` or \`--use-spm\` flag to disambiguate." >&2
     exit 1
   fi
 fi
@@ -80,26 +119,35 @@ elif [[ "${USE_SPM}" == "true" ]]; then
 fi
 
 if [[ ! -f "${PACKAGE_RESOLVED_LOCATION}" ]]; then
-  echo "Unable to find \`Package.resolved\` file (${PACKAGE_RESOLVED_LOCATION:-unable to guess path})"
+  echo "Error: Unable to find \`Package.resolved\` file (${PACKAGE_RESOLVED_LOCATION:-unable to guess path})" >&2
   exit 1
 fi
 
 # Restore SPM cache if it's available
 echo "~~~ Restoring SPM cache if available"
-PACKAGE_RESOLVED_HASH=$(hash_file "${PACKAGE_RESOLVED_LOCATION}")
+if ! PACKAGE_RESOLVED_HASH=$(hash_file "${PACKAGE_RESOLVED_LOCATION}"); then
+  echo "Error: Failed to compute hash for Package.resolved" >&2
+  exit 1
+fi
+
 CACHE_KEY="${BUILDKITE_PIPELINE_SLUG}-spm-cache-${PACKAGE_RESOLVED_HASH}"
 
 mkdir -p "${SPM_CACHE_LOCATION}"
-cd "${SPM_CACHE_LOCATION}"
-restore_cache "${CACHE_KEY}"
-cd -
+cd "${SPM_CACHE_LOCATION}" || exit 1
+if ! restore_cache "${CACHE_KEY}"; then
+  echo "Warning: Failed to restore cache, will download dependencies from scratch" >&2
+fi
+cd - || exit 1
 
 # This will let Xcode use the system SSH config for downloading packages
-sudo defaults write com.apple.dt.Xcode IDEPackageSupportUseBuiltinSCM YES
+if ! sudo defaults write com.apple.dt.Xcode IDEPackageSupportUseBuiltinSCM YES; then
+  echo "Warning: Failed to configure Xcode SSH settings" >&2
+fi
 
 # Trust all GitHub.com and BitBucket.org keys – this allows checking out dependencies via SSH
-add_host_to_ssh_known_hosts bitbucket.org
-add_host_to_ssh_known_hosts github.com
+if ! add_host_to_ssh_known_hosts bitbucket.org || ! add_host_to_ssh_known_hosts github.com; then
+  echo "Warning: Failed to add some hosts to SSH known_hosts" >&2
+fi
 
 # Resolve the packages using the correct method
 if [[ -d "${XCWORKSPACE_PATH}" ]]; then
@@ -109,14 +157,23 @@ if [[ -d "${XCWORKSPACE_PATH}" ]]; then
   # (despite the help page of `xcodebuild` suggesting that it should work without `-scheme`). Since the dependency resolution doesn't really depend on the scheme
   # and we don't want to have to provide or guess it, using `-list` instead stops making `xcodebuild` complain about `-workspace` not being used in conjunction
   # with `-scheme` (even if in practice we don't care about the scheme list it returns)
-  xcodebuild -workspace "${XCWORKSPACE_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile -list
+  if ! xcodebuild -workspace "${XCWORKSPACE_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile -list; then
+    echo "Error: Failed to resolve dependencies for workspace" >&2
+    exit 3
+  fi
 elif [[ -d "${XCODEPROJ_PATH}" ]]; then
   echo "~~~ Resolving Swift Packages with \`xcodebuild\`"
   echo "Using -project \"${XCODEPROJ_PATH}\""
-  xcodebuild -project "${XCODEPROJ_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile
+  if ! xcodebuild -project "${XCODEPROJ_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile; then
+    echo "Error: Failed to resolve dependencies for project" >&2
+    exit 3
+  fi
 elif [[ "${USE_SPM}" == "true" ]]; then
   echo "~~~ Resolving packages with \`swift package\`"
-  swift package resolve
+  if ! swift package resolve; then
+    echo "Error: Failed to resolve dependencies with swift package" >&2
+    exit 3
+  fi
 fi
 
 # `checkouts` can be removed because the system can quickly generate them
@@ -131,4 +188,6 @@ echo "Done. Removed checkouts and artifacts subfolders from $SPM_CACHE_LOCATION"
 
 # If this is the first time we've seen this particular cache key, save it for the future
 echo "~~~ Saving SPM Cache"
-save_cache "${SPM_CACHE_LOCATION}" "${CACHE_KEY}" false --use_relative_path_in_tar
+if ! save_cache "${SPM_CACHE_LOCATION}" "${CACHE_KEY}" false --use_relative_path_in_tar; then
+  echo "Warning: Failed to save cache" >&2
+fi

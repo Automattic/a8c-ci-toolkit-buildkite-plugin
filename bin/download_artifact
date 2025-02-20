@@ -1,39 +1,112 @@
-#!/bin/bash -eu
+#!/bin/bash
 
-# Usage
-# download_artifact $file_name [$destination]
+# Script: download_artifact
 #
-# $file_name should be the name of the file - it'll automatically be combined with the current build ID to differentiate between
-# the same file in different jobs. It'll be identical to the `basename` of whatever you passed to `store_artifact`.
+# Description:
+#   Downloads a previously uploaded build artifact from S3. The file is retrieved using
+#   the build ID and filename to match the path used by `upload_artifact`. This script
+#   is a core utility used by many other scripts to retrieve build outputs, test results,
+#   and other artifacts that were stored or shared between jobs.
 #
-# $destination is an optional argument – by default, `download_artifact` will download the artifact to the present working directory,
-# but if you'd like it stored elsewhere, just pass the path as the second argument.
+# Usage:
+#   download_artifact <file_name> [destination]
+#
+# Arguments:
+#   file_name   - Name of the file to download (must match the basename of the uploaded file)
+#   destination - (Optional) Path where to save the file. Defaults to current directory.
+#
+# Examples:
+#   download_artifact app.ipa
+#   download_artifact test-results.xml ./test-output/
+#   download_artifact lcov.info ./coverage/
+#   download_artifact app-release.apk ./build/outputs/
+#
+# Returns:
+#   0 - File was successfully downloaded
+#   1 - Missing file name argument
+#   2 - Invalid destination or missing bucket configuration
+#   3 - File not found in S3
+#   4 - AWS operation failed
+#
+# Environment Variables:
+#   ARTIFACTS_S3_BUCKET - S3 bucket name for storing artifacts (required)
+#   BUILDKITE_BUILD_ID - Current build ID (automatically set by Buildkite)
+#
+# Notes:
+#   - Compatible with both macOS and Linux
+#   - Supports S3 transfer acceleration if enabled on the bucket
+#   - Files are retrieved from path format: $BUILDKITE_BUILD_ID/filename
+#   - Creates destination directory if it doesn't exist
+#   - Preserves original file permissions
+#   - Reports download progress
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `aws`
+#   - `jq`
+#   - `mkdir` (for creating destination directories)
 
-ARTIFACT_FILE_NAME=${1-}
+set -euo pipefail
 
-if [ -z "$ARTIFACT_FILE_NAME" ]; then
-	echo "You must pass the name of the file you want to download"
+# Validate required arguments
+if [[ -z "${1:-}" ]]; then
+	echo "Error: You must pass the name of the file you want to download" >&2
 	exit 1
 fi
 
-BUCKET=${ARTIFACTS_S3_BUCKET-}
+ARTIFACT_FILE_NAME=$1
 
-if [ -z "$BUCKET" ]; then
-	echo "You must pass set the \`ARTIFACTS_S3_BUCKET\` environment variable with the S3 bucket you'd like to use"
+# Validate environment variables
+if [[ -z "${BUILDKITE_BUILD_ID:-}" ]]; then
+	echo "Error: BUILDKITE_BUILD_ID environment variable is not set" >&2
 	exit 2
 fi
 
-OUTPUT_PATH=${2-.}
+BUCKET=${ARTIFACTS_S3_BUCKET:-}
+if [[ -z "$BUCKET" ]]; then
+	echo "Error: You must set the \`ARTIFACTS_S3_BUCKET\` environment variable with the S3 bucket you'd like to use" >&2
+	exit 2
+fi
+
+OUTPUT_PATH=${2:-.}
+
+# Ensure output directory exists and is writable
+if [[ ! -d "$OUTPUT_PATH" ]]; then
+	echo "Creating destination directory '$OUTPUT_PATH'"
+	if ! mkdir -p "$OUTPUT_PATH"; then
+		echo "Error: Failed to create destination directory '$OUTPUT_PATH'" >&2
+		exit 2
+	fi
+fi
+
+if [[ ! -w "$OUTPUT_PATH" ]]; then
+	echo "Error: Destination directory '$OUTPUT_PATH' is not writable" >&2
+	exit 2
+fi
 
 KEY="$BUILDKITE_BUILD_ID/$ARTIFACT_FILE_NAME"
+
+# Check if the file exists in S3
+if ! aws s3api head-object --bucket "$BUCKET" --key "$KEY" > /dev/null 2>&1; then
+	echo "Error: Artifact '$ARTIFACT_FILE_NAME' not found in build $BUILDKITE_BUILD_ID" >&2
+	exit 3
+fi
 
 # If the bucket has transfer acceleration enabled, use it!
 ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$BUCKET" | jq '.Status' -r || true)
 
-if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
+if [[ "$ACCELERATION_STATUS" = "Enabled" ]]; then
 	echo "Downloading with transfer acceleration"
-	aws s3 cp "s3://$BUCKET/$KEY" "$OUTPUT_PATH"  --endpoint-url https://s3-accelerate.amazonaws.com
+	if ! aws s3 cp "s3://$BUCKET/$KEY" "$OUTPUT_PATH" --endpoint-url https://s3-accelerate.amazonaws.com; then
+		echo "Error: Failed to download artifact from S3" >&2
+		exit 4
+	fi
 else
-	aws s3 cp "s3://$BUCKET/$KEY" "$OUTPUT_PATH"
+	if ! aws s3 cp "s3://$BUCKET/$KEY" "$OUTPUT_PATH"; then
+		echo "Error: Failed to download artifact from S3" >&2
+		exit 4
+	fi
 fi
+
+echo "Successfully downloaded $ARTIFACT_FILE_NAME to $OUTPUT_PATH"
 

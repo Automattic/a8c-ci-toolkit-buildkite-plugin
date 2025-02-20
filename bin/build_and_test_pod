@@ -1,27 +1,82 @@
-#!/bin/bash -eu
+#!/bin/bash
+
+# Script: build_and_test_pod
 #
-# Any arguments passed to this script will be passed through to `fastlane`.
-# If no argument is passed, the `test` lane will be called by default.
+# Description:
+#   Builds and tests a CocoaPods library using Fastlane. Handles both standard
+#   and Example project structures, installing dependencies as needed.
+#
+# Usage:
+#   build_and_test_pod [FASTLANE_ARGS...]
+#
+# Arguments:
+#   FASTLANE_ARGS - Arguments passed directly to fastlane (optional, defaults to 'test')
+#
+# Returns:
+#   0 - Build and tests passed successfully
+#   1 - Setup failed (gems, pods, etc.)
+#   2 - Build or tests failed
+#
+# Notes:
+#   - Must run on a macOS CI agent with Xcode installed
+#   - Supports both standard pod structure and Example project structure
+#   - Will install dependencies in both root and Example/ directory if needed
+#   - Uses Fastlane for build and test execution
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `bundle`
+#   - `fastlane` (via bundler)
+#   - `xcrun`
+#   - `install_gems` (provided by a8c-ci-toolkit)
+#   - `install_cocoapods` (provided by a8c-ci-toolkit)
+
+set -euo pipefail
 
 echo "--- :rubygems: Setting up Gems"
-install_gems
-
-if [ -f "Podfile.lock" ]; then
-	echo "--- :cocoapods: Setting up Pods"
-	install_cocoapods
+if ! install_gems; then
+    echo "Error: Failed to install required gems" >&2
+    exit 1
 fi
 
-if [ -f "Example/Podfile.lock" ]; then
-	cd Example
-	echo "--- :cocoapods: Setting up Pods"
-	install_cocoapods
-	cd -
+# Install pods in root directory if needed
+if [[ -f "Podfile.lock" ]]; then
+    echo "--- :cocoapods: Setting up Pods"
+    if ! install_cocoapods; then
+        echo "Error: Failed to install pods in root directory" >&2
+        exit 1
+    fi
+fi
+
+# Install pods in Example directory if needed
+if [[ -f "Example/Podfile.lock" ]]; then
+    echo "--- :cocoapods: Setting up Example Pods"
+    # Use pushd/popd for safer directory navigation
+    pushd Example > /dev/null || {
+        echo "Error: Failed to change to Example directory" >&2
+        exit 1
+    }
+    
+    if ! install_cocoapods; then
+        echo "Error: Failed to install pods in Example directory" >&2
+        popd > /dev/null
+        exit 1
+    fi
+    
+    popd > /dev/null
 fi
 
 echo "--- :test_tube: Building and Running Tests"
 
 # For some reason this fixes a failure in `lib lint`
 # https://github.com/Automattic/buildkite-ci/issues/7
-xcrun simctl list >> /dev/null
+if ! xcrun simctl list >> /dev/null; then
+    echo "Error: Failed to list simulators. Is Xcode properly installed?" >&2
+    exit 1
+fi
 
-bundle exec fastlane "${@:-test}"
+# Run fastlane with provided arguments or 'test' by default
+if ! bundle exec fastlane "${@:-test}"; then
+    echo "Error: Fastlane execution failed" >&2
+    exit 2
+fi

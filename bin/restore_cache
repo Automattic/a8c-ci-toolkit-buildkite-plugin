@@ -1,17 +1,71 @@
-#!/bin/bash -eu
+#!/bin/bash
 
-CACHE_KEY=$1
+# Script: restore_cache
+#
+# Description:
+#   Restores a file or directory from an S3 bucket cache. This is the companion
+#   script to `save_cache` and handles decompressing and restoring cached files.
+#   This script is a core utility used by many other scripts to restore cached
+#   build artifacts, dependencies, and other large files to speed up CI/CD pipelines.
+#
+# Usage:
+#   restore_cache <cache_key>
+#
+# Arguments:
+#   cache_key - The key used when the cache was saved
+#
+# Examples:
+#   restore_cache "my-project-pods-cache"
+#   restore_cache "gradle-cache"
+#   restore_cache "build-cache-$(hash_file build/output)"
+#   restore_cache "${BUILDKITE_PIPELINE_SLUG}-node-modules"
+#
+# Returns:
+#   0 - Cache was successfully restored or cache miss (not found)
+#   1 - Missing required arguments
+#   2 - Missing bucket configuration
+#   3 - Download or extraction failed
+#
+# Environment Variables:
+#   CACHE_BUCKET_NAME - S3 bucket name for caching (optional if plugin bucket is configured)
+#   BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET - Plugin-provided S3 bucket name (optional)
+#
+# Notes:
+#   - Compatible with both macOS and Linux
+#   - Supports S3 transfer acceleration if enabled on the bucket
+#   - Will not fail if cache entry doesn't exist (returns 0)
+#   - Automatically handles decompression of tar/gzip archives
+#   - Preserves file permissions during extraction
+#   - Reports cache size and restoration duration
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `aws`
+#   - `jq`
+#   - `tar`
+#   - `awk` (for size calculations)
+
+set -euo pipefail
 
 bytes_to_mb() {
 	local bytes=$1
 	printf "%.2f" "$(awk "BEGIN {print $bytes / (1024 * 1024)}")"
 }
 
-S3_BUCKET_NAME=${CACHE_BUCKET_NAME-}
-if [ -z "$S3_BUCKET_NAME" ]; then
-	if [ -z "$BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET" ]; then
-		echo "⛔Unable to restore file from cache – no \$CACHE_BUCKET_NAME is set"
-		exit 1
+# Validate required arguments
+if [[ -z "${1:-}" ]]; then
+	echo "Error: You must provide a cache key to restore" >&2
+	exit 1
+fi
+
+CACHE_KEY=$1
+
+# Validate bucket configuration
+S3_BUCKET_NAME=${CACHE_BUCKET_NAME:-}
+if [[ -z "$S3_BUCKET_NAME" ]]; then
+	if [[ -z "${BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET:-}" ]]; then
+		echo "Error: Unable to restore file from cache – no \$CACHE_BUCKET_NAME is set" >&2
+		exit 2
 	else
 		echo "Reading bucket name from 'BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET'"
 		S3_BUCKET_NAME="$BUILDKITE_PLUGIN_A8C_CI_TOOLKIT_BUCKET"
@@ -20,6 +74,7 @@ fi
 
 echo "Using $S3_BUCKET_NAME as cache bucket"
 
+# Check if cache entry exists and restore if found
 if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
 	SECONDS=0
 	echo "Restoring cache entry $CACHE_KEY"
@@ -28,19 +83,31 @@ if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/nu
 	# If the bucket has transfer acceleration enabled, use it!
 	ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$S3_BUCKET_NAME" | jq '.Status' -r || true)
 
-	if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
+	if [[ "$ACCELERATION_STATUS" = "Enabled" ]]; then
 		echo "Downloading with transfer acceleration"
-		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet --endpoint-url https://s3-accelerate.amazonaws.com
+		if ! aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet --endpoint-url https://s3-accelerate.amazonaws.com; then
+			echo "Error: Failed to download cache from S3" >&2
+			rm -f "$CACHE_KEY"
+			exit 3
+		fi
 	else
-		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet
+		if ! aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet; then
+			echo "Error: Failed to download cache from S3" >&2
+			rm -f "$CACHE_KEY"
+			exit 3
+		fi
 	fi
 
 	CACHE_SIZE=$(wc -c < "$CACHE_KEY")
 	echo "	Decompressing"
-	tar -xf "$CACHE_KEY"
+	if ! tar -xf "$CACHE_KEY"; then
+		echo "Error: Failed to extract cache archive" >&2
+		rm -f "$CACHE_KEY"
+		exit 3
+	fi
 
 	echo "	Cleaning Up"
-	rm "$CACHE_KEY"
+	rm -f "$CACHE_KEY"
 
 	duration=$SECONDS
 	echo "Cache entry successfully restored"

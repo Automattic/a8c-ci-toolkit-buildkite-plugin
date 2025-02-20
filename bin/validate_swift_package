@@ -1,15 +1,50 @@
-#!/bin/bash -eu
-#
-# Any arguments passed to this script will be passed through to `fastlane`.
-# If no argument is passed, the `test` lane will be called by default.
+#!/bin/bash
 
-if [[ ! -f Package.swift ]]; then
-    echo "This repo is not a Swift package."
+# Script: validate_swift_package
+#
+# Description:
+#   Validates a Swift Package by building and running its tests using Fastlane.
+#   This script ensures the package is properly configured and all tests pass.
+#
+# Usage:
+#   validate_swift_package [FASTLANE_ARGS...]
+#
+# Arguments:
+#   FASTLANE_ARGS - Arguments passed directly to fastlane (optional, defaults to 'test')
+#
+# Returns:
+#   0 - Package validation passed successfully
+#   1 - Missing Package.swift or setup failed
+#   2 - Build or tests failed
+#
+# Notes:
+#   - Must run on a macOS CI agent with Xcode installed
+#   - Requires a Package.swift file in the current directory
+#   - Uses Fastlane for build and test execution
+#   - Will install required Ruby gems before running tests
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `bundle`
+#   - `fastlane` (via bundler)
+#   - `install_gems` (provided by a8c-ci-toolkit)
+
+set -euo pipefail
+
+# Validate Package.swift exists
+if [[ ! -f "Package.swift" ]]; then
+    echo "Error: No Package.swift found in current directory" >&2
     exit 1
 fi
 
 echo "--- :rubygems: Setting up Gems"
-install_gems
+if ! install_gems; then
+    echo "Error: Failed to install required gems" >&2
+    exit 1
+fi
 
 echo "--- :test_tube: Building and testing the Swift Package"
-bundle exec fastlane "${@:-test}"
+if ! bundle exec fastlane "${@:-test}"; then
+    echo "Error: Package validation failed" >&2
+    exit 2
+fi

@@ -1,13 +1,33 @@
 #!/bin/bash
 
-# This is a hack to workaround https://github.com/CocoaPods/CocoaPods/issues/12033.
-# We can remove this script once the issue is fixed.
+# Script: patch-cocoapods
 #
-# This script updates the cocoapods source code to change Xcode project targets'
-# minimal deployment target to 13.0, which is a requirement in newer Xcode versions.
+# Description:
+#   Patches the CocoaPods gem to work around deployment target issues with newer Xcode versions.
+#   This is a temporary fix for https://github.com/CocoaPods/CocoaPods/issues/12033.
+#   The script updates the minimum iOS deployment target to 13.0 for framework targets.
+#
+# Usage:
+#   patch-cocoapods
+#
+# Returns:
+#   0 - Patch was successfully applied
+#   1 - Failed to locate CocoaPods gem or patch application failed
+#
+# Notes:
+#   - This script is temporary and will be removed once the upstream issue is fixed
+#   - Must run on a macOS CI agent with CocoaPods installed via bundler
+#   - Modifies the CocoaPods gem files directly
+#   - Will attempt to reverse and reapply patch if initial application fails
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `bundle`
+#   - `patch`
 
 set -euo pipefail
 
+# The patch content to apply to CocoaPods
 patch_content=$(cat <<'EOF'
 --- lib/cocoapods/installer/analyzer.rb
 +++ lib/cocoapods/installer/analyzer.rb
@@ -34,14 +54,30 @@ patch_content=$(cat <<'EOF'
 EOF
 )
 
-cocoapods_gem_path=$(bundle info cocoapods --path)
-echo "Path to the cocoapods gem: $cocoapods_gem_path"
+# Get the path to the installed CocoaPods gem
+if ! cocoapods_gem_path=$(bundle info cocoapods --path); then
+    echo "Error: Failed to locate CocoaPods gem path" >&2
+    exit 1
+fi
+echo "Path to the CocoaPods gem: $cocoapods_gem_path"
 
+# Try to apply the patch
 if echo "$patch_content" | patch --forward --force --directory "$cocoapods_gem_path" --strip 0; then
-    echo "cocoapods patched successfully"
+    echo "CocoaPods patched successfully"
     exit 0
 fi
 
-echo "Failed to patch cocoapods. Try to re-apply the patch"
-echo "$patch_content" | patch --reverse --force --directory "$cocoapods_gem_path" --strip 0
-echo "$patch_content" | patch --forward --force --directory "$cocoapods_gem_path" --strip 0
+# If initial patch failed, try to reverse and reapply
+echo "Initial patch application failed, attempting to reverse and reapply..."
+
+if ! echo "$patch_content" | patch --reverse --force --directory "$cocoapods_gem_path" --strip 0; then
+    echo "Error: Failed to reverse existing patch" >&2
+    exit 1
+fi
+
+if ! echo "$patch_content" | patch --forward --force --directory "$cocoapods_gem_path" --strip 0; then
+    echo "Error: Failed to reapply patch" >&2
+    exit 1
+fi
+
+echo "CocoaPods patched successfully after reapply"

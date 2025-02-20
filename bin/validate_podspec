@@ -1,26 +1,59 @@
-#!/bin/bash -eu
+#!/bin/bash
 
-# Usage: validate_podspec [OPTIONS] [PODSPEC(S)_PATH(S)...] 
+# Script: validate_podspec
 #
-#  - If no `PODSPEC_PATH` provided, will lint all `*.podspec` files found
-#  - By default, the linting of each podspec will `--include-podspecs=*.podspec` any other podspec
-#    found in the root of the repo, in order to support repos containing co-dependant pods which
-#    needs to be linted and pushed in concert
+# Description:
+#   Validates CocoaPods podspec files using `pod lib lint`. Handles multiple podspecs
+#   in the same repository and supports co-dependent pods. Includes setup of required
+#   dependencies and workarounds for known CocoaPods issues.
 #
-# OPTIONS:
-#  `--patch-cocoapods`:
-#     Apply a patch to work around issues with older deployment targets — see https://github.com/CocoaPods/CocoaPods/issues/12033
-#  `--allow-warnings`, `--sources=…`, `--private`, `--include-podspecs=…`, `--external-podspecs=…`:
-#     Those options are passed to `pod lib lint` verbatim
+# Usage:
+#   validate_podspec [OPTIONS] [PODSPEC(S)_PATH(S)...]
 #
+# Arguments:
+#   PODSPEC(S)_PATH(S) - Path(s) to podspec file(s) to validate. If not provided,
+#                        will validate all *.podspec files in current directory.
+#
+# Options:
+#   --patch-cocoapods        - Apply patch for older deployment targets (see Notes)
+#   --allow-warnings         - Passed to pod lib lint
+#   --sources=URL           - Passed to pod lib lint
+#   --private              - Passed to pod lib lint
+#   --include-podspecs=GLOB - Passed to pod lib lint (defaults to *.podspec)
+#   --external-podspecs=URL - Passed to pod lib lint
+#
+# Returns:
+#   0 - All podspecs validated successfully
+#   1 - Validation failed or missing dependencies
+#
+# Environment Variables:
+#   None required
+#
+# Notes:
+#   - By default includes all *.podspec files in validation for co-dependent pods
+#   - The --patch-cocoapods option works around: https://github.com/CocoaPods/CocoaPods/issues/12033
+#   - Must run on a macOS CI agent with Xcode installed
+#   - Will install required gems and pods if needed
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `bundle`
+#   - `pod` (via bundler)
+#   - `xcrun`
+#   - `install_gems` (provided by a8c-ci-toolkit)
+#   - `install_cocoapods` (provided by a8c-ci-toolkit)
+#   - `patch-cocoapods` (provided by a8c-ci-toolkit)
+
+set -euo pipefail
 
 PATCH_COCOAPODS="false"
 COCOAPODS_FLAGS=(--verbose --fail-fast)
 
+# Parse command line options
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
 		--patch-cocoapods)
-		  PATCH_COCOAPODS="true"
+			PATCH_COCOAPODS="true"
 			;;
 		--allow-warnings | --sources=* | --private | --include-podspecs=* | --external-podspecs=*)
 			COCOAPODS_FLAGS+=("$1")
@@ -30,34 +63,49 @@ while [[ "$#" -gt 0 ]]; do
 	shift
 done
 
+# Add default --include-podspecs if not explicitly provided
 if [[ ! "${COCOAPODS_FLAGS[*]}" =~ --include-podspecs=* ]]; then
-	# By default, and if that flag was not already provided explicitly, include all other podspecs present
-	# in the same repo as part of validation, so that if a repo contains multiple co-dependant podspecs,
-	# validation will use the local podspecs of those co-dependant pods when validating each individual pod.
+	# By default, include all other podspecs present in the same repo as part of validation,
+	# so that if a repo contains multiple co-dependant podspecs, validation will use the
+	# local podspecs of those co-dependant pods when validating each individual pod.
 	#
-	# Note: `pod lib lint` considers it invalid to provide that parameter multiple times, hence testing for it first.
-	# Note: If a client needs to override this to make sure _not_ to include any other podspec for some special case
-	# or reason, one can pass `--include-podspecs=""`
-  COCOAPODS_FLAGS+=("--include-podspecs=*.podspec")
+	# Note: `pod lib lint` considers it invalid to provide that parameter multiple times
+	# Note: To override and not include any other podspec, pass `--include-podspecs=""`
+	COCOAPODS_FLAGS+=("--include-podspecs=*.podspec")
 fi
 
 echo "--- :rubygems: Setting up Gems"
-install_gems
-
-if [[ "${PATCH_COCOAPODS}" ==  'true' ]]; then
-	echo "--- :writing_hand: Patching cocoapods"
-	echo "⚠️ Remove this step once this issue is fixed: https://github.com/CocoaPods/CocoaPods/issues/12033"
-	patch-cocoapods
+if ! install_gems; then
+	echo "Error: Failed to install required gems" >&2
+	exit 1
 fi
 
-if [ -f "Podfile.lock" ]; then
+if [[ "${PATCH_COCOAPODS}" == 'true' ]]; then
+	echo "--- :writing_hand: Patching cocoapods"
+	echo "⚠️ Remove this step once this issue is fixed: https://github.com/CocoaPods/CocoaPods/issues/12033"
+	if ! patch-cocoapods; then
+		echo "Error: Failed to apply CocoaPods patch" >&2
+		exit 1
+	fi
+fi
+
+if [[ -f "Podfile.lock" ]]; then
 	echo "--- :cocoapods: Setting up Pods"
-	install_cocoapods
+	if ! install_cocoapods; then
+		echo "Error: Failed to install pods" >&2
+		exit 1
+	fi
 fi
 
 echo "--- :microscope: Validate Podspec"
 # For some reason this fixes a failure in `lib lint`
 # https://github.com/Automattic/buildkite-ci/issues/7
-xcrun simctl list >> /dev/null
+if ! xcrun simctl list >> /dev/null; then
+	echo "Error: Failed to list simulators. Is Xcode properly installed?" >&2
+	exit 1
+fi
 
-bundle exec pod lib lint "${COCOAPODS_FLAGS[@]}" -- "$@"
+if ! bundle exec pod lib lint "${COCOAPODS_FLAGS[@]}" -- "$@"; then
+	echo "Error: Podspec validation failed" >&2
+	exit 1
+fi
