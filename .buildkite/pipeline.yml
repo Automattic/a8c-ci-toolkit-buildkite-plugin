@@ -151,6 +151,16 @@ steps:
           - github_commit_status:
               context: "install_windows_10_sdk Tests - Version file with more than one new line"
 
+      - label: ":windows: install_windows_10_sdk Tests - Version file with trailing whitespace"
+        command: |
+          "123   " | Out-File .windows-10-sdk-version
+          .\tests\test-install-windows-10-sdk.ps1 -ExpectedExitCode 0
+        agents:
+          queue: windows
+        notify:
+          - github_commit_status:
+              context: "install_windows_10_sdk Tests - Version file with trailing whitespace"
+
       - label: ":windows: install_windows_10_sdk Tests - Version file with a word"
         command: |
           "not an integer" | Out-File .windows-10-sdk-version
