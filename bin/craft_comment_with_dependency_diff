@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-export COMMENT_FILE="$DIFF_DEPENDENCIES_FOLDER/comment_body.txt"
 true > $COMMENT_FILE  # Clear the file
 MAX_COMMENT_SIZE=65400
 current_size=0
