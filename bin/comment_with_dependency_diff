@@ -30,8 +30,6 @@
 
 set -euo pipefail
 
-craft_comment_with_dependency_diff
-
 MODULE="${1:-}"
 CONFIGURATION="${2:-}"
 
@@ -45,19 +43,19 @@ if [ "${BUILDKITE_PULL_REQUEST:-false}" == "false" ]; then
   exit 2
 fi
 
-DIFF_DEPENDENCIES_FOLDER="./build/reports/diff"
+export DIFF_DEPENDENCIES_FOLDER="./build/reports/diff"
 BASE_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_dependencies.txt"
 HEAD_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/head_branch_dependencies.txt"
 BASE_BRANCH_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_build_env.txt"
 HEAD_BRANCH_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/head_branch_build_env.txt"
-DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_dependencies.txt"
-DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_build_env.txt"
+export DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_dependencies.txt"
+export DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_build_env.txt"
 
 DEPENDENCY_TREE_VERSION="1.2.1"
 DEPENDENCY_TREE_CHECKSUM="39c50f22cd4211a3e52afec43120b7fdf90f9890"
 
-TLDR_DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_dependencies.txt"
-TLDR_DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_build_env.txt"
+export TLDR_DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_dependencies.txt"
+export TLDR_DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_build_env.txt"
 
 git config --global user.email "mobile@automattic.com"
 git config --global user.name "Dependency Tree Diff Tool"
@@ -132,5 +130,6 @@ if [ ! -s "$TLDR_DIFF_DEPENDENCIES_FILE" ] && [ ! -s "$TLDR_DIFF_BUILD_ENV_FILE"
     exit 0
 fi
 
+craft_comment_with_dependency_diff
 
 comment_on_pr --id "dependency-diff" --if-exist update "$COMMENT_FILE"
