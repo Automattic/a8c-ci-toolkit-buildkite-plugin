@@ -1,0 +1,152 @@
+---
+description: Standards and Rules to follow when editing bash scripts in @bin/
+globs: bin/*
+---
+# Shell Script Documentation and Standards
+
+## Shell Script Standards
+
+For all bash shell scripts:
+- Ensure compatibility with `bash 3.2.57`
+- Follow `shellcheck` recommendations
+- Use proper error handling and input validation
+- Document cross-platform considerations
+
+## Best Practices
+
+For all bash shell scripts:
+- Use `#!/bin/bash` as the first line of the script (a.k.a. shebang)
+- Use `set -e` to exit on error
+- Use `set -u` to error on undefined variables
+- Use `set -o pipefail` for proper error handling
+- Combine those options in a single `set -euo pipefail` command, or as part of the shebang line, as appropriate
+- Always use `$()` instead of backticks to execute commands
+- Quote all variable expansions
+- Use `[[ ]]` for conditional expressions
+- Use `local` variables in functions
+- Include proper error handling
+- Ensure the script file ends with a newline
+
+## Bash 3.2 Compatibility
+
+For all bash shell scripts, avoid using:
+- Associative arrays (`declare -A`)
+- `mapfile`/`readarray` command
+- `coproc` keyword
+- `&>` redirection operator
+- Case fall-through `;& operator`
+- Case continue `;;& operator`
+- `{a..b..c}` brace expansion with step
+- Case-modification operators in `${parameter^}`, `${parameter,}`
+
+## Documentation Requirements
+
+When editing or creating files in `/bin`:
+- Every shell script must have comprehensive header documentation
+- Documentation must include: description, usage, parameters, examples
+- For complex logic, provide detailed examples of different use cases
+- Document all return values and exit codes
+- Keep documentation up to date with any changes
+
+## Documentation Template
+
+```bash
+#!/bin/bash
+
+# Script: {filename}
+# 
+# Description:
+#   [Brief description of what the script does]
+#
+# Usage:
+#   {filename} [options] [arguments]
+#
+# Options:
+#   [List of options/flags with descriptions]
+#
+# Arguments:
+#   [List of positional arguments with descriptions]
+#
+# Examples:
+#   [Provide practical examples demonstrating different use cases]
+#
+# Notes:
+#   [Any important notes about script behavior, dependencies, or limitations]
+#
+# Returns:
+#   [Description of exit codes and their meanings]
+#
+# Requirements:
+#   [List of required external commands/programs]
+#   [Any platform-specific requirements]
+```
+
+## Cross-Platform Considerations
+
+### For all bash shell scripts
+
+- Use POSIX-compliant syntax and commands
+- Ensure the script is at least compatible with macOS and Linux
+- Make your best effort to make the bash scripts also compatible with Windows if possible, in addition to macOS and Linux. If it's not possible, document that in the script's header documentation, and, if the features handled by the bash script would be useful and make sense for use cases where we'd still need a Windows agent, propose your help to the author of the original script to create a PowerShell counterpart of that script to provide the same functionality for when running on Windows agents.
+- If the script would behave differently on different platforms despite your best efforts to make it behave the same way cross-platform, document any such platform-specific behavior in the script header documentation
+
+### For bash scripts compatible with macOS and Linux
+
+You can assume the following external commands/programs will be available on the machine the script is intended to run:
+
+- `jq`
+- `curl`
+- `aws`
+- `git`
+- `awk`
+- `sed`
+- `grep`
+- `sort`
+- `tee`
+- `uname`
+- `which`
+- `xargs`
+- `buildkite-agent`
+- `chmod`
+- `ssh-add`
+- `ssh-keyscan`
+
+### For bash scripts related to iOS tools and intended to be run on macOS systems
+
+You can assume the following external commands/programs will be available on the machine where the script is run, as long as you document in the script's header documentation that the script assumes it will run on a Mac CI agent:
+
+- `bundle`
+- `gem`
+- `pod`
+- `ruby`
+
+### For bash scripts related to Android tools and intended to be run on Linux systems
+
+You can assume the following external commands/programs will be available on the machine where the script is run, as long as you document in the script's header documentation that the script assumes it will run on an Android CI agent:
+
+- `gradle`
+- `java`
+
+### For bash scripts related to Node.js tools and intended to be run on Linux or macOS systems
+
+You can assume the following external commands/programs will be available on the machine where the script is run, as long as you document in the script's header documentation that the script assumes it will run on a Linux CI agent and use the `automattic/nvm-buildkite-plugin` to install the correct version of Node.js:
+
+- `npm`
+- `node`
+
+### For any bash script that needs to have external commands/programs available not listed above
+
+Make sure to document the list of required commands in the script's header documentation, under a "Requirements" section, with a wording like "This script needs to run on a CI agent which has the following external commands installed:".
+
+### For bash scripts that use `shasum` or `sha256sum` directly
+
+Always suggest using our `hash_file` helper command from this repository instead of using `shasum` or `sha256sum` directly, to ensure cross-platform compatibility.
+For scripts using `sha1sum`, suggest to switch the implementation to use checksums provided by `hash_file` instead.
+
+## Script Validation
+
+Before committing new scripts, ensure:
+- `shellcheck` passes with no warnings
+- Header documentation is complete
+- Platform requirements are documented
+- Helper commands are used where available
