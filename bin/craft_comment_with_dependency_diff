@@ -1,3 +1,6 @@
+#!/bin/bash
+
+set -euo pipefail
 
 COMMENT_FILE="$DIFF_DEPENDENCIES_FOLDER/comment_body.txt"
 true > $COMMENT_FILE  # Clear the file
