@@ -44,6 +44,7 @@ When editing or creating PowerShell scripts in `/bin`:
 - Every script must have comprehensive comment-based help
 - Documentation must include: synopsis, description, parameters, examples
 - For complex logic, provide detailed examples of different use cases
+- Use backticks (`) around command names, executables, and technical terms in documentation
 - Document all return values and terminating conditions
 - Keep documentation up to date with any changes
 - Clearly document Windows version requirements or limitations
