@@ -160,7 +160,11 @@ would_content_fit() {
     echo "Debug: TLDR total size: $tldr_size"
     echo "Debug: Current size: $current_size"
     echo "Debug: Max size: $MAX_COMMENT_SIZE"
-    return $(( current_size + $1 < MAX_COMMENT_SIZE ))
+    if (( current_size + $1 < MAX_COMMENT_SIZE )); then
+        return 0  # Success/true - content will fit
+    else
+        return 1  # Failure/false - content won't fit
+    fi
 }
 
 # Print content in order
