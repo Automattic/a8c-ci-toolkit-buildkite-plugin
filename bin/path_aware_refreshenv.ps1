@@ -1,6 +1,9 @@
-# Stop script execution when a non-terminating error occurs
-$ErrorActionPreference = "Stop"
-
+# Wraps Chocolatey's `refreshenv` / `Update-SessionEnvironment` to avoid erasing PATH modifications.
+#
+# See https://docs.chocolatey.org/en-us/create/cmdlets/update-sessionenvironment/
+#
+# Use this after installing a package via Chocolatey in a pipeline that modified the PATH at runtime, e.g. after adding a new binary to the PATH.
+#
 # It seems like calling refreshenv can erase PATH modifications that previous
 # steps in an automation script might have made.
 #
@@ -10,6 +13,9 @@ $ErrorActionPreference = "Stop"
 # To avoid the issue, we save the PATH pre-refreshenv and then manually add all
 # the components that were removed.
 
+# Stop script execution when a non-terminating error occurs
+$ErrorActionPreference = "Stop"
+
 Write-Host "PATH before refreshenv is $env:PATH"
 $originalPath = "$env:PATH"
 Write-Host "Calling refreshenv..."
@@ -17,4 +23,3 @@ refreshenv
 $mergedPath = "$env:PATH;$originalPath" -split ";" | Select-Object -Unique -Skip 1
 $env:PATH = ($mergedPath -join ";")
 Write-Host "PATH after refreshenv is $env:PATH"
-
