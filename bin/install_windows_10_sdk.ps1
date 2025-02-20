@@ -1,4 +1,4 @@
-param ( # parameters need to be defined at the top of the script
+param (
   [switch]$DryRun = $false
 )
 
