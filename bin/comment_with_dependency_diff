@@ -121,90 +121,68 @@ java -jar "$JAR_DIR/dependency-diff-tldr-0.0.6.jar" $BASE_BRANCH_DEPENDENCIES_FI
 ./dependency-tree-diff.jar $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$DIFF_BUILD_ENV_FILE
 java -jar "$JAR_DIR/dependency-diff-tldr-0.0.6.jar" $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$TLDR_DIFF_BUILD_ENV_FILE
 
-generate_project_dependencies_comment_body() {
-  cat <<EOF
+echo "--> Preparing comment for GitHub"
 
-The following changes in project dependencies were detected (configuration \`$CONFIGURATION\`):
-
-<details><summary>list</summary>
-
-\`\`\`
-$(cat "$TLDR_DIFF_DEPENDENCIES_FILE")
-\`\`\`
-
-</details>
-
-<details><summary>tree</summary>
-
-\`\`\`diff
-$(cat "$DIFF_DEPENDENCIES_FILE")
-\`\`\`
-
-</details>
-
-
-EOF
-}
-
-generate_build_dependencies_comment_body() {
-  cat <<EOF
-
-The following changes in the build classpath were detected:
-
-<details><summary>list</summary>
-
-\`\`\`
-$(cat "$TLDR_DIFF_BUILD_ENV_FILE")
-\`\`\`
-
-</details>
-
-<details><summary>tree</summary>
-
-\`\`\`diff
-$(cat "$DIFF_BUILD_ENV_FILE")
-\`\`\`
-
-</details>
-
-EOF
-}
-
-if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
-  echo "--> Commenting result to GitHub"
-
-  # Create or clear the comment body file
-  COMMENT_FILE="$DIFF_DEPENDENCIES_FOLDER/comment_body.txt"
-  true > $COMMENT_FILE  # 'true' used to clear the file as a no-op
-
-  append_content() {
-    local header="$1"
-    local content="$2"
-    local github_comment_max_size=65400 # GitHub constraint is 65536, but we decrease this value slightly to reserve for hidden comment_on_pr content and line breaks
-    local warning_message="Content exceeds $github_comment_max_size characters. [Navigate to Buildkite build artifacts](${BUILDKITE_BUILD_URL}#${BUILDKITE_JOB_ID}) to see details."
-
-    local current_size
-    current_size=$(wc -c < "$COMMENT_FILE")
-
-    # Calculate if there's enough space for the content and header
-    if (( current_size + ${#header} + ${#content} > github_comment_max_size - ${#header} - ${#warning_message})); then
-      printf "\n%s\n%s\n" "$header" "$warning_message" > $COMMENT_FILE
-      return
-    fi
-
-    printf "\n%s\n" "$header" >> $COMMENT_FILE
-    printf "%s\n" "$content" >> $COMMENT_FILE
-  }
-
-  if [ -s "$DIFF_DEPENDENCIES_FILE" ]; then
-    append_content "## Project dependencies changes" "$(generate_project_dependencies_comment_body)"
-  fi
-
-  if [ -s "$DIFF_BUILD_ENV_FILE" ]; then
-    append_content "## Build environment changes" "$(generate_build_dependencies_comment_body)"
-  fi
-
-  comment_on_pr --id "dependency-diff" --if-exist update "$COMMENT_FILE"
-else
-  comment_on_pr --id "dependency-diff" --if-exist delete
+# Check if any dependency changes were found
+if [ ! -s "$TLDR_DIFF_DEPENDENCIES_FILE" ] && [ ! -s "$TLDR_DIFF_BUILD_ENV_FILE" ]; then
+    echo "No dependency changes found"
+    comment_on_pr --id "dependency-diff" --if-exist delete
+    exit 0
 fi
+
+COMMENT_FILE="$DIFF_DEPENDENCIES_FOLDER/comment_body.txt"
+true > $COMMENT_FILE  # Clear the file
+MAX_COMMENT_SIZE=65400
+current_size=0
+WARNING_MESSAGE="Content exceeds $MAX_COMMENT_SIZE characters. [Navigate to Buildkite build artifacts](${BUILDKITE_BUILD_URL}#${BUILDKITE_JOB_ID}) to see details."
+
+# Templates for content formatting
+SECTION_HEADER="\n## %s changes\n\n"
+TLDR_TEMPLATE="<details><summary>list</summary>\n\n\`\`\`\n%s\n\`\`\`\n\n</details>"
+TREE_TEMPLATE="<details><summary>tree</summary>\n\n\`\`\`diff\n%s\n\`\`\`\n\n</details>"
+TREE_TOO_LARGE="\n> ⚠️ %s tree is too large. [View it in Buildkite artifacts](${BUILDKITE_BUILD_URL}#${BUILDKITE_JOB_ID})\n"
+
+# Calculate total size needed for TLDRs
+# This assumes that TLDRs are never too large to fit in the comment
+tldr_size=0
+for section in "Project dependencies" "Build environment"; do
+    tldr_file="$TLDR_DIFF_DEPENDENCIES_FILE"
+    [[ $section == "Build environment" ]] && tldr_file="$TLDR_DIFF_BUILD_ENV_FILE"
+    
+    if [ -s "$tldr_file" ]; then
+        content=$(printf "$SECTION_HEADER$TLDR_TEMPLATE" "$section" "$(cat "$tldr_file")")
+        tldr_size=$(( tldr_size + ${#content} ))
+    fi
+done
+
+# Function to check if content would fit
+would_content_fit() {
+    return $(($1 + tldr_size < MAX_COMMENT_SIZE ))
+}
+
+# Print content in order
+for section in "Project dependencies" "Build environment"; do
+    tldr_file="$TLDR_DIFF_DEPENDENCIES_FILE"
+    tree_file="$DIFF_DEPENDENCIES_FILE"
+    [[ $section == "Build environment" ]] && tldr_file="$TLDR_DIFF_BUILD_ENV_FILE" && tree_file="$DIFF_BUILD_ENV_FILE"
+    
+    if [ -s "$tldr_file" ]; then
+        # Print section header and TLDR
+        printf "$SECTION_HEADER" "$section" >> $COMMENT_FILE
+        printf "$TLDR_TEMPLATE" "$(cat "$tldr_file")" >> $COMMENT_FILE
+        current_size=$(wc -c < "$COMMENT_FILE")
+        
+        # Try to add tree if it exists
+        if [ -s "$tree_file" ]; then
+            content=$(printf "$TREE_TEMPLATE" "$(cat "$tree_file")")
+            if would_content_fit ${#content}; then
+                echo -e "$content" >> $COMMENT_FILE
+                current_size=$(wc -c < "$COMMENT_FILE")
+            else
+                printf "$TREE_TOO_LARGE" "$section" >> $COMMENT_FILE
+            fi
+        fi
+    fi
+done
+
+comment_on_pr --id "dependency-diff" --if-exist update "$COMMENT_FILE"
