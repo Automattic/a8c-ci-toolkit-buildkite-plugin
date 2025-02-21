@@ -63,21 +63,21 @@ cleanup_git_repo() {
 
 # Helper to assert both return code and output
 # Arguments:
-#   $1 - Expected return code
-#   $2 - Actual return code
-#   $3 - Expected output
-#   $4 - Actual output
+#   $1 - Actual return code
+#   $2 - Expected return code
+#   $3 - Actual output
+#   $4 - Expected output
 #   $5 - Optional message to display with the assertion result
 assert_result() {
-    local expected_code="$1"
-    local actual_code="$2"
-    local expected_output="$3"
-    local actual_output="$4"
+    local actual_code="$1"
+    local expected_code="$2"
+    local actual_output="$3"
+    local expected_output="$4"
     local message="$5"
 
-    assert_equal "$expected_code" "$actual_code" "Exit code - $message"
+    assert_equal "$actual_code" "$expected_code" "Exit code - $message"
     if [[ -n "$expected_output" ]]; then
-        assert_equal "$expected_output" "$actual_output" "Output - $message"
+        assert_equal "$actual_output" "$expected_output" "Output - $message"
     fi
 }
 
@@ -87,8 +87,8 @@ assert_result() {
 #   $2 - Actual value 
 #   $3 - Optional message to display with the assertion result
 assert_equal() {
-    local expected="$1"
-    local actual="$2"
+    local actual="$1"
+    local expected="$2"
     local message="${3:-}"
 
     if [[ "$actual" == "$expected" ]]; then
