@@ -115,26 +115,28 @@ while IFS= read -r -d '' file; do
   changed_files+=("$file")
 done < <(git --no-pager diff --name-only -z --merge-base "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | sort)
 
-exit_result() {
-    local result=$1
+exit_true() {
     if [[ "$use_stdout" == "true" ]]; then
-        if [[ "$result" -eq 0 ]]; then
-            echo "true"
-        else
-            echo "false"
-        fi
+        echo "true"
         exit 0
     fi
+    exit 0
+}
 
-    exit "$result"
+exit_false() {
+    if [[ "$use_stdout" == "true" ]]; then
+        echo "false"
+        exit 0
+    fi
+    exit 1
 }
 
 if [[ -z "$mode" ]]; then
     # No arguments = any change
     if [[ ${#changed_files[@]} -gt 0 ]]; then
-        exit_result 0
+        exit_true
     else
-        exit_result 1
+        exit_false
     fi
 fi
 
@@ -155,16 +157,16 @@ if [[ "$mode" == "all-match" ]]; then
     # Check if all changed files match at least one pattern
     for file in "${changed_files[@]}"; do
         if ! file_matches_any_pattern "$file" "${patterns[@]}"; then
-            exit_result 1
+            exit_false
         fi
     done
-    exit_result 0
+    exit_true
 elif [[ "$mode" == "any-match" ]]; then
     # Check if any changed file matches any pattern
     for file in "${changed_files[@]}"; do
         if file_matches_any_pattern "$file" "${patterns[@]}"; then
-            exit_result 0
+            exit_true
         fi
     done
-    exit_result 1
+    exit_false
 fi
