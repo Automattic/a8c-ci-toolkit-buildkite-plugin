@@ -205,3 +205,11 @@ steps:
         notify:
           - github_commit_status:
               context: "install_windows_10_sdk Tests - Version file with version number that is not in the allowed list"
+
+  - label: ":windows: prepare_windows_host_for_app_distribution Tests - Skip Windows 10 SDK Installation"
+    command: .\tests\test-prepare-windows-host-for-app-distribution.ps1
+    agents:
+      queue: windows
+    notify:
+      - github_commit_status:
+          context: "prepare_windows_host_for_app_distribution Tests - Skip Windows 10 SDK Installation"
