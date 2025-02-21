@@ -1,17 +1,35 @@
-# Wraps Chocolatey's `refreshenv` / `Update-SessionEnvironment` to avoid erasing PATH modifications.
+# Script: path_aware_refreshenv.ps1
 #
-# See https://docs.chocolatey.org/en-us/create/cmdlets/update-sessionenvironment/
+# Description:
+#   Wraps Chocolatey's `refreshenv` / `Update-SessionEnvironment` to avoid erasing PATH modifications.
+#   Preserves PATH changes made during script execution while still refreshing other environment variables.
 #
-# Use this after installing a package via Chocolatey in a pipeline that modified the PATH at runtime, e.g. after adding a new binary to the PATH.
+# Usage:
+#   path_aware_refreshenv.ps1
 #
-# It seems like calling refreshenv can erase PATH modifications that previous
-# steps in an automation script might have made.
+# Options:
+#   None
 #
-# See for example the logs in
-# https://buildkite.com/automattic/beeper-desktop/builds/2893#01919717-d0d0-441d-a85d-0fe3223467d2/195
+# Arguments:
+#   None
 #
-# To avoid the issue, we save the PATH pre-refreshenv and then manually add all
-# the components that were removed.
+# Examples:
+#   # After installing a package that modifies PATH
+#   choco install some-package
+#   path_aware_refreshenv.ps1
+#
+# Notes:
+#   - Saves PATH before refreshenv and restores unique entries after
+#   - Use after installing packages that modify PATH at runtime
+#   - See https://docs.chocolatey.org/en-us/create/cmdlets/update-sessionenvironment/
+#
+# Returns:
+#   0 - Success
+#   1 - Error in environment refresh
+#
+# Requirements:
+#   - Windows PowerShell 5.1 or later
+#   - Chocolatey package manager installed
 
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
