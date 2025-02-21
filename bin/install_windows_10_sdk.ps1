@@ -45,7 +45,7 @@ if ($allowedVersions -notcontains $windows10SDKVersion) {
   exit 1
 }
 
-Write-Host "Will attempt to set up Windows 10 ($windows10SDKVersion) SDK and Visual Studio Build Tools..."
+Write-Output "Will attempt to set up Windows 10 ($windows10SDKVersion) SDK and Visual Studio Build Tools..."
 
 if ($DryRun) {
   Write-Output "Running in dry run mode, finishing here."

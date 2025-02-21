@@ -16,10 +16,10 @@
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
 
-Write-Host "PATH before refreshenv is $env:PATH"
+Write-Output "PATH before refreshenv is $env:PATH"
 $originalPath = "$env:PATH"
-Write-Host "Calling refreshenv..."
+Write-Output "Calling refreshenv..."
 refreshenv
 $mergedPath = "$env:PATH;$originalPath" -split ";" | Select-Object -Unique -Skip 1
 $env:PATH = ($mergedPath -join ";")
-Write-Host "PATH after refreshenv is $env:PATH"
+Write-Output "PATH after refreshenv is $env:PATH"
