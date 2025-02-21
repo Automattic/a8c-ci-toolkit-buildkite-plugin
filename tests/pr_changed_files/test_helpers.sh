@@ -76,9 +76,7 @@ assert_result() {
     local message="$5"
 
     assert_equal "$actual_code" "$expected_code" "Exit code - $message"
-    if [[ -n "$expected_output" ]]; then
-        assert_equal "$actual_output" "$expected_output" "Output - $message"
-    fi
+    assert_equal "$actual_output" "$expected_output" "Output - $message"
 }
 
 # Helper function to assert that two values are equal
