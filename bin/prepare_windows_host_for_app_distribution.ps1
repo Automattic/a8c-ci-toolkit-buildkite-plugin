@@ -36,10 +36,10 @@
 #
 # Requirements:
 #   - Windows PowerShell 5.1 or later
-#   - Administrator privileges
+#   - Administrator privileges (for Windows Defender, registry changes)
 #   - AWS CLI configured with access to SecretsManager
-#   - Chocolatey package manager
-#   - jq command-line tool
+#   - certutil (for certificate decoding)
+#   - Windows Defender PowerShell module (for Set-MpPreference)
 
 # Prepares a `windows` CI agent with all the necessary setup so it can build and distribute a windows app
 #
