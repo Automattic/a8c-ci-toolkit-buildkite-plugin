@@ -41,10 +41,6 @@ done
 
 # Function to check if content would fit
 would_content_fit() {
-    echo "Debug: New content size: $1"
-    echo "Debug: TLDR total size: $tldr_size"
-    echo "Debug: Current size: $current_size"
-    echo "Debug: Max size: $MAX_COMMENT_SIZE"
     if (( current_size + $1 < MAX_COMMENT_SIZE )); then
         return 0  # Success/true - content will fit
     else
@@ -67,9 +63,7 @@ for section in "Project dependencies" "Build environment"; do
         # Try to add tree if it exists
         if [ -s "$tree_file" ]; then
             tree_content=$(cat "$tree_file")
-            echo "Debug: Raw tree size: ${#tree_content}"
             content=$(printf "$TREE_TEMPLATE" "$tree_content")
-            echo "Debug: Formatted tree size: ${#content}"
             if would_content_fit ${#content}; then
                 echo -e "$content" >> "$COMMENT_FILE"
                 current_size=$(wc -c < "$COMMENT_FILE")
