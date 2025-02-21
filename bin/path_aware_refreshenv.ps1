@@ -1,3 +1,35 @@
+<#
+.SYNOPSIS
+    Refreshes environment variables while preserving PATH modifications.
+
+.DESCRIPTION
+    This script wraps Chocolatey's `refreshenv` / `Update-SessionEnvironment` command to refresh
+    environment variables while preventing the loss of PATH modifications made during the current
+    session. It's particularly useful in CI/CD pipelines where PATH modifications are needed
+    across multiple steps.
+
+.NOTES
+    Author: Automattic Inc.
+    Requirements: 
+        - Windows PowerShell 5.1
+        - Chocolatey package manager installed
+    Windows Requirements:
+        - Administrator privileges: No
+
+.EXAMPLE
+    .\path_aware_refreshenv.ps1
+    Refreshes environment variables while preserving any PATH modifications made in the current session.
+
+.OUTPUTS
+    - Original PATH value
+    - Confirmation of refreshenv execution
+    - Updated PATH value after merging with original modifications
+
+.RETURNVALUES
+    0: Success
+    1: Failure (if refreshenv fails or PATH manipulation errors occur)
+#>
+
 # Wraps Chocolatey's `refreshenv` / `Update-SessionEnvironment` to avoid erasing PATH modifications.
 #
 # See https://docs.chocolatey.org/en-us/create/cmdlets/update-sessionenvironment/

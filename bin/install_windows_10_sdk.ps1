@@ -1,5 +1,44 @@
 # Install the Windows 10 SDK and Visual Studio Build Tools.
 
+<#
+.SYNOPSIS
+    Installs Windows 10 SDK and Visual Studio Build Tools for a specific Windows 10 SDK version.
+
+.DESCRIPTION
+    This script automates the installation of Windows 10 SDK and Visual Studio Build Tools.
+    It reads the desired SDK version from a .windows-10-sdk-version file and validates it against
+    a list of supported versions. The script then downloads and installs the Visual Studio Build
+    Tools with the specified Windows 10 SDK version.
+
+.PARAMETER DryRun
+    If specified, the script will only validate inputs and show what would be installed
+    without actually performing the installation.
+
+.EXAMPLE
+    .\install_windows_10_sdk.ps1
+    Installs the Windows 10 SDK version specified in .windows-10-sdk-version file
+
+.EXAMPLE
+    .\install_windows_10_sdk.ps1 -DryRun
+    Performs a dry run showing what would be installed without actual installation
+
+.NOTES
+    Author: Automattic Inc.
+    Requirements: Windows PowerShell 5.1
+    Windows Requirements:
+        - Windows Server 2019 or later
+        - Administrator privileges: Yes
+        - Disk space: ~5GB for installation
+        - Internet connection for downloading Visual Studio Build Tools
+
+.OUTPUTS
+    Success/failure messages and installation progress are written to the output stream.
+
+.RETURNVALUES
+    0: Success
+    1: Failure (invalid version, download failure, or installation failure)
+#>
+
 param (
   [switch]$DryRun = $false
 )

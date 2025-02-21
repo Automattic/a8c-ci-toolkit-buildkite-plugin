@@ -1,3 +1,49 @@
+<#
+.SYNOPSIS
+    Prepares a Windows CI agent for building and distributing Windows applications.
+
+.DESCRIPTION
+    This script configures a Windows CI agent with all necessary components and settings for
+    building and distributing Windows applications. It performs the following tasks:
+    - Enables long path behavior for file operations
+    - Disables Windows Defender for improved CI performance
+    - Configures Chocolatey package manager
+    - Enables developer mode for Linux-style symlink support
+    - Downloads and installs code signing certificates from AWS Secrets Manager
+    - Optionally installs Windows 10 SDK based on configuration
+
+.PARAMETER SkipWindows10SDKInstallation
+    If specified, skips the Windows 10 SDK installation regardless of whether
+    .windows-10-sdk-version file is present.
+
+.EXAMPLE
+    .\prepare_windows_host_for_app_distribution.ps1
+    Prepares the Windows host with all components including Windows 10 SDK if configured.
+
+.EXAMPLE
+    .\prepare_windows_host_for_app_distribution.ps1 -SkipWindows10SDKInstallation
+    Prepares the Windows host but skips Windows 10 SDK installation.
+
+.NOTES
+    Author: Automattic Inc.
+    Requirements: 
+        - Windows PowerShell 5.1
+        - AWS CLI configured with appropriate permissions
+        - Administrator privileges
+    Windows Requirements:
+        - Windows Server 2019 or later
+        - Administrator privileges: Yes
+        - AWS credentials configured for Secrets Manager access
+        - Internet connection for downloading components
+
+.OUTPUTS
+    Progress messages for each configuration step are written to the output stream.
+
+.RETURNVALUES
+    0: Success
+    1: Failure (configuration error, download failure, or installation failure)
+#>
+
 # Prepares a `windows` CI agent with all the necessary setup so it can build and distribute a windows app
 #
 #  - Enables long path behavior
