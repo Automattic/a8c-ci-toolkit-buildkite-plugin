@@ -1,6 +1,9 @@
 #!/bin/bash
 # shellcheck disable=SC2059
 
+# This script is used to craft a comment with a dependency diff and a build environment diff.
+# It's extracted from comment_with_dependency_diff to be tested in isolation.
+
 set -euo pipefail
 
 true > "$COMMENT_FILE"  # Clear the file
