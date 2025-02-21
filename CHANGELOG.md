@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- Enhance `pr_changed_files` command to support both exit codes (default) and "true"/"false" string output (via `--stdout` flag) [#151]
+_None._
 
 ### Bug Fixes
 
@@ -47,6 +47,12 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 3.12.0
+
+### New Features
+
+- Enhance `pr_changed_files` command to support both exit codes (default) and "true"/"false" string output (via `--stdout` flag) [#151]
 
 ## 3.11.0
 
