@@ -1,4 +1,4 @@
-#!/bin/bash -eu
+#!/bin/bash -u
 
 set -o pipefail
 
@@ -17,16 +17,28 @@ export BUILDKITE_PULL_REQUEST_BASE_BRANCH="base"
 # Initialize the repository
 init_test_repo "$repo_path"
 
-# [Test] No changes
-result=$(pr_changed_files)
-assert_output "false" "$result" "Should return false when no files changed"
+# [Test] No changes - exit code only
+output=$(pr_changed_files)
+result=$?
+assert_result $result 1 "$output" "" "Should return 1 when no files changed"
 
-# [Test] Single file change
+# [Test] No changes - with stdout
+output=$(pr_changed_files --stdout)
+result=$?
+assert_result $result 0 "$output" "false" "Should output 'false' and return 0 with --stdout when no files changed"
+
+# [Test] Single file change - exit code only
 echo "change" > new.txt
 git add new.txt
 git commit -m "Add new file"
 
-result=$(pr_changed_files)
-assert_output "true" "$result" "Should return true when files changed"
+output=$(pr_changed_files)
+result=$?
+assert_result $result 0 "$output" "" "Should return 0 when files changed"
+
+# [Test] Single file change - with stdout
+output=$(pr_changed_files --stdout)
+result=$?
+assert_result $result 0 "$output" "true" "Should output 'true' and return 0 with --stdout when files changed"
 
 echo "✅ Basic changes tests passed"
