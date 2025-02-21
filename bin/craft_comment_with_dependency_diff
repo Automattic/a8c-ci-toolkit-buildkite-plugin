@@ -1,5 +1,4 @@
 #!/bin/bash
-# shellcheck disable=SC2059
 
 # This script is used to craft a comment with a dependency diff and a build environment diff.
 # It's extracted from comment_with_dependency_diff to be tested in isolation.
@@ -11,23 +10,34 @@ MAX_COMMENT_SIZE=65400
 current_size=0
 
 # Templates for content formatting
-SECTION_HEADER="## %s changes\n\n"
-TLDR_TEMPLATE="<details><summary>list</summary>
+print_header() {
+    printf "## %s changes\n\n" "$1"
+}
+
+print_tldr() {
+    printf "<details><summary>list</summary>
 
 \`\`\`
 %s
 \`\`\`
 
 </details>
-"
-TREE_TEMPLATE="<details><summary>tree</summary>
+" "$1"
+}
+
+print_tree() {
+    printf "<details><summary>tree</summary>
 
 \`\`\`diff
 %s
 \`\`\`
 
-</details>"
-TREE_TOO_LARGE="\n ⚠️ %s tree is too large. [View it in Buildkite artifacts](%s#%s)\n"
+</details>" "$1"
+}
+
+print_tree_too_large() {
+    printf "\n ⚠️ %s tree is too large. [View it in Buildkite artifacts](%s#%s)\n" "$1" "$2" "$3"
+}
 
 # Calculate total size needed for TLDRs
 # This assumes that TLDRs are never too large to fit in the comment
@@ -37,7 +47,7 @@ for section in "Project dependencies" "Build environment"; do
     [[ $section == "Build environment" ]] && tldr_file="$TLDR_DIFF_BUILD_ENV_FILE"
     
     if [ -s "$tldr_file" ]; then
-        content=$(printf "$SECTION_HEADER$TLDR_TEMPLATE" "$section" "$(cat "$tldr_file")")
+        content=$(print_header "$section"; print_tldr "$(cat "$tldr_file")")
         tldr_size=$(( tldr_size + ${#content} ))
     fi
 done
@@ -59,19 +69,19 @@ for section in "Project dependencies" "Build environment"; do
     
     if [ -s "$tldr_file" ]; then
         # Print section header and TLDR
-        printf "$SECTION_HEADER" "$section" >> "$COMMENT_FILE"
-        printf "$TLDR_TEMPLATE" "$(cat "$tldr_file")" >> "$COMMENT_FILE"
+        print_header "$section" >> "$COMMENT_FILE"
+        print_tldr "$(cat "$tldr_file")" >> "$COMMENT_FILE"
         current_size=$(wc -c < "$COMMENT_FILE")
         
         # Try to add tree if it exists
         if [ -s "$tree_file" ]; then
             tree_content=$(cat "$tree_file")
-            content=$(printf "$TREE_TEMPLATE" "$tree_content")
+            content=$(print_tree "$tree_content")
             if would_content_fit ${#content}; then
                 echo -e "$content" >> "$COMMENT_FILE"
                 current_size=$(wc -c < "$COMMENT_FILE")
             else
-                printf "$TREE_TOO_LARGE" "$section" "$BUILDKITE_BUILD_URL" "$BUILDKITE_JOB_ID" >> "$COMMENT_FILE"
+                print_tree_too_large "$section" "$BUILDKITE_BUILD_URL" "$BUILDKITE_JOB_ID" >> "$COMMENT_FILE"
             fi
         fi
     fi
