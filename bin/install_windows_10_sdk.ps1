@@ -9,6 +9,18 @@ $ErrorActionPreference = "Stop"
 
 Write-Output "--- :windows: Installing Windows 10 SDK and Visual Studio Build Tools"
 
+# See list at https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022
+$allowedVersions = @(
+  "20348",
+  "19041",
+  "18362",
+  "17763",
+  "17134",
+  "16299",
+  "15063",
+  "14393"
+)
+
 $windowsSDKVersionFile = ".windows-10-sdk-version"
 if (-not (Test-Path $windowsSDKVersionFile)) {
   Write-Output "[!] No Windows 10 SDK version file found at $windowsSDKVersionFile."
@@ -20,6 +32,16 @@ $windows10SDKVersion = (Get-Content -TotalCount 1 $windowsSDKVersionFile).Trim()
 if ($windows10SDKVersion -notmatch '^\d+$') {
   Write-Output "[!] Invalid version file format."
   Write-Output "Expected an integer, got: '$windows10SDKVersion'"
+  exit 1
+}
+
+if ($allowedVersions -notcontains $windows10SDKVersion) {
+  Write-Output "[!] Invalid Windows 10 SDK version: $windows10SDKVersion"
+  Write-Output "Allowed versions are:"
+  foreach ($version in $allowedVersions) {
+    Write-Output "- $version"
+  }
+  Write-Output "More info at https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022"
   exit 1
 }
 
