@@ -1,3 +1,46 @@
+# Script: prepare_windows_host_for_app_distribution.ps1
+#
+# Description:
+#   Prepares a Windows CI agent for building and distributing Windows applications by:
+#   - Enabling long path behavior
+#   - Disabling Windows Defender
+#   - Setting up package manager
+#   - Enabling developer mode for symlinks
+#   - Downloading code signing certificate
+#   - Optionally installing Windows 10 SDK
+#
+# Usage:
+#   prepare_windows_host_for_app_distribution.ps1 [-SkipWindows10SDKInstallation]
+#
+# Options:
+#   -SkipWindows10SDKInstallation    Skip Windows 10 SDK installation regardless of version file presence
+#
+# Arguments:
+#   None
+#
+# Examples:
+#   # Full setup including SDK if version file exists
+#   prepare_windows_host_for_app_distribution.ps1
+#
+#   # Skip SDK installation
+#   prepare_windows_host_for_app_distribution.ps1 -SkipWindows10SDKInstallation
+#
+# Notes:
+#   - Requires administrator privileges
+#   - Code signing certificate is fetched from AWS SecretsManager
+#   - SDK installation depends on .windows-10-sdk-version file presence
+#
+# Returns:
+#   0 - Success
+#   1 - Error in any setup step
+#
+# Requirements:
+#   - Windows PowerShell 5.1 or later
+#   - Administrator privileges
+#   - AWS CLI configured with access to SecretsManager
+#   - Chocolatey package manager
+#   - jq command-line tool
+
 # Prepares a `windows` CI agent with all the necessary setup so it can build and distribute a windows app
 #
 #  - Enables long path behavior

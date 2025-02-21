@@ -1,3 +1,39 @@
+# Script: install_windows_10_sdk.ps1
+#
+# Description:
+#   Installs the Windows 10 SDK and Visual Studio Build Tools based on a version
+#   specified in a .windows-10-sdk-version file.
+#
+# Usage:
+#   install_windows_10_sdk.ps1 [-DryRun]
+#
+# Options:
+#   -DryRun    Only validate the version file without installing the SDK
+#
+# Arguments:
+#   None
+#
+# Examples:
+#   # Install SDK with version from .windows-10-sdk-version
+#   install_windows_10_sdk.ps1
+#
+#   # Validate version file without installing
+#   install_windows_10_sdk.ps1 -DryRun
+#
+# Notes:
+#   - Requires .windows-10-sdk-version file in current directory
+#   - Version must be one of the allowed SDK versions from Visual Studio
+#   - Installation requires admin privileges
+#
+# Returns:
+#   0 - Success
+#   1 - Error (invalid version, missing file, installation failure)
+#
+# Requirements:
+#   - Windows PowerShell 5.1 or later
+#   - Administrator privileges for installation
+#   - Internet connection for downloading VS Build Tools
+
 # Install the Windows 10 SDK and Visual Studio Build Tools.
 
 param (
