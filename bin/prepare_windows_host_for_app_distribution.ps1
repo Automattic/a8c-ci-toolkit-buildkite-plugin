@@ -8,10 +8,14 @@
 #  - Install the Windows 10 SDK if it detected a `.windows-10-sdk-version` file(2)
 #
 # (1) The certificate it installs is stored in our AWS SecretsManager storage (`windows-code-signing-certificate` secret ID)
-# (2) You can skip the Win10 install even if `.windows-10-sdk-version` file is present by using the `SKIP_WINDOWS_10_SDK_INSTALL=1` env var before calling this script
+# (2) You can skip the Windows 10 SDK installation regardless of whether `.windows-10-sdk-version` is present by calling the script with `-SkipWindows10SDKInstallation`.
 #
 # Note: In addition to calling this script, and depending on your client app, you might want to also install `npm` and the `Node.js` packages used by your client app on the agent too. For that part, you should use the `automattic/nvm` Buildkite plugin on the pipeline step's `plugins:` attribute.
 #
+
+param (
+  [switch]$SkipWindows10SDKInstallation = $false
+)
 
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
@@ -103,6 +107,11 @@ Write-Host "--- :windows: Checking whether to install Windows 10 SDK..."
 # When using Electron Forge and electron2appx, building Appx requires the Windows 10 SDK
 #
 # See https://github.com/hermit99/electron-windows-store/tree/v2.1.2?tab=readme-ov-file#usage
+
+if ($SkipWindows10SDKInstallation) {
+    Write-Host "Run with SkipWindows10SDKInstallation = true. Skipping Windows 10 SDK installation check."
+    exit 0
+}
 
 $windowsSDKVersionFile = ".windows-10-sdk-version"
 if (Test-Path $windowsSDKVersionFile) {
