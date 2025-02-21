@@ -34,8 +34,8 @@ _None._
 
 ### Breaking Changes
 
-- `prepare_windows_host_for_node.ps1` has been to `prepare_windows_host_for_app_distribution` [#144]
-- `prepare_windows_host_for_app_distribution.ps1` no longer install Node.js.
+- `prepare_windows_host_for_node.ps1` has been renamed to `prepare_windows_host_for_app_distribution.ps1` [#144]
+- `prepare_windows_host_for_app_distribution.ps1` no longer installs Node.js.
   Clients should use [`nvm-buildkite-plugin`](https://github.com/Automattic/nvm-buildkite-plugin) instead [#144]
 
 ### New Features
