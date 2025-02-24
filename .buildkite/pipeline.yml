@@ -118,3 +118,14 @@ steps:
         notify:
           - github_commit_status:
               context: "pr_changed_files Tests: Edge Cases"
+
+  - label: ":aws: verify_aws_cli_setup Test succeeds when AWS CLI setup"
+    agents:
+      queue: default
+    # We know the default queue has AWS CLI installed, so this should pass
+    command: |
+      echo "--- :microscope: Run verify_aws_cli_setup"
+      bin/verify_aws_cli_setup
+    notify:
+      - github_commit_status:
+          context: "verify_aws_cli_setup Test succeeds when AWS CLI setup"
