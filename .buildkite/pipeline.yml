@@ -129,3 +129,23 @@ steps:
     notify:
       - github_commit_status:
           context: "verify_aws_cli_setup Test succeeds when AWS CLI setup"
+
+  - label: ":aws: verify_aws_cli_setup Test fails when missing AWS"
+    agents:
+      queue: default
+    plugins:
+      # Alpine shouldn't have AWS CLI installed, so this should fail
+      - docker#v5.7.0:
+          image: "alpine:latest"
+          propagate-exit-status: false
+    command: |
+      echo "--- :microscope: Run verify_aws_cli_setup"
+      if bin/verify_aws_cli_setup; then
+        echo "Error: Script succeeded but should have failed (AWS CLI not present in container)"
+        exit 1
+      else
+        echo "Success: Script failed as expected when AWS CLI not present"
+      fi
+    notify:
+      - github_commit_status:
+          context: "verify_aws_cli_setup Test fails when missing AWS"
