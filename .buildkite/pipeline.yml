@@ -149,3 +149,24 @@ steps:
     notify:
       - github_commit_status:
           context: "verify_aws_cli_setup Test fails when missing AWS"
+
+  - label: ":aws: verify_aws_cli_setup Test fails when missing AWS credentials"
+    agents:
+      queue: default # should have AWS CLI installed and configured
+    command: |
+      echo "~~~ :hammer: Remove AWS credentials"
+      set -x
+      # Removing ~/.aws does not work and neither does clearing the AWS CLI env vars
+      aws configure set aws_access_key_id ""
+      aws configure set aws_secret_access_key ""
+      set +x
+      echo "--- :microscope: Run verify_aws_cli_setup"
+      if bin/verify_aws_cli_setup; then
+        echo "Error: Script succeeded but should have failed (AWS credentials not present)"
+        exit 1
+      else
+        echo "Success: Script failed as expected when AWS credentials not present"
+      fi
+    notify:
+      - github_commit_status:
+          context: "verify_aws_cli_setup Test fails when missing AWS credentials"
