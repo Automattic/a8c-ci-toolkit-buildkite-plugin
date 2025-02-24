@@ -119,54 +119,56 @@ steps:
           - github_commit_status:
               context: "pr_changed_files Tests: Edge Cases"
 
-  - label: ":aws: verify_aws_cli_setup Test succeeds when AWS CLI setup"
-    agents:
-      queue: default
-    # We know the default queue has AWS CLI installed, so this should pass
-    command: |
-      echo "--- :microscope: Run verify_aws_cli_setup"
-      bin/verify_aws_cli_setup
-    notify:
-      - github_commit_status:
-          context: "verify_aws_cli_setup Test succeeds when AWS CLI setup"
+  - group: ":aws: verify_aws_cli_setup Tests"
+    steps:
+      - label: ":aws: Test succeeds when AWS CLI setup"
+        agents:
+          queue: default
+        # We know the default queue has AWS CLI installed, so this should pass
+        command: |
+          echo "--- :microscope: Run verify_aws_cli_setup"
+          bin/verify_aws_cli_setup
+        notify:
+          - github_commit_status:
+              context: "verify_aws_cli_setup Test succeeds when AWS CLI setup"
 
-  - label: ":aws: verify_aws_cli_setup Test fails when missing AWS"
-    agents:
-      queue: default
-    plugins:
-      # Alpine shouldn't have AWS CLI installed, so this should fail
-      - docker#v5.7.0:
-          image: "alpine:latest"
-          propagate-exit-status: false
-    command: |
-      echo "--- :microscope: Run verify_aws_cli_setup"
-      if bin/verify_aws_cli_setup; then
-        echo "Error: Script succeeded but should have failed (AWS CLI not present in container)"
-        exit 1
-      else
-        echo "Success: Script failed as expected when AWS CLI not present"
-      fi
-    notify:
-      - github_commit_status:
-          context: "verify_aws_cli_setup Test fails when missing AWS"
+      - label: ":aws: Test fails when missing AWS"
+        agents:
+          queue: default
+        plugins:
+          # Alpine shouldn't have AWS CLI installed, so this should fail
+          - docker#v5.7.0:
+              image: "alpine:latest"
+              propagate-exit-status: false
+        command: |
+          echo "--- :microscope: Run verify_aws_cli_setup"
+          if bin/verify_aws_cli_setup; then
+            echo "Error: Script succeeded but should have failed (AWS CLI not present in container)"
+            exit 1
+          else
+            echo "Success: Script failed as expected when AWS CLI not present"
+          fi
+        notify:
+          - github_commit_status:
+              context: "verify_aws_cli_setup Test fails when missing AWS"
 
-  - label: ":aws: verify_aws_cli_setup Test fails when missing AWS credentials"
-    agents:
-      queue: default # should have AWS CLI installed and configured
-    command: |
-      echo "~~~ :hammer: Remove AWS credentials"
-      set -x
-      # Removing ~/.aws does not work and neither does clearing the AWS CLI env vars
-      aws configure set aws_access_key_id ""
-      aws configure set aws_secret_access_key ""
-      set +x
-      echo "--- :microscope: Run verify_aws_cli_setup"
-      if bin/verify_aws_cli_setup; then
-        echo "Error: Script succeeded but should have failed (AWS credentials not present)"
-        exit 1
-      else
-        echo "Success: Script failed as expected when AWS credentials not present"
-      fi
-    notify:
-      - github_commit_status:
-          context: "verify_aws_cli_setup Test fails when missing AWS credentials"
+      - label: ":aws: Test fails when missing AWS credentials"
+        agents:
+          queue: default # should have AWS CLI installed and configured
+        command: |
+          echo "~~~ :hammer: Remove AWS credentials"
+          set -x
+          # Removing ~/.aws does not work and neither does clearing the AWS CLI env vars
+          aws configure set aws_access_key_id ""
+          aws configure set aws_secret_access_key ""
+          set +x
+          echo "--- :microscope: Run verify_aws_cli_setup"
+          if bin/verify_aws_cli_setup; then
+            echo "Error: Script succeeded but should have failed (AWS credentials not present)"
+            exit 1
+          else
+            echo "Success: Script failed as expected when AWS credentials not present"
+          fi
+        notify:
+          - github_commit_status:
+              context: "verify_aws_cli_setup Test fails when missing AWS credentials"
