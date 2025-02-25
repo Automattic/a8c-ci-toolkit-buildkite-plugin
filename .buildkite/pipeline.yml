@@ -123,8 +123,8 @@ steps:
     steps:
       - label: ":aws: Test succeeds when AWS CLI setup"
         agents:
-          queue: default
-        # We know the default queue has AWS CLI installed, so this should pass
+          queue: mac
+        # We know the mac queue has AWS CLI installed, so this should pass
         command: |
           echo "--- :microscope: Run verify_aws_cli_setup"
           bin/verify_aws_cli_setup
@@ -154,7 +154,7 @@ steps:
 
       - label: ":aws: Test fails when missing AWS credentials"
         agents:
-          queue: default # should have AWS CLI installed and configured
+          queue: mac # should have AWS CLI installed and configured
         command: |
           echo "~~~ :hammer: Remove AWS credentials"
           set -x
