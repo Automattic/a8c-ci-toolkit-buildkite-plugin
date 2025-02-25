@@ -1,5 +1,15 @@
 #!/bin/bash -eu
 
+if ! "$(dirname "${BASH_SOURCE[0]}")/verify_aws_cli_setup"; then
+	echo "^^^ +++"
+	echo "AWS CLI setup check failed! Will bypass restoring the cache..."
+	# TODO: Add options parsing to configure whether to fail here or skip.
+	#
+	# Currently skipping because we know something stopped working in Linux
+	# queues with the AWS CLI and we don't want to break the build for clients.
+	exit 0
+fi
+
 CACHE_KEY=$1
 
 bytes_to_mb() {
