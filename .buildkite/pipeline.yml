@@ -158,7 +158,9 @@ steps:
         command: |
           echo "~~~ :hammer: Remove AWS credentials"
           set -x
-          # Removing ~/.aws does not work and neither does clearing the AWS CLI env vars
+          rm -rf ~/.aws
+          unset AWS_ACCESS_KEY_ID
+          unset AWS_SECRET_ACCESS_KEY
           aws configure set aws_access_key_id ""
           aws configure set aws_secret_access_key ""
           set +x
