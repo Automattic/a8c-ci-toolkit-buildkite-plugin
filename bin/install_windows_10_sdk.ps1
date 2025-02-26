@@ -1,7 +1,33 @@
+# Install the Windows 10 SDK and Visual Studio Build Tools using the value in .windows-10-sdk-version.
+#
+# The expected .windows-10-sdk-version format is a integer representing a valid SDK component id.
+# The list of valid component ids can be found at
+# https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022
+#
+# Example:
+#
+#   20348
+
+param (
+  [switch]$DryRun = $false
+)
+
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
 
-Write-Host "--- :windows: Installing Windows 10 SDK and Visual Studio Build Tools"
+Write-Output "--- :windows: Installing Windows 10 SDK and Visual Studio Build Tools"
+
+# See list at https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022
+$allowedVersions = @(
+  "20348",
+  "19041",
+  "18362",
+  "17763",
+  "17134",
+  "16299",
+  "15063",
+  "14393"
+)
 
 $windowsSDKVersionFile = ".windows-10-sdk-version"
 if (-not (Test-Path $windowsSDKVersionFile)) {
@@ -9,9 +35,30 @@ if (-not (Test-Path $windowsSDKVersionFile)) {
   exit 1
 }
 
-$windows10SDKVersion = Get-Content $windowsSDKVersionFile
+$windows10SDKVersion = (Get-Content -TotalCount 1 $windowsSDKVersionFile).Trim()
 
-Write-Host "Will attempt to set up Windows 10 ($windows10SDKVersion) SDK and Visual Studio Build Tools..."
+if ($windows10SDKVersion -notmatch '^\d+$') {
+  Write-Output "[!] Invalid version file format."
+  Write-Output "Expected an integer, got: '$windows10SDKVersion'"
+  exit 1
+}
+
+if ($allowedVersions -notcontains $windows10SDKVersion) {
+  Write-Output "[!] Invalid Windows 10 SDK version: $windows10SDKVersion"
+  Write-Output "Allowed versions are:"
+  foreach ($version in $allowedVersions) {
+    Write-Output "- $version"
+  }
+  Write-Output "More info at https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022"
+  exit 1
+}
+
+Write-Output "Will attempt to set up Windows 10 ($windows10SDKVersion) SDK and Visual Studio Build Tools..."
+
+if ($DryRun) {
+  Write-Output "Running in dry run mode, finishing here."
+  exit 0
+}
 
 # Download the Visual Studio Build Tools Bootstrapper
 Write-Output "~~~ Downloading Visual Studio Build Tools..."
@@ -26,7 +73,7 @@ If (-not (Test-Path $buildToolsPath)) {
   Write-Output "[!] Failed to download Visual Studio Build Tools"
   Exit 1
 } else {
-  Write-Output "Successfully downloaded Visual Studio Build Toosl at $buildToolsPath."
+  Write-Output "Successfully downloaded Visual Studio Build Tools at $buildToolsPath."
 }
 
 # Install the Windows SDK and other required components

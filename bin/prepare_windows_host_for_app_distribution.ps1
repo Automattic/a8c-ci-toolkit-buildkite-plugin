@@ -8,24 +8,28 @@
 #  - Install the Windows 10 SDK if it detected a `.windows-10-sdk-version` file(2)
 #
 # (1) The certificate it installs is stored in our AWS SecretsManager storage (`windows-code-signing-certificate` secret ID)
-# (2) You can skip the Win10 install even if `.windows-10-sdk-version` file is present by using the `SKIP_WINDOWS_10_SDK_INSTALL=1` env var before calling this script
+# (2) You can skip the Windows 10 SDK installation regardless of whether `.windows-10-sdk-version` is present by calling the script with `-SkipWindows10SDKInstallation`.
 #
 # Note: In addition to calling this script, and depending on your client app, you might want to also install `npm` and the `Node.js` packages used by your client app on the agent too. For that part, you should use the `automattic/nvm` Buildkite plugin on the pipeline step's `plugins:` attribute.
 #
 
+param (
+  [switch]$SkipWindows10SDKInstallation = $false
+)
+
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
 
-Write-Host "--- :windows: Setting up Windows for app distribution"
+Write-Output "--- :windows: Setting up Windows for app distribution"
 
-Write-Host "Current working directory: $PWD"
+Write-Output "Current working directory: $PWD"
 
-Write-Host "Enable long path behavior"
+Write-Output "Enable long path behavior"
 # See https://docs.microsoft.com/en-us/windows/desktop/fileio/naming-a-file#maximum-path-length-limitation
 Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1
 
 # Disable Windows Defender before starting – otherwise our performance is terrible
-Write-Host "Disable Windows Defender..."
+Write-Output "Disable Windows Defender..."
 $avPreference = @(
     @{DisableArchiveScanning = $true}
     @{DisableAutoExclusions = $true}
@@ -61,12 +65,12 @@ $avPreference | Foreach-Object {
 # https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/microsoft-defender-antivirus-compatibility?view=o365-worldwide
 $atpRegPath = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows Advanced Threat Protection'
 if (Test-Path $atpRegPath) {
-    Write-Host "Set Microsoft Defender Antivirus to passive mode"
+    Write-Output "Set Microsoft Defender Antivirus to passive mode"
     Set-ItemProperty -Path $atpRegPath -Name 'ForceDefenderPassiveMode' -Value '1' -Type 'DWORD'
 }
 
 # From https://stackoverflow.com/a/46760714
-Write-Host "--- :windows: Setting up Package Manager"
+Write-Output "--- :windows: Setting up Package Manager"
 $env:ChocolateyInstall = Convert-Path "$((Get-Command choco).Path)\..\.."
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
 
@@ -74,41 +78,46 @@ Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
 #
 # See how this build failed
 # https://buildkite.com/automattic/beeper-desktop/builds/2895#01919738-7c6e-4b82-8d1d-1c1800481740
-Write-Host "--- :windows: :linux: Enable developer mode to use symlinks"
+Write-Output "--- :windows: :linux: Enable developer mode to use symlinks"
 
 $developerMode = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
 if ($developerMode.State -eq 'Enabled') {
-    Write-Host "Developer Mode is already enabled."
+    Write-Output "Developer Mode is already enabled."
 } else {
-    Write-Host "Enabling Developer Mode..."
+    Write-Output "Enabling Developer Mode..."
     try {
       Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
     } catch {
-      Write-Host "Failed to enable Developer Mode. Continuing without it..."
+      Write-Output "Failed to enable Developer Mode. Continuing without it..."
     }
 }
 
-Write-Host "--- :lock_with_ink_pen: Download Code Signing Certificate"
+Write-Output "--- :lock_with_ink_pen: Download Code Signing Certificate"
 $certificateBinPath = "certificate.bin"
 $EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate `
   | jq -r '.SecretString' `
   | Out-File $certificateBinPath
 $certificatePfxPath = "certificate.pfx"
 certutil -decode $certificateBinPath $certificatePfxPath
-Write-Host "Code signing certificate downloaded at: $((Get-Item $certificatePfxPath).FullName)"
+Write-Output "Code signing certificate downloaded at: $((Get-Item $certificatePfxPath).FullName)"
 
-Write-Host "--- :windows: Checking whether to install Windows 10 SDK..."
+Write-Output "--- :windows: Checking whether to install Windows 10 SDK..."
 
 # When using Electron Forge and electron2appx, building Appx requires the Windows 10 SDK
 #
 # See https://github.com/hermit99/electron-windows-store/tree/v2.1.2?tab=readme-ov-file#usage
 
+if ($SkipWindows10SDKInstallation) {
+    Write-Output "Run with SkipWindows10SDKInstallation = true. Skipping Windows 10 SDK installation check."
+    exit 0
+}
+
 $windowsSDKVersionFile = ".windows-10-sdk-version"
 if (Test-Path $windowsSDKVersionFile) {
-    Write-Host "Found $windowsSDKVersionFile file, installing Windows 10 SDK..."
+    Write-Output "Found $windowsSDKVersionFile file, installing Windows 10 SDK..."
     & "$PSScriptRoot\install_windows_10_sdk.ps1"
     If ($LastExitCode -ne 0) { Exit $LastExitCode }
 } else {
-    Write-Host "No $windowsSDKVersionFile file found, skipping Windows 10 SDK installation."
+    Write-Output "No $windowsSDKVersionFile file found, skipping Windows 10 SDK installation."
 }
