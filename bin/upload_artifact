@@ -1,5 +1,11 @@
 #!/bin/bash -eu
 
+if ! "$(dirname "${BASH_SOURCE[0]}")/verify_aws_cli_setup"; then
+	echo "^^^ +++"
+	echo "AWS CLI setup check failed! Uploading the artifact would fail too."
+	exit 1
+fi
+
 # Usage
 # upload_artifact $file_path
 #
