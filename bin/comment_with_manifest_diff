@@ -1,0 +1,140 @@
+#!/bin/bash
+
+set -euo pipefail
+
+MODULE="${1:-}"
+BUILD_VARIANT="${2:-}"
+
+# This script is used in a Buildkite CI pipeline to analyze and comment on manifest changes in a
+# GitHub pull request (PR). It compares the project manifest between the
+# base branch and the head branch to identify changes caused by updates to the project.
+#
+# Usage:
+#    ./comment_with_manifest_diff <MODULE> <BUILD_VARIANT>
+#
+# Parameters:
+#    <MODULE>        : The project module whose manifest will be checked.
+#    <BUILD_VARIANT> : The build variant to inspect for manifest changes (e.g., "debug", "vanillaRelease).
+#
+# Steps:
+# 1. It generates the manifest reports for both the base and head branch.
+# 2. The script compares these reports to detect any changes in the project's manifest.
+# 3. If changes are found, the script creates a comment on the GitHub PR with the results.
+# 4. If no changes are detected, the script exits without posting any comment.
+#
+# Notes:
+# - The GitHub token must be set via the environment variable `GITHUB_TOKEN` to authenticate API requests.
+# - The comment on the PR will include a detailed list of changes.
+#
+# Example:
+#    ./comment_with_manifest_diff app release
+#
+# This will analyze the `app` module on `release` build variant and post the result to the PR.
+
+if [ -z "$MODULE" ] || [ -z "$BUILD_VARIANT" ]; then
+  echo "Not enough arguments provided. Usage: ./comment_with_manifest_diff <MODULE> <BUILD_VARIANT>"
+  exit 1
+fi
+
+if [ "${BUILDKITE_PULL_REQUEST:-false}" == "false" ]; then
+  echo "This script should only be called on pull requests. Be sure to set \`if: build.pull_request.id != null\` on the step invoking it in your Buildkite pipeline"
+  exit 2
+fi
+
+DIFF_MANIFEST_FOLDER="./build/reports/diff_manifest/${MODULE}/${BUILD_VARIANT}"
+BASE_MANIFEST_FILE="$DIFF_MANIFEST_FOLDER/base_manifest.txt"
+HEAD_MANIFEST_FILE="$DIFF_MANIFEST_FOLDER/head_manifest.txt"
+DIFF_MANIFEST_FILE="$DIFF_MANIFEST_FOLDER/diff_manifest.txt"
+
+GRADLE_TASK="${MODULE}":process"${BUILD_VARIANT^}"Manifest
+MANIFEST_PATH="${MODULE}/build/intermediates/merged_manifest/${BUILD_VARIANT}/process${BUILD_VARIANT^}MainManifest/AndroidManifest.xml"
+
+mkdir -p "$DIFF_MANIFEST_FOLDER"
+
+git config --global user.email "mobile@automattic.com"
+git config --global user.name "Android Manifest Diff Tool"
+
+echo "--> Starting Android Manifest diff check"
+BASE_BRANCH=$BUILDKITE_PULL_REQUEST_BASE_BRANCH
+echo "--> Base branch is $BASE_BRANCH"
+
+# Generate base branch manifest
+echo "--> Switching to base branch"
+git checkout "$BASE_BRANCH"
+echo "--> Generating base branch manifest"
+./gradlew "${GRADLE_TASK}"
+echo ""
+cp "$MANIFEST_PATH" "$BASE_MANIFEST_FILE"
+
+if ! git diff --quiet; then
+  echo "Changes detected. Stashing and continuing with the script"
+  git diff
+  git stash
+fi
+
+# Generate head branch manifest
+echo "--> Switching back to head branch"
+git checkout "-"
+echo "--> Generating head branch manifest"
+./gradlew "${GRADLE_TASK}"
+echo ""
+cp "$MANIFEST_PATH" "$HEAD_MANIFEST_FILE"
+
+if ! git diff --quiet; then
+  echo "Changes detected. Stashing and continuing with the script"
+  git diff
+  git stash
+fi
+
+# Generate diff
+echo "--> Generating manifest diff"
+diff -u "$BASE_MANIFEST_FILE" "$HEAD_MANIFEST_FILE" > "$DIFF_MANIFEST_FILE" || true
+
+generate_manifest_comment_body() {
+  cat <<EOF
+
+The following changes in the \`$MODULE\`'s merged \`AndroidManifest.xml\` file were detected (build variant: \`$BUILD_VARIANT\`):
+
+\`\`\`diff
+$(cat "$DIFF_MANIFEST_FILE")
+\`\`\`
+
+Go to \`$MODULE/build/intermediates/merged_manifest/$BUILD_VARIANT/process${BUILD_VARIANT^}MainManifest/AndroidManifest.xml\` and audit the file.
+
+EOF
+}
+
+if [ -n "$DIFF_MANIFEST_FILE" ]; then
+  echo "--> Commenting manifest diff to GitHub"
+
+  # Create or clear the comment body file
+  COMMENT_FILE="$DIFF_MANIFEST_FOLDER/comment_body.txt"
+  true > "$COMMENT_FILE" # 'true' used to clear the file as a no-op
+
+  append_content() {
+    local header="$1"
+    local content="$2"
+    local github_comment_max_size=65400 # GitHub constraint is 65536, but we decrease this value slightly to reserve for hidden comment_on_pr content and line breaks
+    local warning_message="Content exceeds $github_comment_max_size characters. [Navigate to Buildkite build artifacts](${BUILDKITE_BUILD_URL}#${BUILDKITE_JOB_ID}) to see details."
+
+    local current_size
+    current_size=$(wc -c < "$COMMENT_FILE")
+
+    # Calculate if there's enough space for the content and header
+    if (( current_size + ${#header} + ${#content} > github_comment_max_size - ${#header} - ${#warning_message})); then
+      printf "\n%s\n%s\n" "$header" "$warning_message" > "$COMMENT_FILE"
+      return
+    fi
+
+    printf "\n%s\n" "$header" >> "$COMMENT_FILE"
+    printf "%s\n" "$content" >> "$COMMENT_FILE"
+  }
+
+  if [ -s "$DIFF_MANIFEST_FILE" ]; then
+    append_content "## Project manifest changes for ${MODULE}" "$(generate_manifest_comment_body)"
+  fi
+
+  comment_on_pr --id "manifest-diff-${MODULE}-${BUILD_VARIANT}" --if-exist update "$COMMENT_FILE"
+else
+  comment_on_pr --id "manifest-diff-${MODULE}-${BUILD_VARIANT}" --if-exist delete
+fi
