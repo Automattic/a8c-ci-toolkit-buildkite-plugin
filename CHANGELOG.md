@@ -38,7 +38,6 @@ _None._
 
 ### New Features
 
-- Enhance `pr_changed_files` command to support both exit codes (default) and "true"/"false" string output (via `--stdout` flag) [#151]
 - Add `verify_aws_cli_setup` command to verify the AWS CLI can authenticate with AWS [#162]
 - `restore_cache` and `save_cache` use verify the AWS CLI can authenticate with AWS before running. If AWS cannot be reached, they `exit 0` to avoid failing the build that called them [#162]
 
@@ -49,6 +48,12 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 4.0.0
+
+### Breaking Changes
+
+- `pr_changed_files` command now uses exit codes by default, with stdout output requiring explicit `--stdout` flag [#151]
 
 ## 3.11.0
 
