@@ -1,6 +1,6 @@
 # Install the Windows 10 SDK and Visual Studio Build Tools using the value in .windows-10-sdk-version.
 #
-# The expected .windows-10-sdk-version format is a integer representing a valid SDK component id.
+# The expected .windows-10-sdk-version format is an integer representing a valid SDK component id.
 # The list of valid component ids can be found at
 # https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022
 #
