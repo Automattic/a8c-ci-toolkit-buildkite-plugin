@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- `AndroidManifest`: Merged Manifest Diff [#164]
 
 ### Bug Fixes
 
