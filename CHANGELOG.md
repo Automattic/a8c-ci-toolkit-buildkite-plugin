@@ -52,6 +52,12 @@ _None._
 
 _None._
 
+## 4.0.0
+
+### Breaking Changes
+
+- `pr_changed_files` command now uses exit codes by default, with stdout output requiring explicit `--stdout` flag [#151]
+
 ## 3.11.0
 
 ### New Features
