@@ -31,42 +31,42 @@ Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name
 # Disable Windows Defender before starting – otherwise our performance is terrible
 Write-Output "Disable Windows Defender..."
 $avPreference = @(
-    @{DisableArchiveScanning = $true}
-    @{DisableAutoExclusions = $true}
-    @{DisableBehaviorMonitoring = $true}
-    @{DisableBlockAtFirstSeen = $true}
-    @{DisableCatchupFullScan = $true}
-    @{DisableCatchupQuickScan = $true}
-    @{DisableIntrusionPreventionSystem = $true}
-    @{DisableIOAVProtection = $true}
-    @{DisablePrivacyMode = $true}
-    @{DisableScanningNetworkFiles = $true}
-    @{DisableScriptScanning = $true}
-    @{MAPSReporting = 0}
-    @{PUAProtection = 0}
-    @{SignatureDisableUpdateOnStartupWithoutEngine = $true}
-    @{SubmitSamplesConsent = 2}
-    @{ScanAvgCPULoadFactor = 5; ExclusionPath = @("D:\", "C:\")}
-    @{DisableRealtimeMonitoring = $true}
-    @{ScanScheduleDay = 8}
+  @{DisableArchiveScanning = $true}
+  @{DisableAutoExclusions = $true}
+  @{DisableBehaviorMonitoring = $true}
+  @{DisableBlockAtFirstSeen = $true}
+  @{DisableCatchupFullScan = $true}
+  @{DisableCatchupQuickScan = $true}
+  @{DisableIntrusionPreventionSystem = $true}
+  @{DisableIOAVProtection = $true}
+  @{DisablePrivacyMode = $true}
+  @{DisableScanningNetworkFiles = $true}
+  @{DisableScriptScanning = $true}
+  @{MAPSReporting = 0}
+  @{PUAProtection = 0}
+  @{SignatureDisableUpdateOnStartupWithoutEngine = $true}
+  @{SubmitSamplesConsent = 2}
+  @{ScanAvgCPULoadFactor = 5; ExclusionPath = @("D:\", "C:\")}
+  @{DisableRealtimeMonitoring = $true}
+  @{ScanScheduleDay = 8}
 )
 
 $avPreference += @(
-    @{EnableControlledFolderAccess = "Disable"}
-    @{EnableNetworkProtection = "Disabled"}
+  @{EnableControlledFolderAccess = "Disable"}
+  @{EnableNetworkProtection = "Disabled"}
 )
 
 $avPreference | Foreach-Object {
-    $avParams = $_
-    Set-MpPreference @avParams
+  $avParams = $_
+  Set-MpPreference @avParams
 }
 
 # https://github.com/actions/runner-images/issues/4277
 # https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/microsoft-defender-antivirus-compatibility?view=o365-worldwide
 $atpRegPath = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows Advanced Threat Protection'
 if (Test-Path $atpRegPath) {
-    Write-Output "Set Microsoft Defender Antivirus to passive mode"
-    Set-ItemProperty -Path $atpRegPath -Name 'ForceDefenderPassiveMode' -Value '1' -Type 'DWORD'
+  Write-Output "Set Microsoft Defender Antivirus to passive mode"
+  Set-ItemProperty -Path $atpRegPath -Name 'ForceDefenderPassiveMode' -Value '1' -Type 'DWORD'
 }
 
 # From https://stackoverflow.com/a/46760714
@@ -83,14 +83,14 @@ Write-Output "--- :windows: :linux: Enable developer mode to use symlinks"
 $developerMode = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
 if ($developerMode.State -eq 'Enabled') {
-    Write-Output "Developer Mode is already enabled."
+  Write-Output "Developer Mode is already enabled."
 } else {
-    Write-Output "Enabling Developer Mode..."
-    try {
-      Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
-    } catch {
-      Write-Output "Failed to enable Developer Mode. Continuing without it..."
-    }
+  Write-Output "Enabling Developer Mode..."
+  try {
+    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
+  } catch {
+    Write-Output "Failed to enable Developer Mode. Continuing without it..."
+  }
 }
 
 Write-Output "--- :lock_with_ink_pen: Download Code Signing Certificate"
@@ -109,15 +109,15 @@ Write-Output "--- :windows: Checking whether to install Windows 10 SDK..."
 # See https://github.com/hermit99/electron-windows-store/tree/v2.1.2?tab=readme-ov-file#usage
 
 if ($SkipWindows10SDKInstallation) {
-    Write-Output "Run with SkipWindows10SDKInstallation = true. Skipping Windows 10 SDK installation check."
-    exit 0
+  Write-Output "Run with SkipWindows10SDKInstallation = true. Skipping Windows 10 SDK installation check."
+  exit 0
 }
 
 $windowsSDKVersionFile = ".windows-10-sdk-version"
 if (Test-Path $windowsSDKVersionFile) {
-    Write-Output "Found $windowsSDKVersionFile file, installing Windows 10 SDK..."
-    & "$PSScriptRoot\install_windows_10_sdk.ps1"
-    If ($LastExitCode -ne 0) { Exit $LastExitCode }
+  Write-Output "Found $windowsSDKVersionFile file, installing Windows 10 SDK..."
+  & "$PSScriptRoot\install_windows_10_sdk.ps1"
+  If ($LastExitCode -ne 0) { Exit $LastExitCode }
 } else {
-    Write-Output "No $windowsSDKVersionFile file found, skipping Windows 10 SDK installation."
+  Write-Output "No $windowsSDKVersionFile file found, skipping Windows 10 SDK installation."
 }
