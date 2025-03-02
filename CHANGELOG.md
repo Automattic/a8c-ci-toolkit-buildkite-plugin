@@ -34,6 +34,24 @@ _None._
 
 ### Breaking Changes
 
+_None._
+
+### New Features
+
+_None._
+
+### Bug Fixes
+
+_None._
+
+### Internal Changes
+
+_None._
+
+## 5.0.0
+
+### Breaking Changes
+
 - `prepare_windows_host_for_node.ps1` has been renamed to `prepare_windows_host_for_app_distribution.ps1` [#144]
 - `prepare_windows_host_for_app_distribution.ps1` no longer installs Node.js.
   Clients should use [`nvm-buildkite-plugin`](https://github.com/Automattic/nvm-buildkite-plugin) instead [#144]
@@ -43,14 +61,6 @@ _None._
 - Added new command to install Windows 10 SDK on Windows CI machines, `install_windows_10_sdk.ps1` [#144]
 - `prepare_windows_host_for_app_distribution.ps1` automatically installs the Windows 10 SDK if version file is found [#144]
 - Added new command to run `refreshenv` on Windows preserving the `PATH`, `path_aware_refreshenv.ps1` [#144]
-
-### Bug Fixes
-
-_None._
-
-### Internal Changes
-
-_None._
 
 ## 4.0.0
 
