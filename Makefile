@@ -6,7 +6,7 @@ default: lint test
 lint: buildkite-plugin-lint rubocop shellcheck
 test: buildkite-plugin-test rspec
 
-docker_run := docker run -t --rm -v "${PWD}"/:/plugin:ro -w /plugin
+docker_run := docker run -t --rm -v "${PWD}"/:/plugin -w /plugin
 
 buildkite-plugin-lint:
 	@echo ~~~ 🕵️ Plugin Linter
