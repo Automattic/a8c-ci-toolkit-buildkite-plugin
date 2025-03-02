@@ -19,7 +19,7 @@ shellcheck:
 rubocop:
 	@echo ~~~ 🕵️ Rubocop
 	$(docker_run) ruby:$(RUBY_VERSION) /bin/bash -c \
-	  "gem install --silent rubocop -v 1.62.1 && rubocop -A tests/test_that_all_files_are_executable.rb"
+	  "bundle install && bundle exec rubocop -A tests/test_that_all_files_are_executable.rb"
 
 buildkite-plugin-test:
 	@echo ~~~ 🔬 Plugin Tester
