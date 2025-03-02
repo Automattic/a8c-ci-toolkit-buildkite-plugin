@@ -8,7 +8,7 @@ param (
 $emojiGreenCheck = "$([char]0x2705)"
 $emojiRedCross = "$([char]0x274C)"
 
-Write-Output "Running test-install-windows-10-sdk.ps1 with ExpectedExitCode=$ExpectedExitCode and ExpectedErrorKeyphrase=$ExpectedErrorKeyphrase"
+Write-Output "Running $($MyInvocation.MyCommand.Name) with ExpectedExitCode=$ExpectedExitCode and ExpectedErrorKeyphrase=$ExpectedErrorKeyphrase"
 
 if (($ExpectedExitCode -eq 0) -and ($ExpectedErrorKeyphrase -ne "")) {
   Write-Output "$emojiRedCross Expected call to succeed (expected error code = 0), but given an error keyphrase to check."
