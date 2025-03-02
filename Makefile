@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := default
 
-RUBY_VERSION := 3.3.4
+RUBY_VERSION := 3.2.2
 
 default: lint test
 lint: buildkite-plugin-lint rubocop shellcheck
