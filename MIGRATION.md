@@ -1,5 +1,10 @@
 # Migration Instructions for Major Releases
 
+## From 3.0.0 to 4.0.0
+
+* In 4.0.0, the `pr_changed_files` command uses exit codes by default.
+  To flag to replicate the previous behavior with stdout output, use the `--stdout`.
+
 ## From 2.0.0 to 3.0.0
 
 * The `nvm_install` utility has been removed in 3.0.0. Here are the detailed migration steps:
