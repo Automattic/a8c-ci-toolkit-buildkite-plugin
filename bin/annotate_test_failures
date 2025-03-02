@@ -15,7 +15,7 @@ require 'optparse'
 # Parse arguments
 ###################
 slack_channel = nil
-slack_webhook = ENV['SLACK_WEBHOOK'] # default value inferred from env var if not provided explicitly
+slack_webhook = ENV.fetch('SLACK_WEBHOOK', nil) # default value inferred from env var if not provided explicitly
 args = OptionParser.new do |opts|
   opts.banner = <<~HELP
     Usage: annotate_test_failures [junit-report-file-path] [--slack CHANNEL] [--slack-webhook URL]
@@ -23,8 +23,13 @@ args = OptionParser.new do |opts|
     Annotates the Buildkite build with a summary of failed and flaky tests based on a JUnit report file (defaults to using `build/results/report.junit`).
     Optionally also posts the same info to a Slack channel.
   HELP
-  opts.on('--slack CHANNEL_NAME', 'The name of the Slack channel to post the failure summary to') { |v| slack_channel = "##{v.delete_prefix('#')}" }
-  opts.on('--slack-webhook URL', 'The Slack Webhook URL to use if --slack is used. Defaults to the value of the `SLACK_WEBHOOK` env var') { |v| slack_webhook = v }
+  opts.on('--slack CHANNEL_NAME', 'The name of the Slack channel to post the failure summary to') do |v|
+    slack_channel = "##{v.delete_prefix('#')}"
+  end
+  opts.on('--slack-webhook URL',
+          'The Slack Webhook URL to use if --slack is used. Defaults to the value of the `SLACK_WEBHOOK` env var') do |v|
+    slack_webhook = v
+  end
   opts.on_tail('-h', '--help', 'Show this help message') do
     puts opts
     exit
@@ -120,7 +125,12 @@ end
 # Given a list of failures for a given step and state, update the corresponding annotation
 #
 def update_annotation(title, list, style, state)
-  ctx_components = ['test-summary', ENV.fetch('BUILDKITE_STEP_ID', title), ENV.fetch('BUILDKITE_PARALLEL_JOB', nil), state]
+  ctx_components = [
+    'test-summary',
+    ENV.fetch('BUILDKITE_STEP_ID', title),
+    ENV.fetch('BUILDKITE_PARALLEL_JOB', nil),
+    state
+  ]
   annotation_context = ctx_components.compact.join('-').downcase.gsub(/\W/, '-')
   if list.empty?
     puts "No test #{state}. Removing any previous `#{annotation_context}` Buildkite annotation if any.\n\n"
@@ -128,7 +138,7 @@ def update_annotation(title, list, style, state)
   else
     tests_count = list.map(&:key).uniq.count # Count the number of tests that failed, even if some tests might have multiple assertion failures
     puts "#{tests_count} test(s) #{state} (#{list.count} distinct assertion failures in total). Reporting them as a `#{annotation_context}` Buildkite #{style} annotation.\n\n"
-    markdown = "\#\#\#\# #{title}: #{tests_count} tests #{state} (#{list.count} distinct assertion failure(s) in total)\n\n" + list.map(&:to_s).join("\n")
+    markdown = "#### #{title}: #{tests_count} tests #{state} (#{list.count} distinct assertion failure(s) in total)\n\n" + list.map(&:to_s).join("\n")
     puts markdown
     system('buildkite-agent', 'annotate', markdown, '--style', style, '--context', annotation_context)
   end
@@ -142,36 +152,36 @@ def send_slack_notification(slack_webhook, slack_channel, title, list)
   test_text = assertion_failures_count == 1 ? 'Test' : 'Tests'
 
   slack_message_payload = {
-    "channel": slack_channel,
-    "username": "#{ENV['BUILDKITE_PIPELINE_NAME']} Tests Failures",
-    "icon_emoji": ':fire:',
-    "blocks": [
+    channel: slack_channel,
+    username: "#{ENV.fetch('BUILDKITE_PIPELINE_NAME', nil)} Tests Failures",
+    icon_emoji: ':fire:',
+    blocks: [
       {
-        "type": 'section',
-        "text": {
-          "type": 'mrkdwn',
-          "text": ":warning: *#{assertion_failures_count} #{test_text} Failed in #{ENV['BUILDKITE_PIPELINE_NAME']} - #{title}*"
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: ":warning: *#{assertion_failures_count} #{test_text} Failed in #{ENV.fetch('BUILDKITE_PIPELINE_NAME', nil)} - #{title}*"
         },
-        "accessory": {
-          "type": 'button',
-          "text": {
-            "type": 'plain_text',
-            "text": 'Build',
-            "emoji": true
+        accessory: {
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: 'Build',
+            emoji: true
           },
-          "value": 'build',
-          "url": "#{ENV['BUILDKITE_BUILD_URL']}##{ENV['BUILDKITE_JOB_ID']}",
-          "action_id": 'button-action'
+          value: 'build',
+          url: "#{ENV.fetch('BUILDKITE_BUILD_URL', nil)}##{ENV.fetch('BUILDKITE_JOB_ID', nil)}",
+          action_id: 'button-action'
         }
       },
       {
-        "type": 'divider'
+        type: 'divider'
       },
       {
-        "type": 'section',
-        "text": {
-          "type": 'mrkdwn',
-          "text": "*Failing #{test_text}:*\n#{failing_tests.join("\n")}"
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: "*Failing #{test_text}:*\n#{failing_tests.join("\n")}"
         }
       }
     ]

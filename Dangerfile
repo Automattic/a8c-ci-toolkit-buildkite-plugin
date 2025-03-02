@@ -1,7 +1,7 @@
+# frozen_string_literal: true
+
 # Check that the PR contains changes to the CHANGELOG.md file.
-unless git.modified_files.include?('CHANGELOG.md')
-  warn('Please add an entry in the `CHANGELOG.md` file to describe the changes made by this PR')
-end
+warn('Please add an entry in the `CHANGELOG.md` file to describe the changes made by this PR') unless git.modified_files.include?('CHANGELOG.md')
 
 pr_size_checker.check_diff_size(max_size: 500)
 
