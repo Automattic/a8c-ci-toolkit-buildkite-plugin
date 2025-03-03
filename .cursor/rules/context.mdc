@@ -1,0 +1,11 @@
+---
+description: Provide context to the agent about this repository and how its files are used
+globs: 
+---
+# Context
+
+- You are a senior software engineer working at Automattic, and you are part of the Apps Infra team, responsible for our CI infrastructure, including providing tools and scripts to run on our CI agents.
+- You are responsible for maintaining and improving the scripts in this repository.
+- Our CI runs on Buildkite infrastructure, using a mix of self-hosted agents (MacMinis in our DataCenter) and Linux or Windows EC2 instances on AWS.
+- This repository contains a collection of bash and PowerShell scripts that are used on our CI agents to help build native iOS and Mac apps, Android apps, and cross-platform Electron apps for desktop environments.
+- Those scripts are made available in our CI agents via the Buildkite plugin system. The scripts in the `bin/` directory are available in the `$PATH` of all our CI jobs that use `a8c-ci-toolkit` in their pipeline steps' `plugins:` attribute.

@@ -1,0 +1,141 @@
+---
+description: Standards and Rules to follow when editing PowerShell scripts in @bin/
+globs: *.ps1
+---
+# PowerShell Script Documentation and Standards
+
+## PowerShell Script Standards
+
+For all PowerShell scripts:
+- Ensure compatibility with Windows PowerShell 5.1 (default on Windows Server)
+- Follow `PSScriptAnalyzer` recommendations
+- Use proper error handling and input validation
+- Use UTF-8 encoding without BOM for script files
+- Document Windows-specific requirements and dependencies
+
+## Best Practices
+
+For all PowerShell scripts:
+- Use `$ErrorActionPreference = "Stop"` at the beginning of scripts
+- Use `Set-StrictMode -Version Latest` for strict variable and function checking
+- Always use full cmdlet names (avoid aliases like `ls`, use `Get-ChildItem` instead)
+- Use proper verb-noun naming convention for functions
+- Quote all variable expansions in strings
+- Use `[CmdletBinding()]` for advanced functions
+- Use parameter validation attributes
+- Include proper error handling with try/catch blocks
+- Use approved PowerShell verbs (Get-Verb)
+- End script files with a newline
+- Use proper PowerShell case conventions:
+  - PascalCase for functions, cmdlets, and parameters
+  - camelCase for variables
+  - UPPERCASE for constants
+- Check for and require Administrator privileges when needed using:
+
+```powershell
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
+  throw "This script requires Administrator privileges"
+}
+```
+
+## Documentation Requirements
+
+When editing or creating PowerShell scripts in `/bin`:
+- Every script must have comprehensive comment-based help
+- Documentation must include: synopsis, description, parameters, examples
+- For complex logic, provide detailed examples of different use cases
+- Use backticks (`) around command names, executables, and technical terms in documentation
+- Document all return values and terminating conditions
+- Keep documentation up to date with any changes
+- Clearly document Windows version requirements or limitations
+- Document required Windows features or roles
+
+## Documentation Template
+
+```powershell
+<#
+.SYNOPSIS
+    Brief description of what the script does.
+
+.DESCRIPTION
+    Detailed description of the script's purpose and functionality.
+
+.PARAMETER ParameterName
+    Description of each parameter.
+
+.EXAMPLE
+    Example-1
+    Detailed description of the example.
+
+.NOTES
+    Author: [Author name]
+    Last Edit: [Date]
+    Version 1.0 - Initial release
+    Requirements: Windows PowerShell 5.1
+    Windows Requirements:
+        - Windows Server 2019 or later
+        - Required Windows Features: [list features]
+        - Required Windows Roles: [list roles]
+        - Administrator privileges: [Yes/No]
+
+.OUTPUTS
+    Description of the script's output.
+
+.RETURNVALUES
+    Description of possible return values and their meanings.
+#>
+```
+
+## Windows-Specific Best Practices
+
+### Registry Operations
+- Always use try/catch blocks when modifying registry
+- Use proper registry paths (HKLM:\ instead of HKEY_LOCAL_MACHINE)
+- Check registry key existence before operations
+- Document any registry modifications in script header
+
+### Windows Services
+- Use proper error handling for service operations
+- Check service status before operations
+- Handle service dependencies
+- Document required service account privileges
+
+### File System Operations
+- Use proper path handling for Windows paths
+- Handle long path limitations appropriately
+- Use proper file system permissions checks
+- Handle file locks and sharing violations
+
+### Windows Features and Roles
+- Document required Windows features
+- Check feature presence before operations
+- Handle feature installation failures
+- Document minimum Windows version requirements
+
+### Required PowerShell Modules
+
+For any PowerShell script that needs additional modules:
+- Document required modules in the script's help section
+- Use `#Requires -Modules` statements at the start of the script
+- Include minimum version requirements if specific versions are needed
+- Document any Windows-specific module dependencies
+
+## Script Validation
+
+Before committing PowerShell scripts, ensure:
+- PSScriptAnalyzer passes with no warnings
+- Comment-based help is complete
+- Windows requirements are documented
+- All functions have proper error handling
+- Variables are properly scoped
+- Parameters are properly validated
+- Administrator requirements are documented and checked if needed
+
+## PowerShell Compatibility
+
+For all PowerShell scripts, avoid using:
+- PowerShell 7.x exclusive features
+- Deprecated cmdlets and parameters
+- Write-Host (use Write-Output or Write-Information instead)
+- Positional parameters (always use named parameters)
+- Global variables without explicit scope declaration
