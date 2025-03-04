@@ -43,19 +43,20 @@ if [ "${BUILDKITE_PULL_REQUEST:-false}" == "false" ]; then
   exit 2
 fi
 
-DIFF_DEPENDENCIES_FOLDER="./build/reports/diff"
+export DIFF_DEPENDENCIES_FOLDER="./build/reports/diff"
+export COMMENT_FILE="$DIFF_DEPENDENCIES_FOLDER/comment_body.txt"
 BASE_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_dependencies.txt"
 HEAD_BRANCH_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/head_branch_dependencies.txt"
 BASE_BRANCH_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/base_branch_build_env.txt"
 HEAD_BRANCH_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/head_branch_build_env.txt"
-DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_dependencies.txt"
-DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_build_env.txt"
+export DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_dependencies.txt"
+export DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/diff_build_env.txt"
 
 DEPENDENCY_TREE_VERSION="1.2.1"
 DEPENDENCY_TREE_CHECKSUM="39c50f22cd4211a3e52afec43120b7fdf90f9890"
 
-TLDR_DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_dependencies.txt"
-TLDR_DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_build_env.txt"
+export TLDR_DIFF_DEPENDENCIES_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_dependencies.txt"
+export TLDR_DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_build_env.txt"
 
 git config --global user.email "mobile@automattic.com"
 git config --global user.name "Dependency Tree Diff Tool"
@@ -121,90 +122,15 @@ java -jar "$JAR_DIR/dependency-diff-tldr-0.0.6.jar" $BASE_BRANCH_DEPENDENCIES_FI
 ./dependency-tree-diff.jar $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$DIFF_BUILD_ENV_FILE
 java -jar "$JAR_DIR/dependency-diff-tldr-0.0.6.jar" $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$TLDR_DIFF_BUILD_ENV_FILE
 
-generate_project_dependencies_comment_body() {
-  cat <<EOF
+echo "--> Preparing comment for GitHub"
 
-The following changes in project dependencies were detected (configuration \`$CONFIGURATION\`):
-
-<details><summary>list</summary>
-
-\`\`\`
-$(cat "$TLDR_DIFF_DEPENDENCIES_FILE")
-\`\`\`
-
-</details>
-
-<details><summary>tree</summary>
-
-\`\`\`diff
-$(cat "$DIFF_DEPENDENCIES_FILE")
-\`\`\`
-
-</details>
-
-
-EOF
-}
-
-generate_build_dependencies_comment_body() {
-  cat <<EOF
-
-The following changes in the build classpath were detected:
-
-<details><summary>list</summary>
-
-\`\`\`
-$(cat "$TLDR_DIFF_BUILD_ENV_FILE")
-\`\`\`
-
-</details>
-
-<details><summary>tree</summary>
-
-\`\`\`diff
-$(cat "$DIFF_BUILD_ENV_FILE")
-\`\`\`
-
-</details>
-
-EOF
-}
-
-if [ -n "$DIFF_DEPENDENCIES_FILE" ] || [ -n "$DIFF_BUILD_ENV_FILE" ]; then
-  echo "--> Commenting result to GitHub"
-
-  # Create or clear the comment body file
-  COMMENT_FILE="$DIFF_DEPENDENCIES_FOLDER/comment_body.txt"
-  true > $COMMENT_FILE  # 'true' used to clear the file as a no-op
-
-  append_content() {
-    local header="$1"
-    local content="$2"
-    local github_comment_max_size=65400 # GitHub constraint is 65536, but we decrease this value slightly to reserve for hidden comment_on_pr content and line breaks
-    local warning_message="Content exceeds $github_comment_max_size characters. [Navigate to Buildkite build artifacts](${BUILDKITE_BUILD_URL}#${BUILDKITE_JOB_ID}) to see details."
-
-    local current_size
-    current_size=$(wc -c < "$COMMENT_FILE")
-
-    # Calculate if there's enough space for the content and header
-    if (( current_size + ${#header} + ${#content} > github_comment_max_size - ${#header} - ${#warning_message})); then
-      printf "\n%s\n%s\n" "$header" "$warning_message" > $COMMENT_FILE
-      return
-    fi
-
-    printf "\n%s\n" "$header" >> $COMMENT_FILE
-    printf "%s\n" "$content" >> $COMMENT_FILE
-  }
-
-  if [ -s "$DIFF_DEPENDENCIES_FILE" ]; then
-    append_content "## Project dependencies changes" "$(generate_project_dependencies_comment_body)"
-  fi
-
-  if [ -s "$DIFF_BUILD_ENV_FILE" ]; then
-    append_content "## Build environment changes" "$(generate_build_dependencies_comment_body)"
-  fi
-
-  comment_on_pr --id "dependency-diff" --if-exist update "$COMMENT_FILE"
-else
-  comment_on_pr --id "dependency-diff" --if-exist delete
+# Check if any dependency changes were found
+if [ ! -s "$TLDR_DIFF_DEPENDENCIES_FILE" ] && [ ! -s "$TLDR_DIFF_BUILD_ENV_FILE" ]; then
+    echo "No dependency changes found"
+    comment_on_pr --id "dependency-diff" --if-exist delete
+    exit 0
 fi
+
+craft_comment_with_dependency_diff
+
+comment_on_pr --id "dependency-diff" --if-exist update "$COMMENT_FILE"

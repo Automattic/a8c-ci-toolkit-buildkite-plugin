@@ -1,0 +1,88 @@
+#!/bin/bash
+
+# This script is used to craft a comment with a dependency diff and a build environment diff.
+# It's extracted from comment_with_dependency_diff to be tested in isolation.
+
+set -euo pipefail
+
+true > "$COMMENT_FILE"  # Clear the file
+MAX_COMMENT_SIZE=65400
+current_size=0
+
+# Templates for content formatting
+print_header() {
+    printf "## %s changes\n\n" "$1"
+}
+
+print_tldr() {
+    printf "<details><summary>list</summary>
+
+\`\`\`
+%s
+\`\`\`
+
+</details>
+" "$1"
+}
+
+print_tree() {
+    printf "<details><summary>tree</summary>
+
+\`\`\`diff
+%s
+\`\`\`
+
+</details>" "$1"
+}
+
+print_tree_too_large() {
+    printf "\n ⚠️ %s tree is too large. [View it in Buildkite artifacts](%s#%s)\n" "$1" "$2" "$3"
+}
+
+# Calculate total size needed for TLDRs
+# This assumes that TLDRs are never too large to fit in the comment
+tldr_size=0
+for section in "Project dependencies" "Build environment"; do
+    tldr_file="$TLDR_DIFF_DEPENDENCIES_FILE"
+    [[ $section == "Build environment" ]] && tldr_file="$TLDR_DIFF_BUILD_ENV_FILE"
+    
+    if [ -s "$tldr_file" ]; then
+        content=$(print_header "$section"; print_tldr "$(cat "$tldr_file")")
+        tldr_size=$(( tldr_size + ${#content} ))
+    fi
+done
+
+# Function to check if content would fit
+would_content_fit() {
+    if (( current_size + $1 < MAX_COMMENT_SIZE )); then
+        return 0  # Success/true - content will fit
+    else
+        return 1  # Failure/false - content won't fit
+    fi
+}
+
+# Print content in order
+for section in "Project dependencies" "Build environment"; do
+    tldr_file="$TLDR_DIFF_DEPENDENCIES_FILE"
+    tree_file="$DIFF_DEPENDENCIES_FILE"
+    [[ $section == "Build environment" ]] && tldr_file="$TLDR_DIFF_BUILD_ENV_FILE" && tree_file="$DIFF_BUILD_ENV_FILE"
+    
+    if [ -s "$tldr_file" ]; then
+        # Print section header and TLDR
+        print_header "$section" >> "$COMMENT_FILE"
+        print_tldr "$(cat "$tldr_file")" >> "$COMMENT_FILE"
+        current_size=$(wc -c < "$COMMENT_FILE")
+        
+        # Try to add tree if it exists
+        if [ -s "$tree_file" ]; then
+            tree_content=$(cat "$tree_file")
+            content=$(print_tree "$tree_content")
+            if would_content_fit ${#content}; then
+                echo -e "$content" >> "$COMMENT_FILE"
+                current_size=$(wc -c < "$COMMENT_FILE")
+            else
+                print_tree_too_large "$section" "$BUILDKITE_BUILD_URL" "$BUILDKITE_JOB_ID" >> "$COMMENT_FILE"
+            fi
+        fi
+    fi
+done
