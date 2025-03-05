@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- `AndroidManifest`: Merged Manifest Diff [#164]
+_None._
 
 ### Bug Fixes
 
@@ -47,6 +47,12 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 5.1.0
+
+### New Features
+
+- `AndroidManifest`: Merged Manifest Diff [#164]
 
 ## 5.0.0
 
