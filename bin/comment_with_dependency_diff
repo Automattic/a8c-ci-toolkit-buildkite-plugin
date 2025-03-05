@@ -126,12 +126,16 @@ modify_tldr_diff_file() {
 ./dependency-tree-diff.jar $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$DIFF_DEPENDENCIES_FILE
 java -jar "$JAR_DIR/dependency-diff-tldr-0.0.6.jar" $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$TLDR_DIFF_DEPENDENCIES_FILE
 
-modify_tldr_diff_file "$TLDR_DIFF_DEPENDENCIES_FILE"
+if [[ -f "$TLDR_DIFF_DEPENDENCIES_FILE" ]]; then
+  modify_tldr_diff_file "$TLDR_DIFF_DEPENDENCIES_FILE"
+fi
 
 ./dependency-tree-diff.jar $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$DIFF_BUILD_ENV_FILE
 java -jar "$JAR_DIR/dependency-diff-tldr-0.0.6.jar" $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$TLDR_DIFF_BUILD_ENV_FILE
 
-modify_tldr_diff_file "$TLDR_DIFF_BUILD_ENV_FILE"
+if [[ -f "$TLDR_DIFF_BUILD_ENV_FILE" ]]; then
+  modify_tldr_diff_file "$TLDR_DIFF_BUILD_ENV_FILE"
+fi
 
 echo "--> Preparing comment for GitHub"
 
