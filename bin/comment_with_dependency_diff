@@ -112,6 +112,13 @@ JAR_DIR="$REPO_ROOT/jar"
 
 echo "--> Running dependency-tree-diff.jar"
 
+modify_tldr_diff_file() {
+    local file="$1"
+    sed -i '' -e 's/^New Dependencies$/+ New Dependencies/' \
+              -e 's/^Upgraded Dependencies$/! Upgraded Dependencies/' \
+              -e 's/^Removed Dependencies$/- Removed Dependencies/' "$file"
+}
+
 # This script uses the 'dependency-diff-tldr' tool to summarize dependency differences.
 # Source code: https://github.com/careem/dependency-diff-tldr
 # Version: v0.0.6 (commit: 953a153)
@@ -119,8 +126,12 @@ echo "--> Running dependency-tree-diff.jar"
 ./dependency-tree-diff.jar $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$DIFF_DEPENDENCIES_FILE
 java -jar "$JAR_DIR/dependency-diff-tldr-0.0.6.jar" $BASE_BRANCH_DEPENDENCIES_FILE $HEAD_BRANCH_DEPENDENCIES_FILE >$TLDR_DIFF_DEPENDENCIES_FILE
 
+modify_tldr_diff_file "$TLDR_DIFF_DEPENDENCIES_FILE"
+
 ./dependency-tree-diff.jar $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$DIFF_BUILD_ENV_FILE
 java -jar "$JAR_DIR/dependency-diff-tldr-0.0.6.jar" $BASE_BRANCH_BUILD_ENV_FILE $HEAD_BRANCH_BUILD_ENV_FILE >$TLDR_DIFF_BUILD_ENV_FILE
+
+modify_tldr_diff_file "$TLDR_DIFF_BUILD_ENV_FILE"
 
 echo "--> Preparing comment for GitHub"
 
