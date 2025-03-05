@@ -11,7 +11,7 @@ current_size=0
 
 # Templates for content formatting
 print_header() {
-    printf "## %s changes\n\n" "$1"
+    printf "\n## %s changes\n\n" "$1"
 }
 
 print_tldr() {
