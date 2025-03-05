@@ -99,7 +99,7 @@ The following changes in the \`$MODULE\`'s merged \`AndroidManifest.xml\` file w
 $(cat "$DIFF_MANIFEST_FILE")
 \`\`\`
 
-Go to \`$MODULE/build/intermediates/merged_manifest/$BUILD_VARIANT/process${BUILD_VARIANT^}MainManifest/AndroidManifest.xml\` and audit the file.
+Go to https://buildkite.com/$BUILDKITE_PROJECT_SLUG/builds/$BUILDKITE_BUILD_NUMBER/canvas?sid=$BUILDKITE_STEP_ID, click on the \`Artifacts\` tab and audit the files.
 
 EOF
 }
