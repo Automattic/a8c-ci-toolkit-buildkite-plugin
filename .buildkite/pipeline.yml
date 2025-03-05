@@ -24,7 +24,7 @@ steps:
     agents:
       queue: default
 
-  - label: ":radioactive_sign: Danger - PR Check"
+  - label: ":danger: Danger - PR Check"
     command: danger
     key: danger
     if: build.pull_request.id != null
