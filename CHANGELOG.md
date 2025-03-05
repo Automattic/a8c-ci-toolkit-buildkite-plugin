@@ -52,7 +52,7 @@ _None._
 
 ### New Features
 
-- `AndroidManifest`: Merged Manifest Diff [#164]
+- Add a script for commenting manifest diff on PRs in Android projects [#164]
 
 ## 5.0.0
 
