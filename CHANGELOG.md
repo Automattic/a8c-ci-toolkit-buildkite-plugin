@@ -52,7 +52,7 @@ _None._
 
 ### New Features
 
-- Add a script for commenting manifest diff on PRs in Android projects [#164]
+- Add new `comment_with_manifest_diff` command for commenting manifest diff on PRs in Android projects [#164]
 
 ## 5.0.0
 
