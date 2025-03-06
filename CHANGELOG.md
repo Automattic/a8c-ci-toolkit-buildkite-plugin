@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- `AndroidManifest`: Merged Manifest Diff [#164]
+_None._
 
 ### Bug Fixes
 
@@ -47,6 +47,18 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 5.1.1
+
+### Bug Fixes
+
+- Make `install_gems` account for different C system libraries if `Gemfile.lock` includes `nokogiri` [#149]
+
+## 5.1.0
+
+### New Features
+
+- Add new `comment_with_manifest_diff` command for commenting manifest diff on PRs in Android projects [#164]
 
 ## 5.0.0
 
