@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- Make `install_gems` account for different C system libraries if `Gemfile.lock` includes `nokogiri` [#149]
 
 ### Internal Changes
 
