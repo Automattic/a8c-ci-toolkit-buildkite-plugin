@@ -9,7 +9,7 @@ GEMFILE_HASH=$(hash_file Gemfile.lock)
 # where it is downloaded. To avoid issues, add the libc version to the cache
 # key if the Gemfile.lock includes nokogiri.
 if grep -q "nokogiri" Gemfile.lock; then
-  LIBC_VERSION="-libc$($(dirname "${BASH_SOURCE[0]}")/get_libc_version)"
+  LIBC_VERSION="-libc$("$(dirname "${BASH_SOURCE[0]}")"/get_libc_version)"
 else
   LIBC_VERSION=''
 fi
