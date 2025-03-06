@@ -48,6 +48,12 @@ _None._
 
 _None._
 
+## 5.1.2
+
+### Bug Fixes
+
+- Wow, can you believe this? TL;DR list from the Android dependency diff script has now colorful headers! 🎨✨ [#170]
+
 ## 5.1.1
 
 ### Bug Fixes
