@@ -11,13 +11,13 @@ current_size=0
 
 # Templates for content formatting
 print_header() {
-    printf "## %s changes\n\n" "$1"
+    printf "\n## %s changes\n\n" "$1"
 }
 
 print_tldr() {
     printf "<details><summary>list</summary>
 
-\`\`\`
+\`\`\`diff
 %s
 \`\`\`
 
@@ -32,7 +32,8 @@ print_tree() {
 %s
 \`\`\`
 
-</details>" "$1"
+</details>
+" "$1"
 }
 
 print_tree_too_large() {
@@ -45,7 +46,7 @@ tldr_size=0
 for section in "Project dependencies" "Build environment"; do
     tldr_file="$TLDR_DIFF_DEPENDENCIES_FILE"
     [[ $section == "Build environment" ]] && tldr_file="$TLDR_DIFF_BUILD_ENV_FILE"
-    
+
     if [ -s "$tldr_file" ]; then
         content=$(print_header "$section"; print_tldr "$(cat "$tldr_file")")
         tldr_size=$(( tldr_size + ${#content} ))
@@ -66,13 +67,13 @@ for section in "Project dependencies" "Build environment"; do
     tldr_file="$TLDR_DIFF_DEPENDENCIES_FILE"
     tree_file="$DIFF_DEPENDENCIES_FILE"
     [[ $section == "Build environment" ]] && tldr_file="$TLDR_DIFF_BUILD_ENV_FILE" && tree_file="$DIFF_BUILD_ENV_FILE"
-    
+
     if [ -s "$tldr_file" ]; then
         # Print section header and TLDR
         print_header "$section" >> "$COMMENT_FILE"
         print_tldr "$(cat "$tldr_file")" >> "$COMMENT_FILE"
         current_size=$(wc -c < "$COMMENT_FILE")
-        
+
         # Try to add tree if it exists
         if [ -s "$tree_file" ]; then
             tree_content=$(cat "$tree_file")
