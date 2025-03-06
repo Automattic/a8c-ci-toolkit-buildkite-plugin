@@ -48,6 +48,38 @@ _None._
 
 _None._
 
+## 5.1.0
+
+### New Features
+
+- Add new `comment_with_manifest_diff` command for commenting manifest diff on PRs in Android projects [#164]
+
+## 5.0.0
+
+### Breaking Changes
+
+- `prepare_windows_host_for_node.ps1` has been renamed to `prepare_windows_host_for_app_distribution.ps1` [#144]
+- `prepare_windows_host_for_app_distribution.ps1` no longer installs Node.js.
+  Clients should use [`nvm-buildkite-plugin`](https://github.com/Automattic/nvm-buildkite-plugin) instead [#144]
+
+### New Features
+
+- Added new command to install Windows 10 SDK on Windows CI machines, `install_windows_10_sdk.ps1` [#144]
+- `prepare_windows_host_for_app_distribution.ps1` automatically installs the Windows 10 SDK if version file is found [#144]
+- Added new command to run `refreshenv` on Windows preserving the `PATH`, `path_aware_refreshenv.ps1` [#144]
+
+## 4.0.0
+
+### Breaking Changes
+
+- `pr_changed_files` command now uses exit codes by default, with stdout output requiring explicit `--stdout` flag [#151]
+
+## 3.11.0
+
+### New Features
+
+- Add `pr_changed_files` command to detect changes made in a Pull Request [#148]
+
 ## 3.10.1
 
 ### Bug Fixes
