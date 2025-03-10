@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- Update `comment_with_manifest_diff` command to respect base branch changes prior head branch manifest generation [#173]
 
 ### Internal Changes
 
