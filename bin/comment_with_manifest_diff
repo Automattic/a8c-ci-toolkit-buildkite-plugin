@@ -75,6 +75,7 @@ fi
 # Generate head branch manifest
 echo "--> Switching back to head branch"
 git checkout "-"
+git merge "origin/$BASE_BRANCH" --no-edit
 echo "--> Generating head branch manifest"
 ./gradlew "${GRADLE_TASK}"
 echo ""
