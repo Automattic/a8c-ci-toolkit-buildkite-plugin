@@ -42,11 +42,17 @@ _None._
 
 ### Bug Fixes
 
-- Update `comment_with_manifest_diff` command to respect base branch changes prior head branch manifest generation [#173]
+_None._
 
 ### Internal Changes
 
 _None._
+
+## 5.1.3
+
+### Bug Fixes
+
+- Update `comment_with_manifest_diff` command to respect base branch changes prior head branch manifest generation [#173]
 
 ## 5.1.2
 
