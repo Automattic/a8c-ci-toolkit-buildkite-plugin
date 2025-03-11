@@ -1,0 +1,30 @@
+#!/bin/bash -eu
+
+case $OSTYPE in
+  linux*)
+    os_exp="linux"
+    ;;
+  darwin*)
+    os_exp="macos"
+    ;;
+  msys*|cygwin*|Windows_NT*)
+    os_exp="win"
+    ;;
+  *)
+    echo "Unknown OS type: $OSTYPE"
+    exit 1
+    ;;
+esac
+echo "Detected OS type: $OSTYPE"
+
+libc_version=$(bin/get_libc_version)
+echo "Computed libc version is $libc_version"
+exp="$os_exp-[0-9]+\.[0-9]+(\.[0-9]+)?"
+
+if [[ "$libc_version" =~ ^$exp ]]; then
+  echo "Computed libc version ($libc_version) format matches expected format ($exp)"
+else
+  echo "~~~ :x: Test failed"
+  echo "^^^ +++ Computed libc version ($libc_version) format does not match expected format ($exp)!"
+  exit 1
+fi

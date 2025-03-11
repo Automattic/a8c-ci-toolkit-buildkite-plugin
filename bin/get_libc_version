@@ -1,0 +1,43 @@
+#!/bin/bash -eu
+
+#
+# Returns the system's libc version, or a close proxy of it.
+# Useful for commands like install_gems which use a number of system information to compute the key for the cache they lookup.
+#
+
+VERBOSE=${1:-false}
+
+if [ "$VERBOSE" = true ]; then
+  echo "~~~ :desktop_computer: Check OSTYPE"
+fi
+os_type="${OSTYPE:?Error: OSTYPE environment variable not found}"
+if [ "$VERBOSE" = true ]; then
+  echo "OSTYPE is $os_type"
+fi
+
+if [ "$VERBOSE" = true ]; then
+  echo "~~~ :c: Check libc version"
+fi
+
+if [[ "$os_type" == "linux"* ]]; then
+    # Different Linux distributions use different libc implementations (e.g., glibc, musl), so we check explicitly.
+    # We use `ldd --version` because `ldd` is part of the standard dynamic linker tools and reports the libc version it is linked against.
+    version=$(ldd --version | head -n 1 | grep -o "[0-9][0-9]*\.[0-9][0-9]*" || echo "unknown")
+    echo "linux-$version"
+elif [[ "$os_type" == "darwin"* ]]; then
+    # macOS does not have a standalone libc we can check.
+    # Instead, it has libSystem, which includes a BSD-based libc, libpthread, and other core libraries.
+    # Since libSystem is tied to macOS releases and updated with the OS,
+    # checking the macOS version with `sw_vers` is a good approximation.
+    version=$(sw_vers -productVersion 2>/dev/null || echo "unknown")
+    echo "macos-$version"
+elif [[ "$os_type" == "msys"* ]] || [[ "$os_type" == "cygwin"* ]] || [[ "$os_type" == "Windows_NT" ]]; then
+    # Windows does not have a libc.
+    # The closest thing is the MSVCRT (Microsoft C Runtime) but that varies by
+    # Windows version.
+    # Next up, we have the OS version, which is what we are using here.
+    version=$(powershell -Command "[System.Environment]::OSVersion.Version.ToString()" 2>/dev/null || echo "unknown")
+    echo "win-$version"
+else
+    echo "unknown"
+fi

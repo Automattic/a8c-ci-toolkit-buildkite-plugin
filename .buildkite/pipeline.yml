@@ -24,7 +24,7 @@ steps:
     agents:
       queue: default
 
-  - label: ":radioactive_sign: Danger - PR Check"
+  - label: ":danger: Danger - PR Check"
     command: danger
     key: danger
     if: build.pull_request.id != null
@@ -36,6 +36,27 @@ steps:
           context: Danger - PR Check
     agents:
       queue: linter
+
+  - group: ":c: get_libc_version Tests"
+    steps:
+      - label: ":c: Test get_libc_version on {{matrix}}"
+        command: ./tests/validate_get_libc_version_format
+        agents:
+          queue: "{{matrix}}"
+        matrix:
+          - android
+          - default
+          - mac
+          - tumblr-metal
+          # Could not find a way to run on Windows with the same call as the others.
+          # See syntax in the dedicated step below.
+          # - windows
+
+      - label: ":c: :windows: Test get_libc_version on Windows"
+        command: |
+          & "C:\Program Files\Git\bin\bash.exe" .\tests\validate_get_libc_version_format
+        agents:
+          queue: windows
 
   - group: ":swift: install_swiftpm_dependencies Tests"
     steps:
