@@ -1,10 +1,12 @@
 .DEFAULT_GOAL := default
 
+RUBY_VERSION := $(shell cat .ruby-version)
+
 default: lint test
 lint: buildkite-plugin-lint rubocop shellcheck
 test: buildkite-plugin-test rspec
 
-docker_run := docker run -t --rm -v "${PWD}"/:/plugin:ro -w /plugin
+docker_run := docker run -t --rm -v "${PWD}"/:/plugin -w /plugin
 
 buildkite-plugin-lint:
 	@echo ~~~ 🕵️ Plugin Linter
@@ -16,8 +18,8 @@ shellcheck:
 
 rubocop:
 	@echo ~~~ 🕵️ Rubocop
-	$(docker_run) ruby:3.2.2 /bin/bash -c \
-	  "gem install --silent rubocop -v 1.62.1 && rubocop -A tests/test_that_all_files_are_executable.rb"
+	$(docker_run) ruby:$(RUBY_VERSION) /bin/bash -c \
+	  "bundle install && bundle exec rubocop -A tests/test_that_all_files_are_executable.rb"
 
 buildkite-plugin-test:
 	@echo ~~~ 🔬 Plugin Tester
@@ -25,5 +27,5 @@ buildkite-plugin-test:
 
 rspec:
 	@echo ~~~ 🔬 Rspec
-	$(docker_run) ruby:3.2.2 /bin/bash -c \
+	$(docker_run) ruby:$(RUBY_VERSION) /bin/bash -c \
 	  "gem install --silent rspec -v 3.13.0 && rspec tests/test_that_all_files_are_executable.rb"
