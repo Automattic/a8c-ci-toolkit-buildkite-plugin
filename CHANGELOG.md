@@ -26,7 +26,7 @@ _None._
 
 ### Internal Changes
 
-- Update `annotate_test_failures` to accept an optional `module` argument to make the `annotation context` module aware. [#175]
+_None._
 
 -->
 
@@ -47,6 +47,12 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 5.2.0
+
+### Internal Changes
+
+- Update `annotate_test_failures` to accept an optional `module` argument to make the `annotation context` module aware. [#175]
 
 ## 5.1.3
 
