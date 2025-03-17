@@ -14,15 +14,19 @@ require 'optparse'
 ###################
 # Parse arguments
 ###################
+module_name = nil
 slack_channel = nil
 slack_webhook = ENV.fetch('SLACK_WEBHOOK', nil) # default value inferred from env var if not provided explicitly
 args = OptionParser.new do |opts|
   opts.banner = <<~HELP
-    Usage: annotate_test_failures [junit-report-file-path] [--slack CHANNEL] [--slack-webhook URL]
+    Usage: annotate_test_failures [junit-report-file-path] [--module MODULE] [--slack CHANNEL] [--slack-webhook URL]
 
     Annotates the Buildkite build with a summary of failed and flaky tests based on a JUnit report file (defaults to using `build/results/report.junit`).
     Optionally also posts the same info to a Slack channel.
   HELP
+  opts.on('--module MODULE', 'The module the junit report is based on') do |v|
+    module_name = v
+  end
   opts.on('--slack CHANNEL_NAME', 'The name of the Slack channel to post the failure summary to') do |v|
     slack_channel = "##{v.delete_prefix('#')}"
   end
@@ -124,9 +128,10 @@ end
 
 # Given a list of failures for a given step and state, update the corresponding annotation
 #
-def update_annotation(title, list, style, state)
+def update_annotation(title, module_name, list, style, state)
   ctx_components = [
     'test-summary',
+    module_name || 'default-module',
     ENV.fetch('BUILDKITE_STEP_ID', title),
     ENV.fetch('BUILDKITE_PARALLEL_JOB', nil),
     state
@@ -138,7 +143,8 @@ def update_annotation(title, list, style, state)
   else
     tests_count = list.map(&:key).uniq.count # Count the number of tests that failed, even if some tests might have multiple assertion failures
     puts "#{tests_count} test(s) #{state} (#{list.count} distinct assertion failures in total). Reporting them as a `#{annotation_context}` Buildkite #{style} annotation.\n\n"
-    markdown = "#### #{title}: #{tests_count} tests #{state} (#{list.count} distinct assertion failure(s) in total)\n\n" + list.map(&:to_s).join("\n")
+    module_title = module_name ? " (#{module_name})" : ''
+    markdown = "#### #{title}#{module_title}: #{tests_count} tests #{state} (#{list.count} distinct assertion failure(s) in total)\n\n" + list.map(&:to_s).join("\n")
     puts markdown
     system('buildkite-agent', 'annotate', markdown, '--style', style, '--context', annotation_context)
   end
@@ -220,8 +226,8 @@ REXML::XPath.each(xmldoc, '//testcase[failure|error]') do |node|
   end
 end
 
-update_annotation(title, failures, 'error', 'have failed')
-update_annotation(title, flakies, 'warning', 'were flaky')
+update_annotation(title, module_name, failures, 'error', 'have failed')
+update_annotation(title, module_name, flakies, 'warning', 'were flaky')
 
 if slack_channel.nil?
   if slack_webhook.nil?
