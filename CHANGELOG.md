@@ -46,6 +46,12 @@ _None._
 
 ### Internal Changes
 
+_None._
+
+## 5.3.0
+
+### Internal Changes
+
 - Update `comment_with_manifest_diff` and `comment_with_dependency_diff` commands with extra `git fetch/pull` calls to make both of them work as expected on all CI environments. [#177]
 
 ## 5.2.0
