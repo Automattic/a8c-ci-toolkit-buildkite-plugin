@@ -54,6 +54,8 @@ mkdir -p "$DIFF_MANIFEST_FOLDER"
 git config --global user.email "mobile@automattic.com"
 git config --global user.name "Android Manifest Diff Tool"
 
+git fetch
+
 echo "--> Starting Android Manifest diff check"
 BASE_BRANCH=$BUILDKITE_PULL_REQUEST_BASE_BRANCH
 echo "--> Base branch is $BASE_BRANCH"
@@ -61,6 +63,7 @@ echo "--> Base branch is $BASE_BRANCH"
 # Generate base branch manifest
 echo "--> Switching to base branch"
 git checkout "$BASE_BRANCH"
+git pull origin "$BASE_BRANCH"
 echo "--> Generating base branch manifest"
 ./gradlew "${GRADLE_TASK}"
 echo ""
