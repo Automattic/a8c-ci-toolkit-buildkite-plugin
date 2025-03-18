@@ -61,6 +61,8 @@ export TLDR_DIFF_BUILD_ENV_FILE="$DIFF_DEPENDENCIES_FOLDER/tldr_diff_build_env.t
 git config --global user.email "mobile@automattic.com"
 git config --global user.name "Dependency Tree Diff Tool"
 
+git fetch
+
 echo "--> Starting the check"
 BASE_BRANCH=$BUILDKITE_PULL_REQUEST_BASE_BRANCH
 echo "--> Base branch is $BASE_BRANCH"
