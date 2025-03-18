@@ -63,6 +63,7 @@ echo "--> Base branch is $BASE_BRANCH"
 # Generate base branch manifest
 echo "--> Switching to base branch"
 git checkout "$BASE_BRANCH"
+git pull origin "$BASE_BRANCH"
 echo "--> Generating base branch manifest"
 ./gradlew "${GRADLE_TASK}"
 echo ""

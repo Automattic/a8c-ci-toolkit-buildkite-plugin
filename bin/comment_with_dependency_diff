@@ -93,6 +93,7 @@ if ! git diff --quiet; then
 fi
 
 git checkout "$BASE_BRANCH"
+git pull origin "$BASE_BRANCH"
 ./gradlew :"$MODULE":dependencies --configuration "$CONFIGURATION" >$BASE_BRANCH_DEPENDENCIES_FILE
 
 echo "--> Generating build environment dependencies for the base branch"
