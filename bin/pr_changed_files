@@ -109,8 +109,9 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
+declare -a changed_files=()
+
 # Get list of changed files as an array
-changed_files=()
 while IFS= read -r -d '' file; do
   changed_files+=("$file")
 done < <(git --no-pager diff --name-only -z --merge-base "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | sort)
@@ -138,6 +139,11 @@ if [[ -z "$mode" ]]; then
     else
         exit_false
     fi
+fi
+
+# No changed files
+if [[ ${#changed_files[@]} -eq 0 ]]; then
+    exit_false
 fi
 
 # Returns 0 if the file matches any of the patterns, 1 otherwise
