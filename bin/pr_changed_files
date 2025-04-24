@@ -114,7 +114,7 @@ declare -a changed_files=()
 # Get list of changed files as an array
 while IFS= read -r -d '' file; do
   changed_files+=("$file")
-done < <(git --no-pager diff --name-only -z --merge-base "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | sort)
+done < <(git --no-pager diff --name-only -z --merge-base origin/"$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | sort)
 
 exit_true() {
     if [[ "$use_stdout" == "true" ]]; then
