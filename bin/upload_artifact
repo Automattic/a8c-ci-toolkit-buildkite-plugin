@@ -1,27 +1,80 @@
-#!/bin/bash -eu
+#!/bin/bash
 
-# Usage
-# upload_artifact $file_path
+# Script: upload_artifact
 #
-# $file_path is the path to a file on disk. It'll automatically be combined with the current build ID to differentiate between
-# the same file in different jobs so that it can be correctly re-downloaded within the same job.
+# Description:
+#   Uploads a file to S3 as a build artifact. The file is stored with a path that includes
+#   the build ID to differentiate between the same file in different jobs. This script is
+#   a core utility used by many other scripts to store build outputs, test results, and
+#   other artifacts that need to be preserved or shared between jobs.
+#
+# Usage:
+#   upload_artifact <file_path>
+#
+# Arguments:
+#   file_path - Path to the file to upload
+#
+# Examples:
+#   upload_artifact build/app.ipa
+#   upload_artifact test-results.xml
+#   upload_artifact coverage/lcov.info
+#   upload_artifact build/outputs/apk/release/app-release.apk
+#
+# Returns:
+#   0 - File was successfully uploaded
+#   1 - Missing file path argument
+#   2 - File not found or not accessible
+#   3 - Missing bucket configuration or build ID
+#   4 - AWS operation failed
+#
+# Environment Variables:
+#   ARTIFACTS_S3_BUCKET - S3 bucket name for storing artifacts (required)
+#   BUILDKITE_BUILD_ID - Current build ID (automatically set by Buildkite)
+#
+# Notes:
+#   - Compatible with both macOS and Linux
+#   - Supports S3 transfer acceleration if enabled on the bucket
+#   - Files are stored under a path of format: $BUILDKITE_BUILD_ID/filename
+#   - Preserves original filename in S3 path
+#   - Does not compress files (uploads as-is)
+#   - Reports upload progress
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `aws`
+#   - `jq`
+#   - `basename`
 
-if [ -z "${1-}" ]; then
-	echo "You must pass the file you want to be stored"
+set -euo pipefail
+
+# Validate required arguments
+if [[ -z "${1:-}" ]]; then
+	echo "Error: You must pass the file you want to be stored" >&2
 	exit 1
-else
-	ARTIFACT_PATH=$1
 fi
 
-if [ ! -f "$ARTIFACT_PATH" ]; then
-	echo "No file found at $ARTIFACT_PATH"
+ARTIFACT_PATH=$1
+
+# Validate file exists and is accessible
+if [[ ! -f "$ARTIFACT_PATH" ]]; then
+	echo "Error: No file found at $ARTIFACT_PATH" >&2
 	exit 2
 fi
 
-BUCKET=${ARTIFACTS_S3_BUCKET-}
+if [[ ! -r "$ARTIFACT_PATH" ]]; then
+	echo "Error: File '$ARTIFACT_PATH' is not readable" >&2
+	exit 2
+fi
 
-if [ -z "$BUCKET" ]; then
-	echo "You must pass set the \`ARTIFACTS_S3_BUCKET\` environment variable with the S3 bucket you'd like to use"
+# Validate environment variables
+if [[ -z "${BUILDKITE_BUILD_ID:-}" ]]; then
+	echo "Error: BUILDKITE_BUILD_ID environment variable is not set" >&2
+	exit 3
+fi
+
+BUCKET=${ARTIFACTS_S3_BUCKET:-}
+if [[ -z "$BUCKET" ]]; then
+	echo "Error: You must set the \`ARTIFACTS_S3_BUCKET\` environment variable with the S3 bucket you'd like to use" >&2
 	exit 3
 fi
 
@@ -31,9 +84,17 @@ KEY="$BUILDKITE_BUILD_ID/$BASENAME"
 # If the bucket has transfer acceleration enabled, use it!
 ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$BUCKET" | jq '.Status' -r || true)
 
-if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
+if [[ "$ACCELERATION_STATUS" = "Enabled" ]]; then
 	echo "Uploading with transfer acceleration"
-	aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$KEY" --endpoint-url https://s3-accelerate.amazonaws.com
+	if ! aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$KEY" --endpoint-url https://s3-accelerate.amazonaws.com; then
+		echo "Error: Failed to upload artifact to S3" >&2
+		exit 4
+	fi
 else
-	aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$KEY"
+	if ! aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$KEY"; then
+		echo "Error: Failed to upload artifact to S3" >&2
+		exit 4
+	fi
 fi
+
+echo "Successfully uploaded $ARTIFACT_PATH to s3://$BUCKET/$KEY"

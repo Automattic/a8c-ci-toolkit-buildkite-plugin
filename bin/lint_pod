@@ -1,17 +1,61 @@
-#!/bin/bash -eu
+#!/bin/bash
+
+# Script: lint_pod
+#
+# Description:
+#   Runs various linting checks on a CocoaPods-based iOS/macOS project.
+#   Validates Ruby code style, Gemfile.lock, and Podfile.lock if present.
+#
+# Usage:
+#   lint_pod
+#
+# Returns:
+#   0 - All checks passed successfully
+#   1 - One or more checks failed
+#
+# Notes:
+#   - Must run on a macOS CI agent
+#   - Checks include:
+#     - Ruby code style via Rubocop
+#     - Gemfile.lock validation
+#     - Podfile.lock validation (if present)
+#   - TODO: Add SwiftLint integration
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `bundle`
+#   - `rubocop` (via bundler)
+#   - `install_gems` (provided by a8c-ci-toolkit)
+#   - `validate_gemfile_lock` (provided by a8c-ci-toolkit)
+#   - `validate_podfile_lock` (provided by a8c-ci-toolkit)
+
+set -euo pipefail
 
 echo "--- :rubygems: Setting up Gems"
-install_gems
-
-echo "--- :rubygems: Checking Gemfile.lock"
-validate_gemfile_lock
-
-echo "--- :rubocop: Running Rubocop"
-bundle exec rubocop
-
-if [ -f "Podfile.lock" ]; then
-	echo "--- :cocoapods: Checking Podfile.lock"
-	validate_podfile_lock
+if ! install_gems; then
+    echo "Error: Failed to install required gems" >&2
+    exit 1
 fi
 
-# TODO: Add swiftlint
+echo "--- :rubygems: Checking Gemfile.lock"
+if ! validate_gemfile_lock; then
+    echo "Error: Gemfile.lock validation failed" >&2
+    exit 1
+fi
+
+echo "--- :rubocop: Running Rubocop"
+if ! bundle exec rubocop; then
+    echo "Error: Rubocop checks failed" >&2
+    exit 1
+fi
+
+if [[ -f "Podfile.lock" ]]; then
+    echo "--- :cocoapods: Checking Podfile.lock"
+    if ! validate_podfile_lock; then
+        echo "Error: Podfile.lock validation failed" >&2
+        exit 1
+    fi
+fi
+
+# TODO: Add SwiftLint integration
+# This would involve running `run_swiftlint` if a .swiftlint.yml file is present

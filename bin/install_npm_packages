@@ -1,25 +1,102 @@
-#!/bin/bash -eu
+#!/bin/bash
 
-# Ensure package.json is present
-if [ ! -f package.json ]; then
-    echo "No valid package.json file found"
+# Script: install_npm_packages
+#
+# Description:
+#   Installs Node.js dependencies using npm with caching support. This script
+#   optimizes Node.js builds by caching node_modules based on the package-lock.json
+#   hash, platform, architecture, and Node.js version.
+#
+# Usage:
+#   install_npm_packages
+#
+# Returns:
+#   0 - Dependencies were successfully installed
+#   1 - Missing required files or environment variables
+#   2 - Platform information retrieval failed
+#   3 - Node.js command failed
+#   4 - Cache operations failed
+#   5 - npm install failed
+#
+# Environment Variables:
+#   BUILDKITE_PIPELINE_SLUG - The slug of the current buildkite pipeline (required)
+#   NODE_VERSION - Current Node.js version (automatically detected)
+#
+# Notes:
+#   - Compatible with both macOS and Linux
+#   - Requires package.json and package-lock.json in current directory
+#   - Cache key includes platform, architecture, and Node.js version
+#   - Uses package-lock.json hash for cache invalidation
+#   - Supports npm's package-lock.json format
+#   - Automatically handles npm install flags
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `node`
+#   - `npm`
+#   - `uname`
+#   - `hash_file` (provided by a8c-ci-toolkit)
+#   - `restore_cache` (provided by a8c-ci-toolkit)
+#   - `save_cache` (provided by a8c-ci-toolkit)
+
+set -euo pipefail
+
+# Validate required environment variable
+if [[ -z "${BUILDKITE_PIPELINE_SLUG:-}" ]]; then
+    echo "Error: BUILDKITE_PIPELINE_SLUG environment variable is not set" >&2
     exit 1
 fi
 
-# Ensure package-lock.json is present 
-if [ ! -f package-lock.json ]; then
-    echo "No valid package-lock.json file found"
+# Validate required files
+if [[ ! -f "package.json" ]]; then
+    echo "Error: No package.json file found in current directory" >&2
     exit 1
 fi
 
-PLATFORM=$(uname -s)
-ARCHITECTURE=$(uname -m)
-NODE_VERSION=$(node --version)
-PACKAGE_HASH=$(hash_file package-lock.json)
-CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$PLATFORM-$ARCHITECTURE-node$NODE_VERSION-$PACKAGE_HASH"
+if [[ ! -f "package-lock.json" ]]; then
+    echo "Error: No package-lock.json file found in current directory" >&2
+    exit 1
+fi
 
-restore_cache "$CACHEKEY"
+# Get platform information
+if ! PLATFORM=$(uname -s); then
+    echo "Error: Failed to determine platform" >&2
+    exit 2
+fi
 
-npm install
+if ! ARCHITECTURE=$(uname -m); then
+    echo "Error: Failed to determine architecture" >&2
+    exit 2
+fi
 
-save_cache node_modules/ "$CACHEKEY"
+# Get Node.js version
+if ! NODE_VERSION=$(node --version); then
+    echo "Error: Failed to determine Node.js version" >&2
+    exit 3
+fi
+
+# Generate cache key based on platform, architecture, Node.js version, and package-lock.json hash
+if ! PACKAGE_HASH=$(hash_file package-lock.json); then
+    echo "Error: Failed to compute hash for package-lock.json" >&2
+    exit 4
+fi
+
+CACHE_KEY="$BUILDKITE_PIPELINE_SLUG-$PLATFORM-$ARCHITECTURE-node$NODE_VERSION-$PACKAGE_HASH"
+
+echo "Restoring npm packages from cache..."
+if ! restore_cache "$CACHE_KEY"; then
+    echo "Warning: Failed to restore cache, will perform fresh install" >&2
+fi
+
+echo "Installing npm packages..."
+if ! npm install; then
+    echo "Error: npm install failed" >&2
+    exit 5
+fi
+
+echo "Saving npm packages to cache..."
+if ! save_cache node_modules/ "$CACHE_KEY"; then
+    echo "Warning: Failed to save cache" >&2
+fi
+
+echo "Successfully installed npm packages"

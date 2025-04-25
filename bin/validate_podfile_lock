@@ -1,10 +1,55 @@
-#!/bin/bash -eu
+#!/bin/bash
 
-PODFILE_SHA1=$(ruby -e "require 'yaml';puts YAML.load_file('Podfile.lock')['PODFILE CHECKSUM']")
-RESULT=$(echo "$PODFILE_SHA1 *Podfile" | shasum -c)
+# Script: validate_podfile_lock
+#
+# Description:
+#   Validates that Podfile.lock is in sync with Podfile by comparing the stored
+#   checksum in Podfile.lock against the current Podfile's checksum.
+#
+# Usage:
+#   validate_podfile_lock
+#
+# Returns:
+#   0 - Podfile.lock is in sync with Podfile
+#   1 - Missing required files or checksum mismatch
+#
+# Notes:
+#   - Must run on a macOS CI agent
+#   - Requires both Podfile and Podfile.lock in the current directory
+#   - Uses SHA-1 checksum for validation (as used by CocoaPods)
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `ruby`
+#   - `shasum`
+
+set -euo pipefail
+
+# Validate required files
+if [[ ! -f "Podfile" ]]; then
+	echo "Error: No Podfile found in current directory" >&2
+	exit 1
+fi
+
+if [[ ! -f "Podfile.lock" ]]; then
+	echo "Error: No Podfile.lock found in current directory" >&2
+	exit 1
+fi
+
+# Extract checksum from Podfile.lock
+if ! PODFILE_SHA1=$(ruby -e "require 'yaml';puts YAML.load_file('Podfile.lock')['PODFILE CHECKSUM']"); then
+	echo "Error: Failed to extract checksum from Podfile.lock" >&2
+	exit 1
+fi
+
+# Validate checksum
+if ! RESULT=$(echo "$PODFILE_SHA1 *Podfile" | shasum -c); then
+	echo "Error: Failed to compute Podfile checksum" >&2
+	exit 1
+fi
 
 if [[ $RESULT != "Podfile: OK" ]]; then 
-	echo "Error: Podfile.lock is not in sync – please run \`bundle exec pod install\` and commit your changes"
+	echo "Error: Podfile.lock is not in sync – please run \`bundle exec pod install\` and commit your changes" >&2
 	exit 1
 fi
 

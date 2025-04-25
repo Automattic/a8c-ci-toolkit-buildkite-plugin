@@ -1,17 +1,74 @@
-#!/bin/bash -eu
+#!/bin/bash
 
-if [ -z "${1:-}" ]; then
-	echo "You must pass a filename to hash"
+# Script: hash_file
+#
+# Description:
+#   Generates a SHA-256 hash of a file using platform-appropriate commands.
+#   Uses `shasum` on macOS and `sha256sum` on other platforms.
+#   This script is a core utility used by many other scripts for cache key generation
+#   and file validation.
+#
+# Usage:
+#   hash_file <filename>
+#
+# Arguments:
+#   filename - Path to the file to hash
+#
+# Examples:
+#   hash_file Podfile.lock
+#   hash_file build/output.log
+#   hash_file ~/.gradle/caches/modules-2/modules-2.lock
+#
+# Returns:
+#   0 - Successfully generated hash, outputs hash to stdout
+#   1 - Missing filename argument
+#   2 - File not found or not accessible
+#   3 - Required hash command not available
+#
+# Notes:
+#   - The hash is printed to stdout without the filename
+#   - Compatible with both macOS and Linux
+#   - Uses SHA-256 algorithm for consistent hashing across platforms
+#   - Output is always lowercase hexadecimal
+#
+# Requirements:
+#   This script needs to run on a CI agent which has one of the following commands:
+#   - `shasum` (on macOS)
+#   - `sha256sum` (on Linux)
+#   - `cut` (for output formatting)
+
+set -euo pipefail
+
+# Validate input argument
+if [[ -z "${1:-}" ]]; then
+	echo "Error: You must pass a filename to hash" >&2
 	exit 1
 fi
 
-# `shasum` is available on only macOS
-if command -v shasum &> /dev/null; then
-  sha_command=(shasum -a 256)
-else
-  sha_command=(sha256sum)
+# Validate file exists and is readable
+if [[ ! -f "$1" ]]; then
+	echo "Error: File '$1' not found" >&2
+	exit 2
 fi
 
-# Both `shasum` and `sha256sum` will print the hash and the file name (`$1`).
+if [[ ! -r "$1" ]]; then
+	echo "Error: File '$1' is not readable" >&2
+	exit 2
+fi
+
+# Determine which hash command to use based on platform
+if command -v shasum &> /dev/null; then
+	sha_command=(shasum -a 256)
+elif command -v sha256sum &> /dev/null; then
+	sha_command=(sha256sum)
+else
+	echo "Error: Neither 'shasum' nor 'sha256sum' command found" >&2
+	exit 3
+fi
+
+# Both `shasum` and `sha256sum` will print the hash and the file name.
 # We only care about the hash, so we use `cut` to extract it.
-"${sha_command[@]}" "$1" | cut -f1 -d " "
+if ! "${sha_command[@]}" "$1" | cut -f1 -d " "; then
+	echo "Error: Failed to generate hash for '$1'" >&2
+	exit 3
+fi

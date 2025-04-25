@@ -1,12 +1,47 @@
-#!/bin/bash -eu
+#!/bin/bash
+
+# Script: cache_cocoapods_specs_repos
+#
+# Description:
+#   Updates and caches CocoaPods specs repositories and the global CocoaPods cache.
+#   This script handles both the global CocoaPods specs repo and the global CocoaPods cache directory.
+#
+# Usage:
+#   cache_cocoapods_specs_repos
+#
+# Notes:
+#   - This script must run on a macOS CI agent with CocoaPods installed
+#   - It expects the current directory to be the root of an iOS/macOS project
+#   - If a Podfile exists, it will run `pod install` and cache the global CocoaPods cache directory
+#
+# Returns:
+#   0 - Cache was successfully updated and saved
+#   1 - Required environment variable is missing or other error occurred
+#
+# Requirements:
+#   This script needs to run on a CI agent which has the following external commands installed:
+#   - `bundle`
+#   - `pod` (via bundler)
+#   - `save_cache` (provided by a8c-ci-toolkit)
+#
+# Environment Variables:
+#   BUILDKITE_PIPELINE_SLUG - The slug of the current buildkite pipeline (required)
+
+set -euo pipefail
+
+# Validate required environment variable
+if [[ -z "${BUILDKITE_PIPELINE_SLUG:-}" ]]; then
+  echo "Error: BUILDKITE_PIPELINE_SLUG environment variable is not set"
+  exit 1
+fi
 
 # Update CocoaPods's master specs repo (used when you don't use the CDN)
 bundle exec pod repo update --verbose
-save_cache ~/.cocoapods "$BUILDKITE_PIPELINE_SLUG-specs-repos" --force
+save_cache "${HOME}/.cocoapods" "${BUILDKITE_PIPELINE_SLUG}-specs-repos" --force
 
-if [ -f Podfile ]; then
+if [[ -f Podfile ]]; then
   # Update the cache of the Pods used by the repo.
   # Skip if the repo doesn't have a `Podfile` (e.g. lib repo with only a `.podspec`)
   bundle exec pod install --verbose
-  save_cache ~/Library/Caches/CocoaPods/ "$BUILDKITE_PIPELINE_SLUG-global-pod-cache" --force
+  save_cache "${HOME}/Library/Caches/CocoaPods/" "${BUILDKITE_PIPELINE_SLUG}-global-pod-cache" --force
 fi

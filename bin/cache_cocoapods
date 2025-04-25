@@ -1,5 +1,26 @@
-#!/bin/bash -eu
+#!/bin/bash
 
-# This file is deprecated, but is being kept around until v2.0
+# Script: cache_cocoapods
+#
+# Description:
+#   [DEPRECATED] This script has been replaced by `cache_cocoapods_specs_repos`.
+#   It now only forwards to the new script for backward compatibility.
+#
+# Usage:
+#   cache_cocoapods
+#
+# Returns:
+#   - Returns the same exit code as `cache_cocoapods_specs_repos`
+#
+# Notes:
+#   - This script is deprecated and will be removed in v2.0
+#   - Users should migrate to using `cache_cocoapods_specs_repos` directly
+#   - This script exists only for backward compatibility
+#
+# Requirements:
+#   - `cache_cocoapods_specs_repos` (provided by a8c-ci-toolkit)
 
+set -euo pipefail
+
+# Forward to the new script
 cache_cocoapods_specs_repos
