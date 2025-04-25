@@ -1,0 +1,108 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/buildkite/pipeline-schema/main/schema.json
+---
+
+# For convenience with the many install_swiftpm_dependencies steps, we declare agents and env for macOS in the root, then specialize the fewer remaining steps
+agents:
+  queue: windows
+
+steps:
+  - label: ":c: :windows: Test get_libc_version on Windows"
+    command: |
+      & "C:\Program Files\Git\bin\bash.exe" .\tests\validate_get_libc_version_format
+    agents:
+      queue: windows
+
+  - group: ":windows: install_windows_10_sdk Tests"
+    steps:
+      - label: ":windows: install_windows_10_sdk Tests - Version file with valid format and version"
+        command: |
+          "20348" | Out-File .windows-10-sdk-version
+          .\tests\test_install_windows_10_sdk.ps1 -ExpectedExitCode 0
+        agents:
+          queue: windows
+        notify:
+          - github_commit_status:
+              context: "install_windows_10_sdk Tests - Version file with valid format and version"
+
+      - label: ":windows: install_windows_10_sdk Tests - Version file with one new line"
+        command: |
+          "20348`n" | Out-File .windows-10-sdk-version
+          .\tests\test_install_windows_10_sdk.ps1 -ExpectedExitCode 0
+        agents:
+          queue: windows
+        notify:
+          - github_commit_status:
+              context: "install_windows_10_sdk Tests - Version file with one new line"
+
+      - label: ":windows: install_windows_10_sdk Tests - Version file with more than one new line"
+        command: |
+          "20348`n`n" | Out-File .windows-10-sdk-version
+          .\tests\test_install_windows_10_sdk.ps1 -ExpectedExitCode 0
+        agents:
+          queue: windows
+        notify:
+          - github_commit_status:
+              context: "install_windows_10_sdk Tests - Version file with more than one new line"
+
+      - label: ":windows: install_windows_10_sdk Tests - Version file with leading whitespaces"
+        command: |
+          "  19041" | Out-File .windows-10-sdk-version
+          .\tests\test_install_windows_10_sdk.ps1 -ExpectedExitCode 0
+        agents:
+          queue: windows
+        notify:
+          - github_commit_status:
+              context: "install_windows_10_sdk Tests - Version file with leading whitespaces"
+
+      - label: ":windows: install_windows_10_sdk Tests - Version file with trailing whitespaces"
+        command: |
+          "18362   " | Out-File .windows-10-sdk-version
+          .\tests\test_install_windows_10_sdk.ps1 -ExpectedExitCode 0
+        agents:
+          queue: windows
+        notify:
+          - github_commit_status:
+              context: "install_windows_10_sdk Tests - Version file with trailing whitespaces"
+
+      - label: ":windows: install_windows_10_sdk Tests - Version file with a word"
+        command: |
+          "not an integer" | Out-File .windows-10-sdk-version
+          .\tests\test_install_windows_10_sdk.ps1 `
+            -ExpectedExitCode 1 `
+            -ExpectedErrorKeyphrase "Expected an integer"
+        agents:
+          queue: windows
+        notify:
+          - github_commit_status:
+              context: "install_windows_10_sdk Tests - Version file with a word"
+
+      - label: ":windows: install_windows_10_sdk Tests - Missing version file"
+        command: |
+          .\tests\test_install_windows_10_sdk.ps1 `
+            -ExpectedExitCode 1 `
+            -ExpectedErrorKeyphrase "No Windows 10 SDK version file found at .windows-10-sdk-version"
+        agents:
+          queue: windows
+        notify:
+          - github_commit_status:
+              context: "install_windows_10_sdk Tests - Version file with a word"
+
+      - label: ":windows: install_windows_10_sdk Tests - Version file with version number that is not in the allowed list"
+        command: |
+          "12345" | Out-File .windows-10-sdk-version
+          .\tests\test_install_windows_10_sdk.ps1 `
+            -ExpectedExitCode 1 `
+            -ExpectedErrorKeyphrase "Invalid Windows 10 SDK version: 12345"
+        agents:
+          queue: windows
+        notify:
+          - github_commit_status:
+              context: "install_windows_10_sdk Tests - Version file with version number that is not in the allowed list"
+
+  - label: ":windows: prepare_windows_host_for_app_distribution Tests - Skip Windows 10 SDK Installation"
+    command: .\tests\test_prepare_windows_host_for_app_distribution.ps1
+    agents:
+      queue: windows
+    notify:
+      - github_commit_status:
+          context: "prepare_windows_host_for_app_distribution Tests - Skip Windows 10 SDK Installation"
