@@ -109,7 +109,8 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
-declare -a changed_files=()
+declare -a changed_files
+changed_files=()
 
 # Get list of changed files as an array
 while IFS= read -r -d '' file; do
