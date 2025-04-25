@@ -48,6 +48,12 @@ _None._
 
 _None._
 
+## 5.3.1
+
+### Bug Fixes
+
+- Improve `pr_changed_files` command to run properly on all agents [#179]
+
 ## 5.3.0
 
 ### Internal Changes
