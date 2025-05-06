@@ -19,6 +19,11 @@ steps:
     command: |
       $$ErrorActionPreference = "Stop"
       & .buildkite\commands\command-that-fails.sh
+
+      if ($$LASTEXITCODE -ne 0) {
+        Write-Error "Shell script failed with exit code $$LASTEXITCODE"
+        exit $$LASTEXITCODE
+      }
     agents:
       queue: windows
 
