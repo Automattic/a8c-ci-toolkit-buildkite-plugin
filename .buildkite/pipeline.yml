@@ -18,7 +18,7 @@ steps:
   - label: Windows test Bash script
     command: |
       $$ErrorActionPreference = "Stop"
-      .buildkite\commands\command-that-fails.sh
+      & .buildkite\commands\command-that-fails.sh
     agents:
       queue: windows
 
