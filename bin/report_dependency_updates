@@ -1,11 +1,28 @@
 #!/bin/bash
 
-# Script to install 'caupain' and run it to get data about available dependency updates for Android projects
+# Script to extract and run 'caupain' to get data about available dependency updates for Android projects
 
-brew install deezer/repo/caupain
+# Define paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Create directory structure if it doesn't exist
+JAR_DIR="$REPO_ROOT/jar"
+# caupain artifact was built from the source on commit 35974a7 (1.1.1 release)
+CAUPAIN_ZIP="$JAR_DIR/caupain-1.1.1.0-SNAPSHOT-jvm.zip"
+EXTRACT_DIR="$REPO_ROOT/build/caupain-extract"
+
+# Create extraction directory if it doesn't exist
+mkdir -p "$EXTRACT_DIR"
+
+# Extract the caupain zip file
+echo "Extracting caupain from $CAUPAIN_ZIP to $EXTRACT_DIR"
+unzip -o "$CAUPAIN_ZIP" -d "$EXTRACT_DIR"
+
+# Create directory structure for reports if it doesn't exist
 mkdir -p build/reports/dependency-updates/
 
 # Run caupain and save output to file
-caupain --policy=stability-level --no--cache > build/reports/dependency-updates/report.txt
+echo "Running caupain..."
+"$EXTRACT_DIR/caupain-1.1.1.0-SNAPSHOT-jvm/bin/caupain" --policy=stability-level --no--cache > build/reports/dependency-updates/report.txt
+
+echo "Dependency updates report generated at build/reports/dependency-updates/report.txt"
