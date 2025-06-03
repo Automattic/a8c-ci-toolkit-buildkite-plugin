@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Script to install 'caupain' and run it to get data about available dependency updates for Android projects
+
+brew install deezer/repo/caupain
+
+# Create directory structure if it doesn't exist
+mkdir -p build/reports/dependency-updates/
+
+# Run caupain and save output to file
+caupain --policy=stability-level --no--cache > build/reports/dependency-updates/report.txt
