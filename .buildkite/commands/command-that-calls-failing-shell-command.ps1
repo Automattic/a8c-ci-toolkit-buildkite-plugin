@@ -1,3 +1,5 @@
+$ErrorActionPreference = "Stop"
+
 npm # this should fail because npm is not setup in this repo
 
 if ($LASTEXITCODE -ne 0) {
