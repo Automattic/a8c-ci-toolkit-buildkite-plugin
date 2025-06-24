@@ -8,39 +8,41 @@ env:
   IMAGE_ID: xcode-15.4
 
 steps:
-  - label: Windows test inline Bash
-    command: |
-      echo "I'm about to exit 2. I expect this step to fail..."
-      exit 2
-    agents:
-      queue: windows
+  - group: Windows Behavior Tests
+    steps:
+    - label: Windows test inline Bash
+      command: |
+        echo "I'm about to exit 2. I expect this step to fail..."
+        exit 2
+      agents:
+        queue: windows
 
-  - label: Windows test Bash script
-    command: |
-      $$ErrorActionPreference = "Stop"
-      & .buildkite\commands\command-that-fails.sh
+    - label: Windows test Bash script
+      command: |
+        $$ErrorActionPreference = "Stop"
+        & .buildkite\commands\command-that-fails.sh
 
-      if ($$LASTEXITCODE -ne 0) {
-        Write-Error "Shell script failed with exit code $$LASTEXITCODE"
-        exit $$LASTEXITCODE
-      }
-    agents:
-      queue: windows
+        if ($$LASTEXITCODE -ne 0) {
+          Write-Error "Shell script failed with exit code $$LASTEXITCODE"
+          exit $$LASTEXITCODE
+        }
+      agents:
+        queue: windows
 
-  - label: Windows test Bash script no set -e
-    command: .buildkite/commands/command-that-fails-without-set-e.sh
-    agents:
-      queue: windows
+    - label: Windows test Bash script no set -e
+      command: .buildkite/commands/command-that-fails-without-set-e.sh
+      agents:
+        queue: windows
 
-  - label: Windows test PS1 script that fails
-    command: .buildkite/commands/command-that-fails-internally.ps1
-    agents:
-      queue: windows
+    - label: Windows test PS1 script that fails
+      command: .buildkite/commands/command-that-fails-internally.ps1
+      agents:
+        queue: windows
 
-  - label: Windows test PS1 script that call script that fails
-    command: .buildkite/commands/command-that-calls-other-ps1-failing.ps1
-    agents:
-      queue: windows
+    - label: Windows test PS1 script that call script that fails
+      command: .buildkite/commands/command-that-calls-other-ps1-failing.ps1
+      agents:
+        queue: windows
 
   - label: ":sleuth_or_spy: Lint"
     command: make lint
