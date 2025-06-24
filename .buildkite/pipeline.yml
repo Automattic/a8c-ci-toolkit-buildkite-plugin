@@ -39,13 +39,18 @@ steps:
       agents:
         queue: windows
 
-    - label: Windows test PS1 script that call script that fails
+    - label: Windows test PS1 script that calls script that fails
       command: .buildkite/commands/command-that-calls-other-ps1-failing.ps1
       agents:
         queue: windows
 
-    - label: Windows test PS1 script that call command that fails
+    - label: Windows test PS1 script that calls command that fails
       command: .buildkite/commands/command-that-calls-failing-shell-command.ps1
+      agents:
+        queue: windows
+
+    - label: Windows test PS1 script that calls command that is not installed
+      command: ../.buildkite/commands/command-that-calls-cmd-not-installed.ps1
       agents:
         queue: windows
 
