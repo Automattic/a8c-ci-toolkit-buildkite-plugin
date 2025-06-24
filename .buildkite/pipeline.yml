@@ -44,6 +44,11 @@ steps:
       agents:
         queue: windows
 
+    - label: Windows test PS1 script that call command that fails
+      command: .buildkite/commands/command-that-calls-failing-shell-command.ps1
+      agents:
+        queue: windows
+
   - label: ":sleuth_or_spy: Lint"
     command: make lint
     notify:
