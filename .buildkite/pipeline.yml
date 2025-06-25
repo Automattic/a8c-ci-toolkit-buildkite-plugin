@@ -8,6 +8,18 @@ env:
   IMAGE_ID: xcode-15.4
 
 steps:
+  - group: "Windows Behavior Tests - False Positive"
+    steps:
+      - label: Windows test Bash script no set -e
+        command: .buildkite/commands/command-that-fails-without-set-e.sh
+        agents:
+          queue: windows
+
+      - label: Windows test calling Bash script no set -e with exit code check
+        command: .buildkite/commands/command-that-calls-bash-without-set-e.ps1
+        agents:
+          queue: windows
+
   - group: Windows Behavior Tests
     steps:
     - label: Windows test inline Bash
@@ -26,16 +38,6 @@ steps:
           Write-Error "Shell script failed with exit code $$LASTEXITCODE"
           exit $$LASTEXITCODE
         }
-      agents:
-        queue: windows
-
-    - label: Windows test Bash script no set -e
-      command: .buildkite/commands/command-that-fails-without-set-e.sh
-      agents:
-        queue: windows
-
-    - label: Windows test calling Bash script no set -e with exit code check
-      command: .buildkite/commands/command-that-calls-bash-without-set-e.ps1
       agents:
         queue: windows
 
