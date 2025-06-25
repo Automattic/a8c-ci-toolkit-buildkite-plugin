@@ -17,6 +17,8 @@ For all PowerShell scripts:
 
 For all PowerShell scripts:
 - Use `$ErrorActionPreference = "Stop"` at the beginning of scripts
+- Prefer `Write-Host` to other output method to ensure full logs appear in CI
+- Follow any external command or script call with an error code check, `If ($LastExitCode -ne 0) { Exit $LastExitCode }`
 - Use `Set-StrictMode -Version Latest` for strict variable and function checking
 - Always use full cmdlet names (avoid aliases like `ls`, use `Get-ChildItem` instead)
 - Use proper verb-noun naming convention for functions
