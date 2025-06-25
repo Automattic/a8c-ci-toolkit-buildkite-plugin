@@ -1,3 +1,5 @@
+$ErrorActionPreference = "Stop"
+
 & "$PSScriptRoot\command-that-fails-without-set-e.sh"
 
 if ($LastExitCode -ne 0) {
