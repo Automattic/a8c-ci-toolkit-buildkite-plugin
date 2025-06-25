@@ -57,7 +57,7 @@ steps:
         queue: windows
 
     - label: Windows test PS1 script that calls command that is not installed
-      command: ../.buildkite/commands/command-that-calls-cmd-not-installed.ps1
+      command: .buildkite/commands/command-that-calls-cmd-not-installed.ps1
       agents:
         queue: windows
 
