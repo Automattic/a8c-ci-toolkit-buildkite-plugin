@@ -59,7 +59,8 @@ jq -n "${jq_args[@]}" '
     commit_sha: $commit_sha,
     ref: $ref,
     sarif: $sarif
-  } + ( $tool_name? // {} )
+  }
+  + ( $tool_name? | if . != null then { tool_name: . } else empty end )
 ' > sarif_payload.json
 
 github_api "repos/$slug/code-scanning/sarifs" --data-binary @sarif_payload.json
