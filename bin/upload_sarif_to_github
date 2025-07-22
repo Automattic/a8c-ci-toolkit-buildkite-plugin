@@ -3,7 +3,6 @@
 set -euo pipefail
 
 sarif_file="${1:-}"
-tool_name="${2:-}"
 
 [[ $BUILDKITE_REPO =~ ^(https?://|git@)([^/:]+)[/:](.*)$ ]] && slug=${BASH_REMATCH[3]%%.git}
 if [[ -z "${slug:-}" ]]; then
@@ -12,7 +11,7 @@ if [[ -z "${slug:-}" ]]; then
 fi
 
 if [ -z "$sarif_file" ]; then
-  echo "Not enough arguments provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report> [tool-name]"
+  echo "Not enough arguments provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report>"
   exit 1
 fi
 
@@ -32,35 +31,35 @@ if [ -z "${GITHUB_TOKEN:-}" ]; then
   exit 1
 fi
 
-tmp_sarif=$(mktemp)
-gzip -c "$sarif_file" | base64 > "$tmp_sarif"
+sarif_base64_temp_file=$(mktemp)
 
-ref=""
+gzip -c "$sarif_file" | base64 > "$sarif_base64_temp_file"
+
 if [[ "${BUILDKITE_PULL_REQUEST:-false}" != "false" ]]; then
-  ref="refs/pull/$BUILDKITE_PULL_REQUEST/head"
+  json=$(jq -n \
+    --arg commit_sha "$BUILDKITE_COMMIT" \
+    --arg pr_number "$BUILDKITE_PULL_REQUEST" \
+    --rawfile sarif "$sarif_base64_temp_file" \
+    '{
+     "commit_sha": $commit_sha,
+     "ref": ("refs/pull/"+$pr_number+"/head"),
+     "sarif": $sarif
+   }')
 elif [[ "$BUILDKITE_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
-  ref="refs/heads/$BUILDKITE_BRANCH"
+  json=$(jq -n \
+    --arg commit_sha "$BUILDKITE_COMMIT" \
+    --arg branch "$BUILDKITE_BRANCH" \
+    --rawfile sarif "$sarif_base64_temp_file" \
+    '{
+     "commit_sha": $commit_sha,
+     "ref": ("refs/heads/"+$branch),
+     "sarif": $sarif
+   }')
 else
   exit 0
 fi
 
-jq_args=(
-  --arg commit_sha "$BUILDKITE_COMMIT"
-  --arg ref "$ref"
-  --rawfile sarif "$tmp_sarif"
-)
+sarif_json_temp_file=$(mktemp)
+echo "$json" > "$sarif_json_temp_file"
 
-if [[ -n "$tool_name" ]]; then
-  jq_args+=(--arg tool_name "$tool_name")
-fi
-
-jq -n "${jq_args[@]}" '
-  {
-    commit_sha: $commit_sha,
-    ref: $ref,
-    sarif: $sarif
-  }
-  + ( $tool_name? | if . != null then { tool_name: . } else empty end )
-' > sarif_payload.json
-
-github_api "repos/$slug/code-scanning/sarifs" --data-binary @sarif_payload.json
+github_api "repos/$slug/code-scanning/sarifs" --data-binary "@$sarif_json_temp_file"
