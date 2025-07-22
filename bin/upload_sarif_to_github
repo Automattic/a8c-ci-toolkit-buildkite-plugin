@@ -3,6 +3,7 @@
 set -euo pipefail
 
 sarif_file="${1:-}"
+category="${2:-}"
 
 [[ $BUILDKITE_REPO =~ ^(https?://|git@)([^/:]+)[/:](.*)$ ]] && slug=${BASH_REMATCH[3]%%.git}
 if [[ -z "${slug:-}" ]]; then
@@ -11,7 +12,7 @@ if [[ -z "${slug:-}" ]]; then
 fi
 
 if [ -z "$sarif_file" ]; then
-  echo "Not enough arguments provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report>"
+  echo "Not enough arguments provided. Usage: ./upload_sarif_to_gh.sh <path to .sarif report> [category]"
   exit 1
 fi
 
@@ -29,6 +30,19 @@ fi
 if [ -z "${GITHUB_TOKEN:-}" ]; then
   echo "Error: GITHUB_TOKEN is not defined."
   exit 1
+fi
+
+# Modify SARIF file if category is provided
+if [ -n "$category" ]; then
+  sarif_temp_file=$(mktemp)
+  jq --arg category "$category" '
+    .runs |= map(
+      .automationDetails = {
+        "id": ($category + "/")
+      }
+    )
+  ' "$sarif_file" > "$sarif_temp_file"
+  sarif_file="$sarif_temp_file"
 fi
 
 sarif_base64_temp_file=$(mktemp)
