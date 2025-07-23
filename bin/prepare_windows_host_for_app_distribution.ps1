@@ -3,6 +3,7 @@
 #  - Enables long path behavior
 #  - Disable Windows Defender on the CI agent
 #  - Install the "Chocolatey" package manager
+#  - Install Python (required for Node.js native module compilation)
 #  - Enable dev mode so the agent can support Linux-style symlinks
 #  - Download Code Signing Certificates(1)
 #  - Install the Windows 10 SDK if it detected a `.windows-10-sdk-version` file(2)
@@ -73,6 +74,31 @@ if (Test-Path $atpRegPath) {
 Write-Output "--- :windows: Setting up Package Manager"
 $env:ChocolateyInstall = Convert-Path "$((Get-Command choco).Path)\..\.."
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+
+Write-Output "--- :snake: Installing Python"
+# Install Python 3 via Chocolatey for Node.js native module compilation
+# Many Node.js packages require Python during npm install for building native extensions
+choco install python3 --yes --no-progress
+If ($LastExitCode -ne 0) { 
+  Write-Output "[!] Failed to install Python via Chocolatey"
+  Exit $LastExitCode 
+}
+
+# Refresh environment to make Python available in PATH
+& "$PSScriptRoot\path_aware_refreshenv.ps1"
+If ($LastExitCode -ne 0) { 
+  Write-Output "[!] Failed to refresh environment after Python installation"
+  Exit $LastExitCode 
+}
+
+# Verify Python installation
+$pythonVersion = python --version 2>&1
+If ($LastExitCode -eq 0) {
+  Write-Output "Python installed successfully: $pythonVersion"
+} else {
+  Write-Output "[!] Python installation verification failed"
+  Exit 1
+}
 
 # This should avoid issues with symlinks not being supported in Windows.
 #
