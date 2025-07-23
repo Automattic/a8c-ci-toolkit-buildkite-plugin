@@ -4,6 +4,11 @@
 # The list of valid component ids can be found at
 # https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022
 #
+# This script installs components required for Node.js native module compilation on Windows:
+# - Windows 10 SDK (configurable version)
+# - MSVC v143 compiler toolset (x64/x86)
+# - CMake tools for Visual Studio
+#
 # Example:
 #
 #   20348
@@ -76,11 +81,26 @@ If (-not (Test-Path $buildToolsPath)) {
   Write-Output "Successfully downloaded Visual Studio Build Tools at $buildToolsPath."
 }
 
-# Install the Windows SDK and other required components
-Write-Output "~~~ Installing Visual Studio Build Tools..."
+# Install the Windows SDK and other required components for Node.js native module compilation
+Write-Output "~~~ Installing Visual Studio Build Tools with Node.js native module support..."
+
+# Define components needed for Node.js native module compilation
+$components = @(
+  "Microsoft.VisualStudio.Component.Windows10SDK.$windows10SDKVersion",
+  "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",  # MSVC v143 compiler toolset
+  "Microsoft.VisualStudio.Component.VC.CMake.Project"   # CMake tools for native modules
+)
+
+$argumentList = "--quiet --wait"
+foreach ($component in $components) {
+  $argumentList += " --add $component"
+}
+
+Write-Output "Installing components: $($components -join ', ')"
+
 Start-Process `
   -FilePath $buildToolsPath `
-  -ArgumentList "--quiet --wait --add Microsoft.VisualStudio.Component.Windows10SDK.$windows10SDKVersion" `
+  -ArgumentList $argumentList `
   -NoNewWindow `
   -Wait
 
