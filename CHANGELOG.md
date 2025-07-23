@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Allow to specify category on `sarif` files upload [#183]
 
 ### Bug Fixes
 
