@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- Allow to specify category on `sarif` files upload [#183]
+_None._
 
 ### Bug Fixes
 
@@ -47,6 +47,13 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 5.4.0
+
+### New Features
+
+- Allow to specify category on `sarif` files upload [#183]
+
 
 ## 5.3.1
 
