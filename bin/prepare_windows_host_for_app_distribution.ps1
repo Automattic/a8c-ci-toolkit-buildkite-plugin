@@ -157,3 +157,6 @@ if (Test-Path $windowsSDKVersionFile) {
 } else {
   Write-Output "No $windowsSDKVersionFile file found, skipping Windows 10 SDK installation."
 }
+
+Write-Output "Windows host preparation for app distribution completed successfully."
+Exit 0
