@@ -62,7 +62,7 @@ if ($allowedVersions -notcontains $windows10SDKVersion) {
 Write-Output "Will attempt to set up Windows 10 ($windows10SDKVersion) SDK and Visual Studio Build Tools..."
 
 if ($InstallNativeCompilationTools) {
-  Write-Output "Native compilation tools requested. Will also install MSVC compiler toolset and CMake tools."
+  Write-Output "Native compilation tools requested. Will also install MSVC compiler toolset and CMake tools in addition to the Windows 10 SDK."
 } else {
   Write-Output "Installing Windows 10 SDK only. Use -InstallNativeCompilationTools to include MSVC compiler and CMake tools."
 }
@@ -90,7 +90,7 @@ If (-not (Test-Path $buildToolsPath)) {
 
 # Install the Windows SDK and (optionally) native compilation tools
 if ($InstallNativeCompilationTools) {
-  Write-Output "~~~ Installing Visual Studio Build Tools with native compilation tools..."
+  Write-Output "~~~ Installing Visual Studio Build Tools and native compilation tools with Windows 10 sdk..."
 } else {
   Write-Output "~~~ Installing Visual Studio Build Tools with Windows 10 SDK..."
 }
