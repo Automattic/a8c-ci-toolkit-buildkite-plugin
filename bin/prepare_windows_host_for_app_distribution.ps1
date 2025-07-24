@@ -7,17 +7,20 @@
 #  - Enable dev mode so the agent can support Linux-style symlinks
 #  - Download Code Signing Certificates(2)
 #  - Install the Windows 10 SDK if it detected a `.windows-10-sdk-version` file(3)
+#  - Optionally install native compilation tools (MSVC compiler and CMake)(4)
 #
 # (1) Python is NOT installed by default. You can install Python by calling the script with `-InstallPython`.
 # (2) The certificate it installs is stored in our AWS SecretsManager storage (`windows-code-signing-certificate` secret ID)
 # (3) You can skip the Windows 10 SDK installation regardless of whether `.windows-10-sdk-version` is present by calling the script with `-SkipWindows10SDKInstallation`.
+# (4) Native compilation tools are NOT installed by default. You can install them by calling the script with `-InstallNativeCompilationTools`.
 #
 # Note: In addition to calling this script, and depending on your client app, you might want to also install `npm` and the `Node.js` packages used by your client app on the agent too. For that part, you should use the `automattic/nvm` Buildkite plugin on the pipeline step's `plugins:` attribute.
 #
 
 param (
   [switch]$SkipWindows10SDKInstallation = $false,
-  [switch]$InstallPython = $false
+  [switch]$InstallPython = $false,
+  [switch]$InstallNativeCompilationTools = $false
 )
 
 # Stop script execution when a non-terminating error occurs
@@ -127,7 +130,12 @@ if ($SkipWindows10SDKInstallation) {
 $windowsSDKVersionFile = ".windows-10-sdk-version"
 if (Test-Path $windowsSDKVersionFile) {
   Write-Output "Found $windowsSDKVersionFile file, installing Windows 10 SDK..."
-  & "$PSScriptRoot\install_windows_10_sdk.ps1"
+  
+  if ($InstallNativeCompilationTools) {
+    & "$PSScriptRoot\install_windows_10_sdk.ps1" -InstallNativeCompilationTools
+  } else {
+    & "$PSScriptRoot\install_windows_10_sdk.ps1"
+  }
   If ($LastExitCode -ne 0) { Exit $LastExitCode }
 } else {
   Write-Output "No $windowsSDKVersionFile file found, skipping Windows 10 SDK installation."

@@ -4,8 +4,8 @@
 # The list of valid component ids can be found at
 # https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022
 #
-# This script installs components required for Node.js native module compilation on Windows:
-# - Windows 10 SDK (configurable version)
+# This script installs the Windows 10 SDK by default.
+# Optionally, it can also install native compilation tools for building native modules:
 # - MSVC v143 compiler toolset (x64/x86)
 # - CMake tools for Visual Studio
 #
@@ -14,7 +14,8 @@
 #   20348
 
 param (
-  [switch]$DryRun = $false
+  [switch]$DryRun = $false,
+  [switch]$InstallNativeCompilationTools = $false
 )
 
 # Stop script execution when a non-terminating error occurs
@@ -60,6 +61,12 @@ if ($allowedVersions -notcontains $windows10SDKVersion) {
 
 Write-Output "Will attempt to set up Windows 10 ($windows10SDKVersion) SDK and Visual Studio Build Tools..."
 
+if ($InstallNativeCompilationTools) {
+  Write-Output "Native compilation tools requested. Will also install MSVC compiler toolset and CMake tools."
+} else {
+  Write-Output "Installing Windows 10 SDK only. Use -InstallNativeCompilationTools to include MSVC compiler and CMake tools."
+}
+
 if ($DryRun) {
   Write-Output "Running in dry run mode, finishing here."
   exit 0
@@ -81,15 +88,25 @@ If (-not (Test-Path $buildToolsPath)) {
   Write-Output "Successfully downloaded Visual Studio Build Tools at $buildToolsPath."
 }
 
-# Install the Windows SDK and other required components for Node.js native module compilation
-Write-Output "~~~ Installing Visual Studio Build Tools with Node.js native module support..."
+# Install the Windows SDK and (optionally) native compilation tools
+if ($InstallNativeCompilationTools) {
+  Write-Output "~~~ Installing Visual Studio Build Tools with native compilation tools..."
+} else {
+  Write-Output "~~~ Installing Visual Studio Build Tools with Windows 10 SDK..."
+}
 
-# Define components needed for Node.js native module compilation
+# Define base components (always installed)
 $components = @(
-  "Microsoft.VisualStudio.Component.Windows10SDK.$windows10SDKVersion",
-  "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",  # MSVC v143 compiler toolset
-  "Microsoft.VisualStudio.Component.VC.CMake.Project"   # CMake tools for native modules
+  "Microsoft.VisualStudio.Component.Windows10SDK.$windows10SDKVersion"
 )
+
+# Add native compilation tools if requested
+if ($InstallNativeCompilationTools) {
+  $components += @(
+    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",  # MSVC v143 compiler toolset
+    "Microsoft.VisualStudio.Component.VC.CMake.Project"   # CMake tools for native modules
+  )
+}
 
 $argumentList = "--quiet --wait"
 foreach ($component in $components) {
