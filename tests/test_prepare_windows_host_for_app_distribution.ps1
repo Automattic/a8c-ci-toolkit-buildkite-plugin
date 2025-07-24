@@ -5,12 +5,9 @@
 # 2. -SkipWindows10SDKInstallation -InstallNativeCompilationTools (should fail with validation error)
 # 3. No .windows-10-sdk-version file with -InstallNativeCompilationTools (should skip installation - no version file available)
 # 4. No .windows-10-sdk-version file without -InstallNativeCompilationTools (should skip installation)
-# 5. .windows-10-sdk-version file exists with -InstallNativeCompilationTools (should install SDK with native tools)
-# 6. .windows-10-sdk-version file exists without -InstallNativeCompilationTools (should install SDK only)
-# 7. -InstallPython flag (should attempt Python installation)
 #
-# Note: For tests involving actual downloads/installations, we test up to the download attempt
-# to verify the correct decision logic without requiring network access or long installations.
+# Note: These tests focus on parameter validation and decision logic only, without performing
+# expensive installations or downloads.
 
 param (
   [int]$ExpectedExitCode = 0
@@ -144,79 +141,7 @@ if ($output -match [regex]::Escape($expectedNoFileSkipMessage)) {
   Exit 1
 }
 
-# Test 5: .windows-10-sdk-version file exists with -InstallNativeCompilationTools (should install SDK with native tools)
-Write-Output "`n--- Test 5: SDK version file exists with native compilation tools requested"
-Remove-TestFiles
-
-# Create a valid SDK version file
-"$sdkVersion" | Out-File .windows-10-sdk-version
-
-$output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1" -InstallNativeCompilationTools 2>&1
-$exitCode = $LASTEXITCODE
-
-$expectedSDKMessage = "Found .windows-10-sdk-version file"
-if ($output -match [regex]::Escape($expectedSDKMessage)) {
-  Write-Output "$emojiGreenCheck Test 5: Found expected SDK installation message"
-} else {
-  Write-Output "$emojiRedCross Test 5: Expected to find SDK installation message, but got:"
-  Write-Output "$output"
-  Exit 1
-}
-
-# Test 6: .windows-10-sdk-version file exists without -InstallNativeCompilationTools (should install SDK only)
-Write-Output "`n--- Test 6: SDK version file exists without native compilation tools"
-Remove-TestFiles
-
-# Create a valid SDK version file
-"$sdkVersion" | Out-File .windows-10-sdk-version
-
-$output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1" 2>&1
-$exitCode = $LASTEXITCODE
-
-$expectedSDKMessage = "Found .windows-10-sdk-version file"
-if ($output -match [regex]::Escape($expectedSDKMessage)) {
-  Write-Output "$emojiGreenCheck Test 6: Found expected SDK installation message"
-} else {
-  Write-Output "$emojiRedCross Test 6: Expected to find SDK installation message, but got:"
-  Write-Output "$output"
-  Exit 1
-}
-
-# Test 7: -InstallPython flag (should attempt Python installation)
-Write-Output "`n--- Test 7: Python installation requested"
-Remove-TestFiles
-
-$output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1" -InstallPython 2>&1
-$exitCode = $LASTEXITCODE
-
-$expectedPythonInstallMessage = "Installing Python for Node.js native module compilation"
-if ($output -match [regex]::Escape($expectedPythonInstallMessage)) {
-  Write-Output "$emojiGreenCheck Test 7: Found expected Python installation message"
-} else {
-  Write-Output "$emojiRedCross Test 7: Expected to find Python installation message, but got:"
-  Write-Output "$output"
-  Exit 1
-}
-
-# Test Python installation skip behavior (should be consistent across tests that don't use -InstallPython)
-Write-Output "`n--- Testing Python installation skip behavior"
-# Use output from Test 4 since it completed successfully without errors
-$expectedPythonSkipMessage = "Skipping Python installation"
-# We'll test this on a fresh run since it ran without -InstallPython
-Remove-TestFiles
-"$sdkVersion" | Out-File .windows-10-sdk-version
-$outputForPythonTest = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1" 2>&1
-
-if ($outputForPythonTest -match [regex]::Escape($expectedPythonSkipMessage)) {
-  Write-Output "$emojiGreenCheck Found expected Python skip message in output"
-} else {
-  Write-Output "$emojiRedCross Expected to find message about skipping Python installation, but got:"
-  Write-Output "$outputForPythonTest"
-  Exit 1
-}
-
 # Clean up
 Remove-TestFiles
 
 Write-Output "`n$emojiGreenCheck All tests completed successfully."
-Write-Output "Note: Tests 5, 6, and 7 may attempt to call install_windows_10_sdk.ps1 or install_python.ps1 which require network access. If these fail due to network issues, the validation logic is still confirmed working."
