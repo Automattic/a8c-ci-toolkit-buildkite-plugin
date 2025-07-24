@@ -81,7 +81,7 @@ $env:ChocolateyInstall = Convert-Path "$((Get-Command choco).Path)\..\.."
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
 
 if ($InstallPython) {
-  Write-Output "Run with InstallPython = true. Installing Python..."
+  Write-Output "Run with InstallPython = true. Installing Python for Node.js native module compilation..."
   & "$PSScriptRoot\install_python.ps1"
   If ($LastExitCode -ne 0) { Exit $LastExitCode }
 } else {
