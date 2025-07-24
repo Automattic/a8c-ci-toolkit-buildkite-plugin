@@ -12,7 +12,7 @@
 # (1) Python is NOT installed by default. You can install Python by calling the script with `-InstallPython`.
 # (2) The certificate it installs is stored in our AWS SecretsManager storage (`windows-code-signing-certificate` secret ID)
 # (3) You can skip the Windows 10 SDK installation regardless of whether `.windows-10-sdk-version` is present by calling the script with `-SkipWindows10SDKInstallation`.
-# (4) Native compilation tools are NOT installed by default. You can install them by calling the script with `-InstallNativeCompilationTools`.
+# (4) Native compilation tools are NOT installed by default. You can install them by calling the script with `-InstallNativeCompilationTools`. This requires the Windows 10 SDK installation to NOT be skipped, as those are installed in tandem.
 #
 # Note: In addition to calling this script, and depending on your client app, you might want to also install `npm` and the `Node.js` packages used by your client app on the agent too. For that part, you should use the `automattic/nvm` Buildkite plugin on the pipeline step's `plugins:` attribute.
 #
