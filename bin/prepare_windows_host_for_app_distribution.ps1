@@ -28,7 +28,9 @@ $ErrorActionPreference = "Stop"
 
 # Validate parameter combinations
 if ($InstallNativeCompilationTools -and $SkipWindows10SDKInstallation) {
-    throw "Invalid parameter combination: -InstallNativeCompilationTools cannot be used with -SkipWindows10SDKInstallation. Native compilation tools require Windows 10 SDK to be installed."
+    Write-Output "[!] Invalid parameter combination: -InstallNativeCompilationTools cannot be used with -SkipWindows10SDKInstallation."
+    Write-Output "    Native compilation tools require Windows 10 SDK to be installed."
+    Exit 1
 }
 
 Write-Output "--- :windows: Setting up Windows for app distribution"
