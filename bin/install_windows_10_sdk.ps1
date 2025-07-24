@@ -38,7 +38,7 @@ $allowedVersions = @(
 $windowsSDKVersionFile = ".windows-10-sdk-version"
 if (-not (Test-Path $windowsSDKVersionFile)) {
   Write-Output "[!] No Windows 10 SDK version file found at $windowsSDKVersionFile."
-  exit 1
+  Exit 1
 }
 
 $windows10SDKVersion = (Get-Content -TotalCount 1 $windowsSDKVersionFile).Trim()
@@ -46,7 +46,7 @@ $windows10SDKVersion = (Get-Content -TotalCount 1 $windowsSDKVersionFile).Trim()
 if ($windows10SDKVersion -notmatch '^\d+$') {
   Write-Output "[!] Invalid version file format."
   Write-Output "Expected an integer, got: '$windows10SDKVersion'"
-  exit 1
+  Exit 1
 }
 
 if ($allowedVersions -notcontains $windows10SDKVersion) {
@@ -56,7 +56,7 @@ if ($allowedVersions -notcontains $windows10SDKVersion) {
     Write-Output "- $version"
   }
   Write-Output "More info at https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022"
-  exit 1
+  Exit 1
 }
 
 Write-Output "Will attempt to set up Windows 10 ($windows10SDKVersion) SDK and Visual Studio Build Tools..."
@@ -69,7 +69,7 @@ if ($InstallNativeCompilationTools) {
 
 if ($DryRun) {
   Write-Output "Running in dry run mode, finishing here."
-  exit 0
+  Exit 0
 }
 
 # Download the Visual Studio Build Tools Bootstrapper

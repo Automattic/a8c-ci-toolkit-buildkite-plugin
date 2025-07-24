@@ -52,7 +52,7 @@ try {
 } catch {
     Write-Output "[!] Chocolatey is not installed or not available in PATH"
     Write-Output "    Please ensure Chocolatey is installed before running this script"
-    exit 1
+    Exit 1
 }
 
 Write-Output "Will attempt to install Python 3 via Chocolatey..."

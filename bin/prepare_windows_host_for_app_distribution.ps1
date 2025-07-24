@@ -124,7 +124,7 @@ Write-Output "--- :windows: Checking whether to install Windows 10 SDK..."
 
 if ($SkipWindows10SDKInstallation) {
   Write-Output "Run with SkipWindows10SDKInstallation = true. Skipping Windows 10 SDK installation check."
-  exit 0
+  Exit 0
 }
 
 $windowsSDKVersionFile = ".windows-10-sdk-version"

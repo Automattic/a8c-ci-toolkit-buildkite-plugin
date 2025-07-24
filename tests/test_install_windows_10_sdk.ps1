@@ -12,7 +12,7 @@ Write-Output "Running $($MyInvocation.MyCommand.Name) with ExpectedExitCode=$Exp
 
 if (($ExpectedExitCode -eq 0) -and ($ExpectedErrorKeyphrase -ne "")) {
   Write-Output "$emojiRedCross Expected call to succeed (expected error code = 0), but given an error keyphrase to check."
-  exit 1
+  Exit 1
 }
 
 $output = & "$PSScriptRoot\..\bin\install_windows_10_sdk.ps1" -DryRun
@@ -22,20 +22,20 @@ if ($exitCode -ne $ExpectedExitCode) {
   Write-Output "$emojiRedCross Expected exit code $ExpectedExitCode, got $exitCode"
   Write-Output "Output was:"
   Write-Output "$output"
-  exit 1
+  Exit 1
 } else {
   Write-Output "$emojiGreenCheck Exit code matches expected value ($ExpectedExitCode)"
 }
 
 # Only check error keyphrase if exit code is not 0
 if ($exitCode -eq 0) {
-  exit 0
+  Exit 0
 }
 
 # If keyphrase is empty, assume the caller is satisfied with only testing the exit code
 if ($ExpectedErrorKeyphrase -eq "") {
   Write-Output "Exit code match expectation and no error keyphrase was provided. Test completed."
-  exit 0
+  Exit 0
 }
 
 if ($output -match [regex]::Escape($ExpectedErrorKeyphrase)) {
@@ -44,5 +44,5 @@ if ($output -match [regex]::Escape($ExpectedErrorKeyphrase)) {
 } else {
   Write-Output "$emojiRedCross Expected error to contain '$ExpectedErrorKeyphrase', but got:"
   Write-Output "$output"
-  exit 1
+  Exit 1
 }
