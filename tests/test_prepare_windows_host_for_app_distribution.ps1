@@ -21,6 +21,9 @@ param (
 $emojiGreenCheck = "$([char]0x2705)"
 $emojiRedCross = "$([char]0x274C)"
 
+# Skip certificate download for all tests to avoid AWS credential issues
+$env:SKIP_CERTIFICATE_DOWNLOAD = "true"
+
 Write-Output "Testing prepare_windows_host_for_app_distribution.ps1 with various parameter combinations"
 
 # Function to clean up test files
@@ -95,11 +98,6 @@ if ($output -match "Invalid parameter combination") {
 Write-Output "`n--- Test 3: No SDK version file with native compilation tools requested"
 Remove-TestFiles
 
-# Ensure no SDK version file exists
-if (Test-Path ".windows-10-sdk-version") {
-  Remove-Item ".windows-10-sdk-version" -Force
-}
-
 $output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1" -InstallNativeCompilationTools 2>&1
 $exitCode = $LASTEXITCODE
 
@@ -124,11 +122,6 @@ if ($output -match [regex]::Escape($expectedNoFileSkipMessage)) {
 # Test 4: No .windows-10-sdk-version file without -InstallNativeCompilationTools (should skip everything)
 Write-Output "`n--- Test 4: No SDK version file and no native tools requested"
 Remove-TestFiles
-
-# Ensure no SDK version file exists
-if (Test-Path ".windows-10-sdk-version") {
-  Remove-Item ".windows-10-sdk-version" -Force
-}
 
 $output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1"
 $exitCode = $LASTEXITCODE

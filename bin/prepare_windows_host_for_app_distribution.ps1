@@ -13,6 +13,7 @@
 # (2) The certificate it installs is stored in our AWS SecretsManager storage (`windows-code-signing-certificate` secret ID)
 # (3) You can skip the Windows 10 SDK installation regardless of whether `.windows-10-sdk-version` is present by calling the script with `-SkipWindows10SDKInstallation`.
 # (4) Native compilation tools are NOT installed by default. You can install them by calling the script with `-InstallNativeCompilationTools`. This requires the Windows 10 SDK installation to NOT be skipped, as those are installed in tandem.
+# (5) Certificate download can be skipped by setting environment variable `SKIP_CERTIFICATE_DOWNLOAD=true` (useful for testing).
 #
 # Note: In addition to calling this script, and depending on your client app, you might want to also install `npm` and the `Node.js` packages used by your client app on the agent too. For that part, you should use the `automattic/nvm` Buildkite plugin on the pipeline step's `plugins:` attribute.
 #
@@ -114,14 +115,23 @@ if ($developerMode.State -eq 'Enabled') {
   }
 }
 
-Write-Output "--- :lock_with_ink_pen: Download Code Signing Certificate"
-$certificateBinPath = "certificate.bin"
-$EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate `
-  | jq -r '.SecretString' `
-  | Out-File $certificateBinPath
-$certificatePfxPath = "certificate.pfx"
-certutil -decode $certificateBinPath $certificatePfxPath
-Write-Output "Code signing certificate downloaded at: $((Get-Item $certificatePfxPath).FullName)"
+if ($env:SKIP_CERTIFICATE_DOWNLOAD -eq "true") {
+  Write-Output "--- :lock_with_ink_pen: Skipping Code Signing Certificate download"
+} else {
+  Write-Output "--- :lock_with_ink_pen: Download Code Signing Certificate"
+  $certificateBinPath = "certificate.bin"
+  $EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate `
+    | jq -r '.SecretString' `
+    | Out-File $certificateBinPath
+  $certificatePfxPath = "certificate.pfx"
+  certutil -decode $certificateBinPath $certificatePfxPath
+  Write-Output "Code signing certificate downloaded at: $((Get-Item $certificatePfxPath).FullName)"
+
+  If ($LastExitCode -ne 0) {
+    Write-Output "[!] Failed to download code signing certificate."
+    Exit $LastExitCode
+  }
+}
 
 Write-Output "--- :windows: Checking whether to install Windows 10 SDK..."
 
