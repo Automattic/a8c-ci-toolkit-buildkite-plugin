@@ -26,6 +26,11 @@ param (
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
 
+# Validate parameter combinations
+if ($InstallNativeCompilationTools -and $SkipWindows10SDKInstallation) {
+    throw "Invalid parameter combination: -InstallNativeCompilationTools cannot be used with -SkipWindows10SDKInstallation. Native compilation tools require Windows 10 SDK to be installed."
+}
+
 Write-Output "--- :windows: Setting up Windows for app distribution"
 
 Write-Output "Current working directory: $PWD"
