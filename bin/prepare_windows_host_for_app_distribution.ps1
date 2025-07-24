@@ -107,15 +107,6 @@ if ($developerMode.State -eq 'Enabled') {
   }
 }
 
-Write-Output "--- :lock_with_ink_pen: Download Code Signing Certificate"
-$certificateBinPath = "certificate.bin"
-$EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate `
-  | jq -r '.SecretString' `
-  | Out-File $certificateBinPath
-$certificatePfxPath = "certificate.pfx"
-certutil -decode $certificateBinPath $certificatePfxPath
-Write-Output "Code signing certificate downloaded at: $((Get-Item $certificatePfxPath).FullName)"
-
 Write-Output "--- :windows: Checking whether to install Windows 10 SDK..."
 
 # When using Electron Forge and electron2appx, building Appx requires the Windows 10 SDK
@@ -140,3 +131,12 @@ if (Test-Path $windowsSDKVersionFile) {
 } else {
   Write-Output "No $windowsSDKVersionFile file found, skipping Windows 10 SDK installation."
 }
+
+Write-Output "--- :lock_with_ink_pen: Download Code Signing Certificate"
+$certificateBinPath = "certificate.bin"
+$EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate `
+  | jq -r '.SecretString' `
+  | Out-File $certificateBinPath
+$certificatePfxPath = "certificate.pfx"
+certutil -decode $certificateBinPath $certificatePfxPath
+Write-Output "Code signing certificate downloaded at: $((Get-Item $certificatePfxPath).FullName)"
