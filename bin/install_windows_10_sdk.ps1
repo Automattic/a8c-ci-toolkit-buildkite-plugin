@@ -1,13 +1,13 @@
 # Install the Windows 10 SDK and Visual Studio Build Tools using the value in .windows-10-sdk-version.
 #
+# This script installs the Windows 10 SDK by default.
+# Optionally, it can also install native compilation tools for building native modules using the -InstallNativeCompilationTools flag:
+# - MSVC v143 compiler toolset (x64/x86)
+# - CMake tools for Visual Studio
+#
 # The expected .windows-10-sdk-version format is an integer representing a valid SDK component id.
 # The list of valid component ids can be found at
 # https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022
-#
-# This script installs the Windows 10 SDK by default.
-# Optionally, it can also install native compilation tools for building native modules:
-# - MSVC v143 compiler toolset (x64/x86)
-# - CMake tools for Visual Studio
 #
 # Example:
 #
