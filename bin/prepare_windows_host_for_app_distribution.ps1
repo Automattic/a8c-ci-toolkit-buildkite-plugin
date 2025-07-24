@@ -3,19 +3,21 @@
 #  - Enables long path behavior
 #  - Disable Windows Defender on the CI agent
 #  - Install the "Chocolatey" package manager
-#  - Install Python (required for Node.js native module compilation)
+#  - Install Python (required for Node.js native module compilation)(1)
 #  - Enable dev mode so the agent can support Linux-style symlinks
-#  - Download Code Signing Certificates(1)
-#  - Install the Windows 10 SDK if it detected a `.windows-10-sdk-version` file(2)
+#  - Download Code Signing Certificates(2)
+#  - Install the Windows 10 SDK if it detected a `.windows-10-sdk-version` file(3)
 #
-# (1) The certificate it installs is stored in our AWS SecretsManager storage (`windows-code-signing-certificate` secret ID)
-# (2) You can skip the Windows 10 SDK installation regardless of whether `.windows-10-sdk-version` is present by calling the script with `-SkipWindows10SDKInstallation`.
+# (1) Python is NOT installed by default. You can install Python by calling the script with `-InstallPython`.
+# (2) The certificate it installs is stored in our AWS SecretsManager storage (`windows-code-signing-certificate` secret ID)
+# (3) You can skip the Windows 10 SDK installation regardless of whether `.windows-10-sdk-version` is present by calling the script with `-SkipWindows10SDKInstallation`.
 #
 # Note: In addition to calling this script, and depending on your client app, you might want to also install `npm` and the `Node.js` packages used by your client app on the agent too. For that part, you should use the `automattic/nvm` Buildkite plugin on the pipeline step's `plugins:` attribute.
 #
 
 param (
-  [switch]$SkipWindows10SDKInstallation = $false
+  [switch]$SkipWindows10SDKInstallation = $false,
+  [switch]$InstallPython = $false
 )
 
 # Stop script execution when a non-terminating error occurs
@@ -75,29 +77,12 @@ Write-Output "--- :windows: Setting up Package Manager"
 $env:ChocolateyInstall = Convert-Path "$((Get-Command choco).Path)\..\.."
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
 
-Write-Output "--- :snake: Installing Python"
-# Install Python 3 via Chocolatey for Node.js native module compilation
-# Many Node.js packages require Python during npm install for building native extensions
-choco install python3 --yes --no-progress
-If ($LastExitCode -ne 0) { 
-  Write-Output "[!] Failed to install Python via Chocolatey"
-  Exit $LastExitCode 
-}
-
-# Refresh environment to make Python available in PATH
-& "$PSScriptRoot\path_aware_refreshenv.ps1"
-If ($LastExitCode -ne 0) { 
-  Write-Output "[!] Failed to refresh environment after Python installation"
-  Exit $LastExitCode 
-}
-
-# Verify Python installation
-$pythonVersion = python --version 2>&1
-If ($LastExitCode -eq 0) {
-  Write-Output "Python installed successfully: $pythonVersion"
+if ($InstallPython) {
+  Write-Output "Run with InstallPython = true. Installing Python..."
+  & "$PSScriptRoot\install_python.ps1"
+  If ($LastExitCode -ne 0) { Exit $LastExitCode }
 } else {
-  Write-Output "[!] Python installation verification failed"
-  Exit 1
+  Write-Output "Python installation not requested. Skipping Python installation."
 }
 
 # This should avoid issues with symlinks not being supported in Windows.
