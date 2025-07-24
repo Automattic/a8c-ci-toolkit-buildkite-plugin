@@ -7,9 +7,17 @@
     for Node.js native module compilation as some Node.js packages require Python during
     npm install for building native extensions.
 
+.PARAMETER DryRun
+    When specified, the script will validate dependencies and show what would be installed
+    without actually performing the installation.
+
 .EXAMPLE
     .\install_python.ps1
     Installs Python 3 via Chocolatey.
+
+.EXAMPLE
+    .\install_python.ps1 -DryRun
+    Validates dependencies and shows what would be installed without performing installation.
 
 .NOTES
     Author: Automattic
@@ -28,6 +36,10 @@
     Non-zero - Chocolatey installation exit code
 #>
 
+param (
+  [switch]$DryRun = $false
+)
+
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
 
@@ -41,6 +53,13 @@ try {
     Write-Output "[!] Chocolatey is not installed or not available in PATH"
     Write-Output "    Please ensure Chocolatey is installed before running this script"
     exit 1
+}
+
+Write-Output "Will attempt to install Python 3 via Chocolatey..."
+
+if ($DryRun) {
+  Write-Output "Running in dry run mode, finishing here."
+  exit 0
 }
 
 # Install Python 3 via Chocolatey for Node.js native module compilation
