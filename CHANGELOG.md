@@ -52,7 +52,7 @@ _None._
 
 ### New Features
 
-- Install Python during windows setup and install additional Visual Studio Build Tools components for native builds [#186]
+- Allow optionally installing Python and additional Visual Studio Build Tools components for native builds during Windows setup [#186]
 
 ## 5.4.0
 
