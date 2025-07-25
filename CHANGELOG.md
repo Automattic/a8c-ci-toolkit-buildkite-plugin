@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Install Python during windows setup and install additional Visual Studio Build Tools components for native builds [#186]
 
 ### Bug Fixes
 
@@ -53,7 +53,6 @@ _None._
 ### New Features
 
 - Allow to specify category on `sarif` files upload [#183]
-
 
 ## 5.3.1
 

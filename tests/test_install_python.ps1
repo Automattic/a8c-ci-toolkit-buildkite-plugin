@@ -15,7 +15,7 @@ if (($ExpectedExitCode -eq 0) -and ($ExpectedErrorKeyphrase -ne "")) {
   Exit 1
 }
 
-$output = & "$PSScriptRoot\..\bin\install_windows_10_sdk.ps1" -DryRun
+$output = & "$PSScriptRoot\..\bin\install_python.ps1" -DryRun
 $exitCode = $LASTEXITCODE
 
 if ($exitCode -ne $ExpectedExitCode) {

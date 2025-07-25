@@ -3,22 +3,36 @@
 #  - Enables long path behavior
 #  - Disable Windows Defender on the CI agent
 #  - Install the "Chocolatey" package manager
+#  - Install Python (required for Node.js native module compilation)(1)
 #  - Enable dev mode so the agent can support Linux-style symlinks
-#  - Download Code Signing Certificates(1)
-#  - Install the Windows 10 SDK if it detected a `.windows-10-sdk-version` file(2)
+#  - Download Code Signing Certificates(2)
+#  - Install the Windows 10 SDK if it detected a `.windows-10-sdk-version` file(3)
+#  - Optionally install native compilation tools (MSVC compiler and CMake)(4)
 #
-# (1) The certificate it installs is stored in our AWS SecretsManager storage (`windows-code-signing-certificate` secret ID)
-# (2) You can skip the Windows 10 SDK installation regardless of whether `.windows-10-sdk-version` is present by calling the script with `-SkipWindows10SDKInstallation`.
+# (1) Python is NOT installed by default. You can install Python by calling the script with `-InstallPython`.
+# (2) The certificate it installs is stored in our AWS SecretsManager storage (`windows-code-signing-certificate` secret ID)
+# (3) You can skip the Windows 10 SDK installation regardless of whether `.windows-10-sdk-version` is present by calling the script with `-SkipWindows10SDKInstallation`.
+# (4) Native compilation tools are NOT installed by default. You can install them by calling the script with `-InstallNativeCompilationTools`. This requires the Windows 10 SDK installation to NOT be skipped, as those are installed in tandem.
+# (5) Certificate download can be skipped by setting environment variable `SKIP_CERTIFICATE_DOWNLOAD=true` (useful for testing).
 #
 # Note: In addition to calling this script, and depending on your client app, you might want to also install `npm` and the `Node.js` packages used by your client app on the agent too. For that part, you should use the `automattic/nvm` Buildkite plugin on the pipeline step's `plugins:` attribute.
 #
 
 param (
-  [switch]$SkipWindows10SDKInstallation = $false
+  [switch]$SkipWindows10SDKInstallation = $false,
+  [switch]$InstallPython = $false,
+  [switch]$InstallNativeCompilationTools = $false
 )
 
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
+
+# Validate parameter combinations
+if ($InstallNativeCompilationTools -and $SkipWindows10SDKInstallation) {
+    Write-Output "[!] Invalid parameter combination: -InstallNativeCompilationTools cannot be used with -SkipWindows10SDKInstallation."
+    Write-Output "    Native compilation tools require Windows 10 SDK to be installed."
+    Exit 1
+}
 
 Write-Output "--- :windows: Setting up Windows for app distribution"
 
@@ -74,6 +88,14 @@ Write-Output "--- :windows: Setting up Package Manager"
 $env:ChocolateyInstall = Convert-Path "$((Get-Command choco).Path)\..\.."
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
 
+if ($InstallPython) {
+  Write-Output "Run with InstallPython = true. Installing Python for Node.js native module compilation..."
+  & "$PSScriptRoot\install_python.ps1"
+  If ($LastExitCode -ne 0) { Exit $LastExitCode }
+} else {
+  Write-Output "Python installation not requested. Skipping Python installation."
+}
+
 # This should avoid issues with symlinks not being supported in Windows.
 #
 # See how this build failed
@@ -93,14 +115,23 @@ if ($developerMode.State -eq 'Enabled') {
   }
 }
 
-Write-Output "--- :lock_with_ink_pen: Download Code Signing Certificate"
-$certificateBinPath = "certificate.bin"
-$EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate `
-  | jq -r '.SecretString' `
-  | Out-File $certificateBinPath
-$certificatePfxPath = "certificate.pfx"
-certutil -decode $certificateBinPath $certificatePfxPath
-Write-Output "Code signing certificate downloaded at: $((Get-Item $certificatePfxPath).FullName)"
+if ($env:SKIP_CERTIFICATE_DOWNLOAD -eq "true") {
+  Write-Output "--- :lock_with_ink_pen: Skipping Code Signing Certificate download"
+} else {
+  Write-Output "--- :lock_with_ink_pen: Download Code Signing Certificate"
+  $certificateBinPath = "certificate.bin"
+  $EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate `
+    | jq -r '.SecretString' `
+    | Out-File $certificateBinPath
+  $certificatePfxPath = "certificate.pfx"
+  certutil -decode $certificateBinPath $certificatePfxPath
+  Write-Output "Code signing certificate downloaded at: $((Get-Item $certificatePfxPath).FullName)"
+
+  If ($LastExitCode -ne 0) {
+    Write-Output "[!] Failed to download code signing certificate."
+    Exit $LastExitCode
+  }
+}
 
 Write-Output "--- :windows: Checking whether to install Windows 10 SDK..."
 
@@ -110,14 +141,22 @@ Write-Output "--- :windows: Checking whether to install Windows 10 SDK..."
 
 if ($SkipWindows10SDKInstallation) {
   Write-Output "Run with SkipWindows10SDKInstallation = true. Skipping Windows 10 SDK installation check."
-  exit 0
+  Exit 0
 }
 
 $windowsSDKVersionFile = ".windows-10-sdk-version"
 if (Test-Path $windowsSDKVersionFile) {
   Write-Output "Found $windowsSDKVersionFile file, installing Windows 10 SDK..."
-  & "$PSScriptRoot\install_windows_10_sdk.ps1"
+  
+  if ($InstallNativeCompilationTools) {
+    & "$PSScriptRoot\install_windows_10_sdk.ps1" -InstallNativeCompilationTools
+  } else {
+    & "$PSScriptRoot\install_windows_10_sdk.ps1"
+  }
   If ($LastExitCode -ne 0) { Exit $LastExitCode }
 } else {
   Write-Output "No $windowsSDKVersionFile file found, skipping Windows 10 SDK installation."
 }
+
+Write-Output "Windows host preparation for app distribution completed successfully."
+Exit 0

@@ -1,5 +1,10 @@
 # Install the Windows 10 SDK and Visual Studio Build Tools using the value in .windows-10-sdk-version.
 #
+# This script installs the Windows 10 SDK by default.
+# Optionally, it can also install native compilation tools for building native modules using the -InstallNativeCompilationTools flag:
+# - MSVC v143 compiler toolset (x64/x86)
+# - CMake tools for Visual Studio
+#
 # The expected .windows-10-sdk-version format is an integer representing a valid SDK component id.
 # The list of valid component ids can be found at
 # https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022
@@ -9,7 +14,8 @@
 #   20348
 
 param (
-  [switch]$DryRun = $false
+  [switch]$DryRun = $false,
+  [switch]$InstallNativeCompilationTools = $false
 )
 
 # Stop script execution when a non-terminating error occurs
@@ -32,7 +38,7 @@ $allowedVersions = @(
 $windowsSDKVersionFile = ".windows-10-sdk-version"
 if (-not (Test-Path $windowsSDKVersionFile)) {
   Write-Output "[!] No Windows 10 SDK version file found at $windowsSDKVersionFile."
-  exit 1
+  Exit 1
 }
 
 $windows10SDKVersion = (Get-Content -TotalCount 1 $windowsSDKVersionFile).Trim()
@@ -40,7 +46,7 @@ $windows10SDKVersion = (Get-Content -TotalCount 1 $windowsSDKVersionFile).Trim()
 if ($windows10SDKVersion -notmatch '^\d+$') {
   Write-Output "[!] Invalid version file format."
   Write-Output "Expected an integer, got: '$windows10SDKVersion'"
-  exit 1
+  Exit 1
 }
 
 if ($allowedVersions -notcontains $windows10SDKVersion) {
@@ -50,14 +56,20 @@ if ($allowedVersions -notcontains $windows10SDKVersion) {
     Write-Output "- $version"
   }
   Write-Output "More info at https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022"
-  exit 1
+  Exit 1
 }
 
 Write-Output "Will attempt to set up Windows 10 ($windows10SDKVersion) SDK and Visual Studio Build Tools..."
 
+if ($InstallNativeCompilationTools) {
+  Write-Output "Native compilation tools requested. Will also install MSVC compiler toolset and CMake tools in addition to the Windows 10 SDK."
+} else {
+  Write-Output "Installing Windows 10 SDK only. Use -InstallNativeCompilationTools to include MSVC compiler and CMake tools."
+}
+
 if ($DryRun) {
   Write-Output "Running in dry run mode, finishing here."
-  exit 0
+  Exit 0
 }
 
 # Download the Visual Studio Build Tools Bootstrapper
@@ -76,11 +88,36 @@ If (-not (Test-Path $buildToolsPath)) {
   Write-Output "Successfully downloaded Visual Studio Build Tools at $buildToolsPath."
 }
 
-# Install the Windows SDK and other required components
-Write-Output "~~~ Installing Visual Studio Build Tools..."
+# Install the Windows SDK and (optionally) native compilation tools
+if ($InstallNativeCompilationTools) {
+  Write-Output "~~~ Installing Visual Studio Build Tools and native compilation tools with Windows 10 sdk..."
+} else {
+  Write-Output "~~~ Installing Visual Studio Build Tools with Windows 10 SDK..."
+}
+
+# Define base components (always installed)
+$components = @(
+  "Microsoft.VisualStudio.Component.Windows10SDK.$windows10SDKVersion"
+)
+
+# Add native compilation tools if requested
+if ($InstallNativeCompilationTools) {
+  $components += @(
+    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",  # MSVC v143 compiler toolset
+    "Microsoft.VisualStudio.Component.VC.CMake.Project"   # CMake tools for native modules
+  )
+}
+
+$argumentList = "--quiet --wait"
+foreach ($component in $components) {
+  $argumentList += " --add $component"
+}
+
+Write-Output "Installing components: $($components -join ', ')"
+
 Start-Process `
   -FilePath $buildToolsPath `
-  -ArgumentList "--quiet --wait --add Microsoft.VisualStudio.Component.Windows10SDK.$windows10SDKVersion" `
+  -ArgumentList $argumentList `
   -NoNewWindow `
   -Wait
 
