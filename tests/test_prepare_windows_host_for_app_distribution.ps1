@@ -38,7 +38,7 @@ Write-Output "`n--- Test 1: Skip SDK installation without native tools"
 Remove-TestFiles
 
 # Create a valid SDK version file to ensure it's not being used when skip is set
-$sdkVersion = "20348"
+$sdkVersion = "19041"
 "$sdkVersion" | Out-File .windows-10-sdk-version
 
 $output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1" -SkipWindows10SDKInstallation
