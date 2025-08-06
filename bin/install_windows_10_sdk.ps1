@@ -11,7 +11,7 @@
 #
 # Example:
 #
-#   20348
+#   19041
 
 param (
   [switch]$DryRun = $false,
@@ -25,14 +25,7 @@ Write-Output "--- :windows: Installing Windows 10 SDK and Visual Studio Build To
 
 # See list at https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022
 $allowedVersions = @(
-  "20348",
-  "19041",
-  "18362",
-  "17763",
-  "17134",
-  "16299",
-  "15063",
-  "14393"
+  "19041"
 )
 
 $windowsSDKVersionFile = ".windows-10-sdk-version"

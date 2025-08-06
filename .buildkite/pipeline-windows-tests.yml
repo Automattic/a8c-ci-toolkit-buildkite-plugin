@@ -16,7 +16,7 @@ steps:
     steps:
       - label: ":windows: install_windows_10_sdk Tests - Version file with valid format and version"
         command: |
-          "20348" | Out-File .windows-10-sdk-version
+          "19041" | Out-File .windows-10-sdk-version
           .\tests\test_install_windows_10_sdk.ps1 -ExpectedExitCode 0
         agents:
           queue: windows
@@ -26,7 +26,7 @@ steps:
 
       - label: ":windows: install_windows_10_sdk Tests - Version file with one new line"
         command: |
-          "20348`n" | Out-File .windows-10-sdk-version
+          "19041`n" | Out-File .windows-10-sdk-version
           .\tests\test_install_windows_10_sdk.ps1 -ExpectedExitCode 0
         agents:
           queue: windows
@@ -36,7 +36,7 @@ steps:
 
       - label: ":windows: install_windows_10_sdk Tests - Version file with more than one new line"
         command: |
-          "20348`n`n" | Out-File .windows-10-sdk-version
+          "19041`n`n" | Out-File .windows-10-sdk-version
           .\tests\test_install_windows_10_sdk.ps1 -ExpectedExitCode 0
         agents:
           queue: windows
@@ -56,7 +56,7 @@ steps:
 
       - label: ":windows: install_windows_10_sdk Tests - Version file with trailing whitespaces"
         command: |
-          "18362   " | Out-File .windows-10-sdk-version
+          "19041   " | Out-File .windows-10-sdk-version
           .\tests\test_install_windows_10_sdk.ps1 -ExpectedExitCode 0
         agents:
           queue: windows
