@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- Windows 10 SDKs are now limited to version 19041 due to availability from Microsoft. [#188]
 
 ## 5.5.0
 
