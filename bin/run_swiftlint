@@ -34,7 +34,6 @@ fi
 # If no config files specified, use default
 if [[ ${#CONFIG_FILES[@]} -eq 0 ]]; then
   CONFIG_FILES=(".swiftlint.yml")
-  SWIFTLINT_ARGUMENTS+=(--config ".swiftlint.yml")
 fi
 
 # Validate all config files exist
