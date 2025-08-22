@@ -38,6 +38,24 @@ _None._
 
 ### New Features
 
+_None._
+
+### Bug Fixes
+
+_None._
+
+### Internal Changes
+
+_None._
+
+## 5.6.0
+
+### Breaking Changes
+
+_None._
+
+### New Features
+
 - Add `--config` argument to `run_swiftlint` script to allow specifying custom `.swiftlint.yml` config files and allowing for multiple `--config` arguments [#189]
 
 ### Bug Fixes
