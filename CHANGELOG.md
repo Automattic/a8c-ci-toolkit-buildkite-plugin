@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- Add `--config` argument to `run_swiftlint` script to allow specifying custom `.swiftlint.yml` config files [#189]
+- Add `--config` argument to `run_swiftlint` script to allow specifying custom `.swiftlint.yml` config files and allowing for multiple `--config` arguments [#189]
 
 ### Bug Fixes
 
