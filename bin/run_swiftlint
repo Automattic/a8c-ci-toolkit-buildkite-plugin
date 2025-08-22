@@ -3,6 +3,7 @@
 echo "--- :swift: Running SwiftLint"
 
 SWIFTLINT_ARGUMENTS=(--quiet --reporter relative-path)
+CONFIG_FILE=".swiftlint.yml"
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -10,25 +11,39 @@ while [[ "$#" -gt 0 ]]; do
       SWIFTLINT_ARGUMENTS+=("$1")
       shift
       ;;
+    --config)
+      if [[ -z "$2" || "$2" =~ ^- ]]; then
+        echo "Error: --config requires a config file path"
+        echo "Usage: $0 [--strict | --lenient] [--config CONFIG_FILE]"
+        exit 1
+      fi
+      CONFIG_FILE="$2"
+      shift 2
+      ;;
     *) break ;;
   esac
 done
 
 if [[ $# -gt 0 ]]; then
   echo "Error: invalid arguments."
-  echo "Usage: $0 [--strict | --lenient]"
+  echo "Usage: $0 [--strict | --lenient] [--config CONFIG_FILE]"
   exit 1
 fi
 
-SWIFTLINT_VERSION="$(<.swiftlint.yml awk '/^swiftlint_version: / {print $2}')"
+if [[ ! -f "$CONFIG_FILE" ]]; then
+  echo "Error: config file '$CONFIG_FILE' not found."
+  exit 1
+fi
+
+SWIFTLINT_VERSION="$(<"$CONFIG_FILE" awk '/^swiftlint_version: / {print $2}')"
 if [ -z "$SWIFTLINT_VERSION" ]; then
-  echo "Your \`.swiftlint.yml\` file must contain a key for \`swiftlint_version:\` so that we know which version of SwiftLint to use to lint your codebase."
+  echo "Your \`$CONFIG_FILE\` file must contain a key for \`swiftlint_version:\` so that we know which version of SwiftLint to use to lint your codebase."
   exit 1
 fi
 SWIFTLINT_DOCKER_CMD=(docker run --rm -v "$PWD":/workspace -w /workspace ghcr.io/realm/swiftlint:"$SWIFTLINT_VERSION" swiftlint)
 
 set +e
-SWIFTLINT_OUTPUT=$("${SWIFTLINT_DOCKER_CMD[@]}" lint "${SWIFTLINT_ARGUMENTS[@]}")
+SWIFTLINT_OUTPUT=$("${SWIFTLINT_DOCKER_CMD[@]}" lint --config "$CONFIG_FILE" "${SWIFTLINT_ARGUMENTS[@]}")
 SWIFTLINT_EXIT_STATUS=$?
 set -e
 
