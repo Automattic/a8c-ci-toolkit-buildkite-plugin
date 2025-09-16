@@ -46,21 +46,13 @@ _None._
 
 ### Internal Changes
 
-_None._
+Improved header comment documentation of `pr_changed_files`. [#191]
 
 ## 5.6.0
-
-### Breaking Changes
-
-_None._
 
 ### New Features
 
 - Add `--config` argument to `run_swiftlint` script to allow specifying custom `.swiftlint.yml` config files and allowing for multiple `--config` arguments [#189]
-
-### Bug Fixes
-
-_None._
 
 ### Internal Changes
 

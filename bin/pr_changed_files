@@ -13,14 +13,26 @@
 #  - If you use the `--stdout` flag, it will output "true" or "false" instead of using the exit code (and exit 0 in both cases). Useful to assign the result to an environment variable for example.
 #  - The script will exit with code 255 if there is an error in the command invocation (bad parameters, not in PR context, etc.)
 #
+# Format used for patterns:
+#  - The `<file-patterns>` are expected to be *bash* patterns, i.e. strings that can contain `*` to match any string, `?` to match a single character, or `[…]` to match any character in the provided set.
+#    See https://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html (Note: this script doesn't enable the `globstar` option)
+#  - Those patterns are tested via `[[ "$file" == $pattern ]]` (note the absence of quotes around $pattern that allows `*`/`?`/`[…]` to be interpreted in those patterns during the matching)
+#  - As a result, to match "any file in folder a/b/c" you'd want to use the pattern `a/b/c/*`
+#     - [!] If you use `a/b/c` or `a/b/c/`, it would only match a file with that exact name, so that would NOT detect changes in that `a/b/c/` folder's contents!
+#     - Adding the `/*` suffix to your pattern is enough to match _any_ file in that given folder _recursively_ (i.e. there's no need to use `/**/*`; in fact `/**/*` would not detect files at the _root_ of that folder as it'd expect an extra `/`…)
+#
+#  IMPORTANT: Remember to *quote your patterns* when passing them to the command line, so that the shell won't interpret the `*` and all at call site,
+#             but that those patterns are instead passed verbatim to the command and only interpreted inside this tool.
+#             i.e. use `pr_changed_files --any-match 'docs/*'`, not `pr_changed_files --any-match docs/*` (which would instead make the calling shell try to expand `docs/*` before passing the result of the expansion to `pr_changed_files`)
+#
 # Typical usage patterns:
 #   # Using exit codes
-#   $ if pr_changed_files --any-match docs/* *.md; then
+#   $ if pr_changed_files --any-match 'docs/*' '*.md'; then
 #       echo "Documentation was updated"
 #     fi
 #
 #   # Using stdout output
-#   $ DOCS_UPDATED=$(pr_changed_files --stdout --any-match docs/* *.md)
+#   $ DOCS_UPDATED=$(pr_changed_files --stdout --any-match 'docs/*' '*.md')
 #
 # Behavior:
 #   With no arguments:
