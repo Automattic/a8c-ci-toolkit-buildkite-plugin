@@ -38,62 +38,90 @@ Write-Output "--- :windows: Setting up Windows for app distribution"
 
 Write-Output "Current working directory: $PWD"
 
-Write-Output "Enable long path behavior"
-# See https://docs.microsoft.com/en-us/windows/desktop/fileio/naming-a-file#maximum-path-length-limitation
-Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1
+$ciImageVersionMakerPath = "C:\CI\ami_version.txt"
+$runningOnCustomCIImage = $false
 
-# Disable Windows Defender before starting – otherwise our performance is terrible
-Write-Output "Disable Windows Defender..."
-$avPreference = @(
-  @{DisableArchiveScanning = $true}
-  @{DisableAutoExclusions = $true}
-  @{DisableBehaviorMonitoring = $true}
-  @{DisableBlockAtFirstSeen = $true}
-  @{DisableCatchupFullScan = $true}
-  @{DisableCatchupQuickScan = $true}
-  @{DisableIntrusionPreventionSystem = $true}
-  @{DisableIOAVProtection = $true}
-  @{DisablePrivacyMode = $true}
-  @{DisableScanningNetworkFiles = $true}
-  @{DisableScriptScanning = $true}
-  @{MAPSReporting = 0}
-  @{PUAProtection = 0}
-  @{SignatureDisableUpdateOnStartupWithoutEngine = $true}
-  @{SubmitSamplesConsent = 2}
-  @{ScanAvgCPULoadFactor = 5; ExclusionPath = @("D:\", "C:\")}
-  @{DisableRealtimeMonitoring = $true}
-  @{ScanScheduleDay = 8}
-)
-
-$avPreference += @(
-  @{EnableControlledFolderAccess = "Disable"}
-  @{EnableNetworkProtection = "Disabled"}
-)
-
-$avPreference | Foreach-Object {
-  $avParams = $_
-  Set-MpPreference @avParams
-}
-
-# https://github.com/actions/runner-images/issues/4277
-# https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/microsoft-defender-antivirus-compatibility?view=o365-worldwide
-$atpRegPath = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows Advanced Threat Protection'
-if (Test-Path $atpRegPath) {
-  Write-Output "Set Microsoft Defender Antivirus to passive mode"
-  Set-ItemProperty -Path $atpRegPath -Name 'ForceDefenderPassiveMode' -Value '1' -Type 'DWORD'
-}
-
-# From https://stackoverflow.com/a/46760714
-Write-Output "--- :windows: Setting up Package Manager"
-$env:ChocolateyInstall = Convert-Path "$((Get-Command choco).Path)\..\.."
-Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-
-if ($InstallPython) {
-  Write-Output "Run with InstallPython = true. Installing Python for Node.js native module compilation..."
-  & "$PSScriptRoot\install_python.ps1"
-  If ($LastExitCode -ne 0) { Exit $LastExitCode }
+if (-not (Test-Path $ciImageVersionMakerPath)) {
+  Write-Output "No AMI version marker found will assume stock image."
 } else {
-  Write-Output "Python installation not requested. Skipping Python installation."
+  $ciImageVersion = (Get-Content $ciImageVersionMakerPath).Trim()
+  Write-Output "Found CI image version: $ciImageVersion"
+
+  switch ($ciImageVersion) {
+    "AMIv1" {
+      Write-Output "CI Image version '$ciImageVersion' is known."
+      $runningOnCustomCIImage = $true
+    }
+    default {
+      Write-Output "CI Image version unknown."
+    }
+  }
+}
+
+if ($runningOnCustomCIImage) {
+  Write-Output "Running on custom CI image version '$ciImageVersion'. Skipping environment setup."
+} else {
+  Write-Output "Enable long path behavior"
+  # See https://docs.microsoft.com/en-us/windows/desktop/fileio/naming-a-file#maximum-path-length-limitation
+  Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value 1
+
+  # Disable Windows Defender before starting – otherwise our performance is terrible
+  Write-Output "Disable Windows Defender..."
+  $avPreference = @(
+    @{DisableArchiveScanning = $true}
+    @{DisableAutoExclusions = $true}
+    @{DisableBehaviorMonitoring = $true}
+    @{DisableBlockAtFirstSeen = $true}
+    @{DisableCatchupFullScan = $true}
+    @{DisableCatchupQuickScan = $true}
+    @{DisableIntrusionPreventionSystem = $true}
+    @{DisableIOAVProtection = $true}
+    @{DisablePrivacyMode = $true}
+    @{DisableScanningNetworkFiles = $true}
+    @{DisableScriptScanning = $true}
+    @{MAPSReporting = 0}
+    @{PUAProtection = 0}
+    @{SignatureDisableUpdateOnStartupWithoutEngine = $true}
+    @{SubmitSamplesConsent = 2}
+    @{ScanAvgCPULoadFactor = 5; ExclusionPath = @("D:\", "C:\")}
+    @{DisableRealtimeMonitoring = $true}
+    @{ScanScheduleDay = 8}
+  )
+
+  $avPreference += @(
+    @{EnableControlledFolderAccess = "Disable"}
+    @{EnableNetworkProtection = "Disabled"}
+  )
+
+  $avPreference | Foreach-Object {
+    $avParams = $_
+    Set-MpPreference @avParams
+  }
+
+  # https://github.com/actions/runner-images/issues/4277
+  # https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/microsoft-defender-antivirus-compatibility?view=o365-worldwide
+  $atpRegPath = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows Advanced Threat Protection'
+  if (Test-Path $atpRegPath) {
+    Write-Output "Set Microsoft Defender Antivirus to passive mode"
+    Set-ItemProperty -Path $atpRegPath -Name 'ForceDefenderPassiveMode' -Value '1' -Type 'DWORD'
+  }
+
+  # From https://stackoverflow.com/a/46760714
+  Write-Output "--- :windows: Setting up Package Manager"
+  $env:ChocolateyInstall = Convert-Path "$((Get-Command choco).Path)\..\.."
+  Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+}
+
+if ($runningOnCustomCIImage) {
+  Write-Output "Running on custom CI image version '$ciImageVersion'. Skipping Python setup entirely."
+} else {
+  if ($InstallPython) {
+    Write-Output "Run with InstallPython = true. Installing Python for Node.js native module compilation..."
+    & "$PSScriptRoot\install_python.ps1"
+    If ($LastExitCode -ne 0) { Exit $LastExitCode }
+  } else {
+    Write-Output "Python installation not requested. Skipping Python installation."
+  }
 }
 
 # This should avoid issues with symlinks not being supported in Windows.
@@ -147,7 +175,7 @@ if ($SkipWindows10SDKInstallation) {
 $windowsSDKVersionFile = ".windows-10-sdk-version"
 if (Test-Path $windowsSDKVersionFile) {
   Write-Output "Found $windowsSDKVersionFile file, installing Windows 10 SDK..."
-  
+
   if ($InstallNativeCompilationTools) {
     & "$PSScriptRoot\install_windows_10_sdk.ps1" -InstallNativeCompilationTools
   } else {

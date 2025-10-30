@@ -6,8 +6,8 @@
 # 3. No .windows-10-sdk-version file with -InstallNativeCompilationTools (should skip installation - no version file available)
 # 4. No .windows-10-sdk-version file without -InstallNativeCompilationTools (should skip installation)
 #
-# Note: These tests focus on parameter validation and decision logic only, without performing
-# expensive installations or downloads.
+# Note: These tests focus on parameter validation and decision logic only,
+# without performing expensive installations or downloads.
 
 param (
   [int]$ExpectedExitCode = 0
@@ -137,6 +137,58 @@ if ($output -match [regex]::Escape($expectedNoFileSkipMessage)) {
   Write-Output "$emojiGreenCheck Test 4: Found expected no-file skip message"
 } else {
   Write-Output "$emojiRedCross Test 4: Expected to find no-file skip message, but got:"
+  Write-Output "$output"
+  Exit 1
+}
+
+# Test 5: If CI version marker is AMIv1, skips env and Win 10 SDK setup
+Write-Output "`n--- Test 5: If AMIv1, skips env and Win 10 SDK setup"
+Remove-TestFiles
+
+$testCIVersion = "AMIv1"
+$ciDir = "C:\CI"
+if (-not (Test-Path $ciDir)) {
+  New-Item -ItemType Directory -Path $ciDir | Out-Null
+}
+
+$versionFile = Join-Path $ciDir "ami_version.txt"
+Set-Content -Path $versionFile -Value $testCIVersion -Encoding UTF8
+
+$output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1"
+$exitCode = $LASTEXITCODE
+
+if ($exitCode -ne $ExpectedExitCode) {
+  Write-Output "$emojiRedCross Test 5: Expected exit code $ExpectedExitCode, got $exitCode"
+  Write-Output "Output was:"
+  Write-Output "$output"
+  Exit 1
+} else {
+  Write-Output "$emojiGreenCheck Test 5: Exit code matches expected value ($ExpectedExitCode)"
+}
+
+$expectedAMIv1Acknowledgement = "CI Image version 'AMIv1' is known."
+if ($output -match [regex]::Escape($expectedNoFileSkipMessage)) {
+  Write-Output "$emojiGreenCheck Test 5: Found expected CI version acknowledgement"
+} else {
+  Write-Output "$emojiRedCross Test 5: Expected to find CI version acknowledgement, but got:"
+  Write-Output "$output"
+  Exit 1
+}
+
+$expectedEnvSkipMessage = "Running on custom CI image version 'AMIv1'. Skipping environment setup."
+if ($output -match [regex]::Escape($expectedEnvSkipMessage)) {
+  Write-Output "$emojiGreenCheck Test 5: Found expected environment setup message"
+} else {
+  Write-Output "$emojiRedCross Test 5: Expected to find environment setup message, but got:"
+  Write-Output "$output"
+  Exit 1
+}
+
+$expectedPythonSkipMessage = "Running on custom CI image version 'AMIv1'. Skipping python setup entirely."
+if ($output -match [regex]::Escape($expectedPythonSkipMessage)) {
+  Write-Output "$emojiGreenCheck Test 5: Found expected Python skip message"
+} else {
+  Write-Output "$emojiRedCross Test 5: Expected to find Python skip message, but got:"
   Write-Output "$output"
   Exit 1
 }
