@@ -110,6 +110,25 @@ if ($runningOnCustomCIImage) {
   Write-Output "--- :windows: Setting up Package Manager"
   $env:ChocolateyInstall = Convert-Path "$((Get-Command choco).Path)\..\.."
   Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+
+  # This should avoid issues with symlinks not being supported in Windows.
+  #
+  # See how this build failed
+  # https://buildkite.com/automattic/beeper-desktop/builds/2895#01919738-7c6e-4b82-8d1d-1c1800481740
+  Write-Output "--- :windows: :linux: Enable developer mode to use symlinks"
+
+  $developerMode = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
+
+  if ($developerMode.State -eq 'Enabled') {
+    Write-Output "Developer Mode is already enabled."
+  } else {
+    Write-Output "Enabling Developer Mode..."
+    try {
+      Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
+    } catch {
+      Write-Output "Failed to enable Developer Mode. Continuing without it..."
+    }
+  }
 }
 
 if ($runningOnCustomCIImage) {
@@ -121,25 +140,6 @@ if ($runningOnCustomCIImage) {
     If ($LastExitCode -ne 0) { Exit $LastExitCode }
   } else {
     Write-Output "Python installation not requested. Skipping Python installation."
-  }
-}
-
-# This should avoid issues with symlinks not being supported in Windows.
-#
-# See how this build failed
-# https://buildkite.com/automattic/beeper-desktop/builds/2895#01919738-7c6e-4b82-8d1d-1c1800481740
-Write-Output "--- :windows: :linux: Enable developer mode to use symlinks"
-
-$developerMode = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
-
-if ($developerMode.State -eq 'Enabled') {
-  Write-Output "Developer Mode is already enabled."
-} else {
-  Write-Output "Enabling Developer Mode..."
-  try {
-    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
-  } catch {
-    Write-Output "Failed to enable Developer Mode. Continuing without it..."
   }
 }
 
