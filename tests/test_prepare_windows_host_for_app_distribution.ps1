@@ -193,6 +193,15 @@ if ($output -match [regex]::Escape($expectedPythonSkipMessage)) {
   Exit 1
 }
 
+$expectedWindows10SkipMessage = "Running on custom CI image version 'AMIv1'. Skipping Windows 10 SDK setup entirely."
+if ($output -match [regex]::Escape($expectedWindows10SkipMessage)) {
+  Write-Output "$emojiGreenCheck Test 5: Found expected Python skip message"
+} else {
+  Write-Output "$emojiRedCross Test 5: Expected to find Python skip message, but got:"
+  Write-Output "$output"
+  Exit 1
+}
+
 # Clean up
 Remove-TestFiles
 

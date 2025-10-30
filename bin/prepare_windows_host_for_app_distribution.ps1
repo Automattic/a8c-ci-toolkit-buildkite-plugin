@@ -161,29 +161,32 @@ if ($env:SKIP_CERTIFICATE_DOWNLOAD -eq "true") {
   }
 }
 
-Write-Output "--- :windows: Checking whether to install Windows 10 SDK..."
-
 # When using Electron Forge and electron2appx, building Appx requires the Windows 10 SDK
 #
 # See https://github.com/hermit99/electron-windows-store/tree/v2.1.2?tab=readme-ov-file#usage
+Write-Output "--- :windows: Checking whether to install Windows 10 SDK..."
 
-if ($SkipWindows10SDKInstallation) {
-  Write-Output "Run with SkipWindows10SDKInstallation = true. Skipping Windows 10 SDK installation check."
-  Exit 0
-}
-
-$windowsSDKVersionFile = ".windows-10-sdk-version"
-if (Test-Path $windowsSDKVersionFile) {
-  Write-Output "Found $windowsSDKVersionFile file, installing Windows 10 SDK..."
-
-  if ($InstallNativeCompilationTools) {
-    & "$PSScriptRoot\install_windows_10_sdk.ps1" -InstallNativeCompilationTools
-  } else {
-    & "$PSScriptRoot\install_windows_10_sdk.ps1"
-  }
-  If ($LastExitCode -ne 0) { Exit $LastExitCode }
+if ($runningOnCustomCIImage) {
+  Write-Output "Running on custom CI image version '$ciImageVersion'. Skipping Windows 10 SDK setup entirely."
 } else {
-  Write-Output "No $windowsSDKVersionFile file found, skipping Windows 10 SDK installation."
+  if ($SkipWindows10SDKInstallation) {
+    Write-Output "Run with SkipWindows10SDKInstallation = true. Skipping Windows 10 SDK installation check."
+    Exit 0
+  }
+
+  $windowsSDKVersionFile = ".windows-10-sdk-version"
+  if (Test-Path $windowsSDKVersionFile) {
+    Write-Output "Found $windowsSDKVersionFile file, installing Windows 10 SDK..."
+
+    if ($InstallNativeCompilationTools) {
+      & "$PSScriptRoot\install_windows_10_sdk.ps1" -InstallNativeCompilationTools
+    } else {
+      & "$PSScriptRoot\install_windows_10_sdk.ps1"
+    }
+    If ($LastExitCode -ne 0) { Exit $LastExitCode }
+  } else {
+    Write-Output "No $windowsSDKVersionFile file found, skipping Windows 10 SDK installation."
+  }
 }
 
 Write-Output "Windows host preparation for app distribution completed successfully."
