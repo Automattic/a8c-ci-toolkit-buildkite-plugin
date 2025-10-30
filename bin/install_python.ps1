@@ -66,17 +66,17 @@ if ($DryRun) {
 # Some Node.js packages require Python during npm install for building native extensions
 Write-Output "Installing Python 3 via Chocolatey..."
 choco install python3 --yes --no-progress
-If ($LastExitCode -ne 0) { 
+If ($LastExitCode -ne 0) {
     Write-Output "[!] Failed to install Python via Chocolatey"
-    Exit $LastExitCode 
+    Exit $LastExitCode
 }
 
 # Refresh environment to make Python available in PATH
 Write-Output "Refreshing environment variables..."
 & "$PSScriptRoot\path_aware_refreshenv.ps1"
-If ($LastExitCode -ne 0) { 
+If ($LastExitCode -ne 0) {
     Write-Output "[!] Failed to refresh environment after Python installation"
-    Exit $LastExitCode 
+    Exit $LastExitCode
 }
 
 # Verify Python installation
