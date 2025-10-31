@@ -30,7 +30,7 @@ $ErrorActionPreference = "Stop"
 $amiVersion = [Environment]::GetEnvironmentVariable('AMI_VERSION', 'Machine')
 Write-Output "AMI_VERSION is: $amiVersion"
 if (![string]::IsNullOrWhiteSpace($amiVersion) -and [version]$amiVersion -ge [version]'0.2') {
-  Write-Output "Tooling is already pre-installed in AMI versions >= 0.2, so only installing code signing certificate."
+  Write-Output "Tooling is already pre-installed in AMI versions >= 0.2. Only installing code signing certificate."
   & "setup_windows_code_signing.ps1"
   Exit 0
 }

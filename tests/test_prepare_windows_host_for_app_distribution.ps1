@@ -141,18 +141,11 @@ if ($output -match [regex]::Escape($expectedNoFileSkipMessage)) {
   Exit 1
 }
 
-# Test 5: If CI version marker is AMIv1, skips env and Win 10 SDK setup
-Write-Output "`n--- Test 5: If AMIv1, skips env and Win 10 SDK setup"
+# Test 5: If CI AMI version is == 0.2, only installs certificates
+Write-Output "`n--- Test 5: If AMI version env == 0.2, only installs certificates"
 Remove-TestFiles
 
-$testCIVersion = "AMIv1"
-$ciDir = "C:\CI"
-if (-not (Test-Path $ciDir)) {
-  New-Item -ItemType Directory -Path $ciDir | Out-Null
-}
-
-$versionFile = Join-Path $ciDir "ami_version.txt"
-Set-Content -Path $versionFile -Value $testCIVersion -Encoding UTF8
+[Environment]::SetEnvironmentVariable('AMI_VERSION', '0.2', 'Machine')
 
 $output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1"
 $exitCode = $LASTEXITCODE
@@ -166,43 +159,43 @@ if ($exitCode -ne $ExpectedExitCode) {
   Write-Output "$emojiGreenCheck Test 5: Exit code matches expected value ($ExpectedExitCode)"
 }
 
-$expectedAMIv1Acknowledgement = "CI Image version 'AMIv1' is known."
-if ($output -match [regex]::Escape($expectedNoFileSkipMessage)) {
-  Write-Output "$emojiGreenCheck Test 5: Found expected CI version acknowledgement"
+$expectedOnlyCertsMessage = "Tooling is already pre-installed in AMI versions >= 0.2. Only installing code signing certificate."
+if ($output -match [regex]::Escape($expectedOnlyCertsMessage)) {
+  Write-Output "$emojiGreenCheck Test 5: Found expected message regarding AMI version and what to install."
 } else {
-  Write-Output "$emojiRedCross Test 5: Expected to find CI version acknowledgement, but got:"
+  Write-Output "$emojiRedCross Test 5: Expected to find AMI version acknowledgement, but got:"
   Write-Output "$output"
   Exit 1
 }
 
-$expectedEnvSkipMessage = "Running on custom CI image version 'AMIv1'. Skipping environment setup."
-if ($output -match [regex]::Escape($expectedEnvSkipMessage)) {
-  Write-Output "$emojiGreenCheck Test 5: Found expected environment setup message"
+# Test 6: If CI AMI version is > 0.2, only installs certificates
+Write-Output "`n--- Test 6: If AMI version env > 0.2, only installs certificates"
+Remove-TestFiles
+
+[Environment]::SetEnvironmentVariable('AMI_VERSION', '1.0', 'Machine')
+
+$output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1"
+$exitCode = $LASTEXITCODE
+
+if ($exitCode -ne $ExpectedExitCode) {
+  Write-Output "$emojiRedCross Test 6: Expected exit code $ExpectedExitCode, got $exitCode"
+  Write-Output "Output was:"
+  Write-Output "$output"
+  Exit 1
 } else {
-  Write-Output "$emojiRedCross Test 5: Expected to find environment setup message, but got:"
+  Write-Output "$emojiGreenCheck Test 6: Exit code matches expected value ($ExpectedExitCode)"
+}
+
+$expectedOnlyCertsMessage = "Tooling is already pre-installed in AMI versions >= 0.2. Only installing code signing certificate."
+if ($output -match [regex]::Escape($expectedOnlyCertsMessage)) {
+  Write-Output "$emojiGreenCheck Test 6: Found expected message regarding AMI version and what to install."
+} else {
+  Write-Output "$emojiRedCross Test 6: Expected to find AMI version acknowledgement, but got:"
   Write-Output "$output"
   Exit 1
 }
 
-$expectedPythonSkipMessage = "Running on custom CI image version 'AMIv1'. Skipping python setup entirely."
-if ($output -match [regex]::Escape($expectedPythonSkipMessage)) {
-  Write-Output "$emojiGreenCheck Test 5: Found expected Python skip message"
-} else {
-  Write-Output "$emojiRedCross Test 5: Expected to find Python skip message, but got:"
-  Write-Output "$output"
-  Exit 1
-}
-
-$expectedWindows10SkipMessage = "Running on custom CI image version 'AMIv1'. Skipping Windows 10 SDK setup entirely."
-if ($output -match [regex]::Escape($expectedWindows10SkipMessage)) {
-  Write-Output "$emojiGreenCheck Test 5: Found expected Python skip message"
-} else {
-  Write-Output "$emojiRedCross Test 5: Expected to find Python skip message, but got:"
-  Write-Output "$output"
-  Exit 1
-}
-
-# Clean up
+# Final clean up
 Remove-TestFiles
 
 Write-Output "`n$emojiGreenCheck All tests completed successfully."
