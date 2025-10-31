@@ -1,6 +1,6 @@
 # Installs the code signing certificate for Windows app distribution.
 #
-# The certificate is stored in our AWS SecretsManager storage (`windows-code-signing-certificate` secret ID)
+# The certificate is stored in our AWS SecretsManager storage (`windows-code-signing-certificate` secret ID).
 # It is decoded and stored in the `certificate.pfx` file.
 
 # Stop script execution when a non-terminating error occurs
