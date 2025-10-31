@@ -145,7 +145,8 @@ if ($output -match [regex]::Escape($expectedNoFileSkipMessage)) {
 Write-Output "`n--- Test 5: If AMI version env == 0.2, only installs certificates"
 Remove-TestFiles
 
-[Environment]::SetEnvironmentVariable('AMI_VERSION', '0.2', 'Machine')
+# Notice that setting via $env is session bound, which is perfect for unit tests.
+$env:AMI_VERSION = '0.2'
 
 $output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1"
 $exitCode = $LASTEXITCODE
@@ -172,7 +173,8 @@ if ($output -match [regex]::Escape($expectedOnlyCertsMessage)) {
 Write-Output "`n--- Test 6: If AMI version env > 0.2, only installs certificates"
 Remove-TestFiles
 
-[Environment]::SetEnvironmentVariable('AMI_VERSION', '1.0', 'Machine')
+# Notice that setting via $env is session bound, which is perfect for unit tests.
+$env:AMI_VERSION = '1.0'
 
 $output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1"
 $exitCode = $LASTEXITCODE
