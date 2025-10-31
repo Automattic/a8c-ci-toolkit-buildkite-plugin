@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- The `prepare_windows_host_for_app_distribution.ps1` command for Windows builds will inspect the environment it's running on and skip time consuming steps when running on our custom CI image. [#192]
 
 ### Bug Fixes
 
@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-Improved header comment documentation of `pr_changed_files`. [#191]
+- Improved header comment documentation of `pr_changed_files`. [#191]
 
 ## 5.6.0
 
