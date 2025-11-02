@@ -27,6 +27,14 @@ param (
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
 
+$amiVersion = [Environment]::GetEnvironmentVariable('AMI_VERSION', 'Machine')
+Write-Output "AMI_VERSION is: $amiVersion"
+if (![string]::IsNullOrWhiteSpace($amiVersion) -and [version]$amiVersion -ge [version]'0.2') {
+  Write-Output "Tooling is already pre-installed in AMI versions >= 0.2. Only installing code signing certificate."
+  & "setup_windows_code_signing.ps1"
+  Exit 0
+}
+
 # Validate parameter combinations
 if ($InstallNativeCompilationTools -and $SkipWindows10SDKInstallation) {
     Write-Output "[!] Invalid parameter combination: -InstallNativeCompilationTools cannot be used with -SkipWindows10SDKInstallation."
@@ -88,14 +96,6 @@ Write-Output "--- :windows: Setting up Package Manager"
 $env:ChocolateyInstall = Convert-Path "$((Get-Command choco).Path)\..\.."
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
 
-if ($InstallPython) {
-  Write-Output "Run with InstallPython = true. Installing Python for Node.js native module compilation..."
-  & "$PSScriptRoot\install_python.ps1"
-  If ($LastExitCode -ne 0) { Exit $LastExitCode }
-} else {
-  Write-Output "Python installation not requested. Skipping Python installation."
-}
-
 # This should avoid issues with symlinks not being supported in Windows.
 #
 # See how this build failed
@@ -115,29 +115,24 @@ if ($developerMode.State -eq 'Enabled') {
   }
 }
 
+if ($InstallPython) {
+  Write-Output "Run with InstallPython = true. Installing Python for Node.js native module compilation..."
+  & "$PSScriptRoot\install_python.ps1"
+  If ($LastExitCode -ne 0) { Exit $LastExitCode }
+} else {
+  Write-Output "Python installation not requested. Skipping Python installation."
+}
+
 if ($env:SKIP_CERTIFICATE_DOWNLOAD -eq "true") {
   Write-Output "--- :lock_with_ink_pen: Skipping Code Signing Certificate download"
 } else {
-  Write-Output "--- :lock_with_ink_pen: Download Code Signing Certificate"
-  $certificateBinPath = "certificate.bin"
-  $EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate `
-    | jq -r '.SecretString' `
-    | Out-File $certificateBinPath
-  $certificatePfxPath = "certificate.pfx"
-  certutil -decode $certificateBinPath $certificatePfxPath
-  Write-Output "Code signing certificate downloaded at: $((Get-Item $certificatePfxPath).FullName)"
-
-  If ($LastExitCode -ne 0) {
-    Write-Output "[!] Failed to download code signing certificate."
-    Exit $LastExitCode
-  }
+  & "setup_windows_code_signing.ps1"
 }
-
-Write-Output "--- :windows: Checking whether to install Windows 10 SDK..."
 
 # When using Electron Forge and electron2appx, building Appx requires the Windows 10 SDK
 #
 # See https://github.com/hermit99/electron-windows-store/tree/v2.1.2?tab=readme-ov-file#usage
+Write-Output "--- :windows: Checking whether to install Windows 10 SDK..."
 
 if ($SkipWindows10SDKInstallation) {
   Write-Output "Run with SkipWindows10SDKInstallation = true. Skipping Windows 10 SDK installation check."
@@ -147,7 +142,7 @@ if ($SkipWindows10SDKInstallation) {
 $windowsSDKVersionFile = ".windows-10-sdk-version"
 if (Test-Path $windowsSDKVersionFile) {
   Write-Output "Found $windowsSDKVersionFile file, installing Windows 10 SDK..."
-  
+
   if ($InstallNativeCompilationTools) {
     & "$PSScriptRoot\install_windows_10_sdk.ps1" -InstallNativeCompilationTools
   } else {
