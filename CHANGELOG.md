@@ -38,11 +38,21 @@ _None._
 
 ### New Features
 
-- The `prepare_windows_host_for_app_distribution.ps1` command for Windows builds will inspect the environment it's running on and skip time consuming steps when running on our custom CI image. [#192]
+_None._
 
 ### Bug Fixes
 
 _None._
+
+### Internal Changes
+
+_None._
+
+## 5.7.0
+
+### New Features
+
+- The `prepare_windows_host_for_app_distribution.ps1` command for Windows builds will inspect the environment it's running on and skip time consuming steps when running on our custom CI image. [#192]
 
 ### Internal Changes
 
