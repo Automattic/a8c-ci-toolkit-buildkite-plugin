@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Description:
+#   A wrapper script to run `git-conceal unlock` on CI
+#   See https://github.com/Automattic/git-conceal
+#
+#   The wrapper automatically runs the `install.sh` script of `git-conceal`
+#   if it's not already installed locally before running `git-conceal unlock env:…`.
+#
+# By default, it uses the `GIT_CONCEAL_SECRET_KEY` environment variable as the key source.
+# You can override it by passing the environment variable name as the first argument.
+#
+
+set -euo pipefail
+
+env_var_name=${1:-GIT_CONCEAL_SECRET_KEY}
+
+# If installed in the $PATH, execute it (replacing this current process)
+if command -v git-conceal &> /dev/null; then
+    git-conceal unlock "env:${env_var_name}"
+    exit $?
+fi
+
+INSTALL_DIR="${PWD}"
+# If was already previously installed in INSTALL_DIR, execute it (replacing this current process)
+if [[ -x "${INSTALL_DIR}/git-conceal" ]]; then
+    "${INSTALL_DIR}/git-conceal" unlock "env:${env_var_name}"
+    exit $?
+fi
+
+# Otherwise, install it locally and execute it
+echo "git-conceal binary not found. Installing it..."
+mkdir -p "${INSTALL_DIR}"
+curl -fsSL https://raw.githubusercontent.com/Automattic/git-conceal/trunk/install.sh | bash -s -- --prefix "${INSTALL_DIR}"
+"${INSTALL_DIR}/git-conceal" unlock "env:${env_var_name}"
