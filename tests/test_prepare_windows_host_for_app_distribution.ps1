@@ -95,6 +95,9 @@ if ($output -match "Invalid parameter combination") {
 Write-Output "`n--- Test 3: No SDK version file with native compilation tools requested"
 Remove-TestFiles
 
+# Set AMI_VERSION to a value < 0.2 to avoid early exit (allows test to reach the SDK file checking logic)
+$env:AMI_VERSION = "0.1"
+
 $output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1" -InstallNativeCompilationTools 2>&1
 $exitCode = $LASTEXITCODE
 
@@ -119,6 +122,9 @@ if ($output -match [regex]::Escape($expectedNoFileSkipMessage)) {
 # Test 4: No .windows-10-sdk-version file without -InstallNativeCompilationTools (should skip everything)
 Write-Output "`n--- Test 4: No SDK version file and no native tools requested"
 Remove-TestFiles
+
+# Set AMI_VERSION to a value < 0.2 to avoid early exit (allows test to reach the SDK file checking logic)
+$env:AMI_VERSION = "0.1"
 
 $output = & "$PSScriptRoot\..\bin\prepare_windows_host_for_app_distribution.ps1"
 $exitCode = $LASTEXITCODE
