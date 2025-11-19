@@ -31,7 +31,7 @@ $amiVersion = [Environment]::GetEnvironmentVariable('AMI_VERSION', 'Machine')
 Write-Output "AMI_VERSION is: $amiVersion"
 if (![string]::IsNullOrWhiteSpace($amiVersion) -and [version]$amiVersion -ge [version]'0.2') {
   Write-Output "Tooling is already pre-installed in AMI versions >= 0.2. Only installing code signing certificate."
-  & "setup_windows_code_signing.ps1"
+  & "$PSScriptRoot\setup_windows_code_signing.ps1"
   Exit 0
 }
 
@@ -126,7 +126,7 @@ if ($InstallPython) {
 if ($env:SKIP_CERTIFICATE_DOWNLOAD -eq "true") {
   Write-Output "--- :lock_with_ink_pen: Skipping Code Signing Certificate download"
 } else {
-  & "setup_windows_code_signing.ps1"
+  & "$PSScriptRoot\setup_windows_code_signing.ps1"
 }
 
 # When using Electron Forge and electron2appx, building Appx requires the Windows 10 SDK
