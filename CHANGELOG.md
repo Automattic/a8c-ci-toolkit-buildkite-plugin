@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- Fixed Windows unit tests after Windows AMI changes. [#196]
 
 ## 5.7.0
 
