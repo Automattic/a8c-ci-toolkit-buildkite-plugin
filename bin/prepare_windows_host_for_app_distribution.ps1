@@ -27,19 +27,27 @@ param (
 # Stop script execution when a non-terminating error occurs
 $ErrorActionPreference = "Stop"
 
-$amiVersion = [Environment]::GetEnvironmentVariable('AMI_VERSION', 'Machine')
-Write-Output "AMI_VERSION is: $amiVersion"
-if (![string]::IsNullOrWhiteSpace($amiVersion) -and [version]$amiVersion -ge [version]'0.2') {
-  Write-Output "Tooling is already pre-installed in AMI versions >= 0.2. Only installing code signing certificate."
-  & "$PSScriptRoot\setup_windows_code_signing.ps1"
-  Exit 0
-}
-
-# Validate parameter combinations
+# Validate parameter combinations first
 if ($InstallNativeCompilationTools -and $SkipWindows10SDKInstallation) {
     Write-Output "[!] Invalid parameter combination: -InstallNativeCompilationTools cannot be used with -SkipWindows10SDKInstallation."
     Write-Output "    Native compilation tools require Windows 10 SDK to be installed."
     Exit 1
+}
+
+# If SkipWindows10SDKInstallation is explicitly set, skip the AMI_VERSION optimization
+# and proceed with normal flow (which will skip SDK installation)
+if (-not $SkipWindows10SDKInstallation) {
+  # Check Process scope first (allows tests to override), then fall back to Machine scope
+  $amiVersion = [Environment]::GetEnvironmentVariable('AMI_VERSION', 'Process')
+  if ([string]::IsNullOrWhiteSpace($amiVersion)) {
+    $amiVersion = [Environment]::GetEnvironmentVariable('AMI_VERSION', 'Machine')
+  }
+  Write-Output "AMI_VERSION is: $amiVersion"
+  if (![string]::IsNullOrWhiteSpace($amiVersion) -and [version]$amiVersion -ge [version]'0.2') {
+    Write-Output "Tooling is already pre-installed in AMI versions >= 0.2. Only installing code signing certificate."
+    & "$PSScriptRoot\setup_windows_code_signing.ps1"
+    Exit 0
+  }
 }
 
 Write-Output "--- :windows: Setting up Windows for app distribution"
