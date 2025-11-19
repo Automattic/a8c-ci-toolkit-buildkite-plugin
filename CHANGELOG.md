@@ -34,7 +34,7 @@ _None._
 
 ### Breaking Changes
 
-_None._
+- We've removed the `prepare_windows_host_for_app_distribution.ps1` script as this functionality is now implemented in the Windows AMI itself. [#196]
 
 ### New Features
 
