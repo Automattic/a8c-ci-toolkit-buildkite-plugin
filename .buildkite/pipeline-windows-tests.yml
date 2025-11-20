@@ -109,11 +109,3 @@ steps:
         notify:
           - github_commit_status:
               context: "install_python Tests - Basic dry run with Chocolatey available"
-
-  - label: ":windows: prepare_windows_host_for_app_distribution Tests - Skip Windows 10 SDK Installation"
-    command: .\tests\test_prepare_windows_host_for_app_distribution.ps1
-    agents:
-      queue: windows
-    notify:
-      - github_commit_status:
-          context: "prepare_windows_host_for_app_distribution Tests - Skip Windows 10 SDK Installation"
