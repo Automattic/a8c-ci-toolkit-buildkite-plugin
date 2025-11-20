@@ -34,7 +34,7 @@ _None._
 
 ### Breaking Changes
 
-- We've removed the `prepare_windows_host_for_app_distribution.ps1` script as this functionality is now implemented in the Windows AMI itself. [#196]
+- Removed the `prepare_windows_host_for_app_distribution.ps1` script as what it was installing is now already pre-provisioned in our latest custom Windows AMI already. [#196]
 
 ### New Features
 
@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-- Fixed Windows unit tests after Windows AMI changes. [#196]
+_None._
 
 ## 5.7.0
 
