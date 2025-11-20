@@ -34,7 +34,7 @@ _None._
 
 ### Breaking Changes
 
-- Removed the `prepare_windows_host_for_app_distribution.ps1` script as what it was installing is now already pre-provisioned in our latest custom Windows AMI already. [#196]
+- Removed the `prepare_windows_host_for_app_distribution.ps1` script, given what it was installing is now already pre-provisioned in our custom Windows AMI. [#196]
 
 ### New Features
 
