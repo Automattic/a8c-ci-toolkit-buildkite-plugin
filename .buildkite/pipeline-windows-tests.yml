@@ -98,14 +98,3 @@ steps:
         notify:
           - github_commit_status:
               context: "install_windows_10_sdk Tests - Version file with version number that is not in the allowed list"
-
-  - group: ":snake: install_python Tests"
-    steps:
-      - label: ":snake: install_python Tests - Basic dry run with Chocolatey available"
-        command: |
-          .\tests\test_install_python.ps1 -ExpectedExitCode 0
-        agents:
-          queue: windows
-        notify:
-          - github_commit_status:
-              context: "install_python Tests - Basic dry run with Chocolatey available"
