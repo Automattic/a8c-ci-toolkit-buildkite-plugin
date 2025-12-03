@@ -40,7 +40,7 @@ _None._
 
 ### New Features
 
-_None._
+- Add `git-conceal-unlock` helper script to download & install [`git-conceal`](https://github.com/Automattic/git-conceal) if not present, then run `git-conceal unlock`. [#195]
 
 ### Bug Fixes
 
