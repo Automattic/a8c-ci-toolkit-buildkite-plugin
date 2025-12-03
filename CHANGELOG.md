@@ -35,7 +35,7 @@ _None._
 ### Breaking Changes
 
 - Removed the `prepare_windows_host_for_app_distribution.ps1` script, given what it was installing is now already pre-provisioned in our custom Windows AMI. [#196]
-- Removed the scripts to install Python and Windows 10 SDK, given they come pre-installed in our custom Windows AMI. [#197]
+- Removed the scripts to install Python and Windows 10 SDK, given they now come pre-installed in our custom Windows AMI. [#197]
 - Removed script to refresh the environment after a Chocolatey install. This functionality is also already available in the custom Windows AMI. [#197]
 
 ### New Features
