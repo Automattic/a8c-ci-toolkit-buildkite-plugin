@@ -21,7 +21,7 @@ if command -v git-conceal &> /dev/null; then
 fi
 
 INSTALL_DIR="${PWD}"
-# If was already previously installed in INSTALL_DIR, execute it (replacing this current process)
+# If already installed in INSTALL_DIR, execute it (replacing this current process)
 if [[ -x "${INSTALL_DIR}/git-conceal" ]]; then
     "${INSTALL_DIR}/git-conceal" unlock "env:${env_var_name}"
     exit $?
