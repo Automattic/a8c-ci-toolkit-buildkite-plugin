@@ -9,7 +9,6 @@
 #
 # By default, it uses the `GIT_CONCEAL_SECRET_KEY` environment variable as the key source.
 # You can override it by passing the environment variable name as the first argument.
-#
 
 set -euo pipefail
 
