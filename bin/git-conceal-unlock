@@ -16,15 +16,13 @@ env_var_name=${1:-GIT_CONCEAL_SECRET_KEY}
 
 # If installed in the $PATH, execute it (replacing this current process)
 if command -v git-conceal &> /dev/null; then
-    git-conceal unlock "env:${env_var_name}"
-    exit $?
+    exec git-conceal unlock "env:${env_var_name}"
 fi
 
 INSTALL_DIR="${PWD}"
 # If already installed in INSTALL_DIR, execute it (replacing this current process)
 if [[ -x "${INSTALL_DIR}/git-conceal" ]]; then
-    "${INSTALL_DIR}/git-conceal" unlock "env:${env_var_name}"
-    exit $?
+    exec "${INSTALL_DIR}/git-conceal" unlock "env:${env_var_name}"
 fi
 
 # Otherwise, install it locally and execute it
