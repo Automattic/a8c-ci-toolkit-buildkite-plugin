@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Description:
+#   A wrapper script to run `git-conceal unlock` on CI
+#   See https://github.com/Automattic/git-conceal
+#
+#   The wrapper automatically runs the `install.sh` script of `git-conceal`
+#   if it's not already installed locally before running `git-conceal unlock env:…`.
+#
+# By default, it uses the `GIT_CONCEAL_SECRET_KEY` environment variable as the key source.
+# You can override it by passing the environment variable name as the first argument.
+
+set -euo pipefail
+
+# Note: this default env var name has been purposely chosen with a `_SECRET_KEY` suffix
+# so that Buildkite will automatically redact any accidental leak of its value in CI logs.
+# See https://buildkite.com/docs/agent/v3/cli-pipeline#redacted-vars
+# See https://github.com/buildkite/elastic-ci-stack-s3-secrets-hooks/blob/cb27042/s3secrets-helper/secrets/secrets.go#L31-L38
+env_var_name=${1:-GIT_CONCEAL_SECRET_KEY}
+
+# If installed in the $PATH, execute it (replacing this current process)
+if command -v git-conceal &> /dev/null; then
+    exec git-conceal unlock "env:${env_var_name}"
+fi
+
+INSTALL_DIR="${PWD}"
+# If already installed in INSTALL_DIR, execute it (replacing this current process)
+if [[ -x "${INSTALL_DIR}/git-conceal" ]]; then
+    exec "${INSTALL_DIR}/git-conceal" unlock "env:${env_var_name}"
+fi
+
+# Otherwise, install it locally and execute it
+echo "git-conceal binary not found. Installing it..."
+mkdir -p "${INSTALL_DIR}"
+curl -fsSL https://raw.githubusercontent.com/Automattic/git-conceal/trunk/install.sh | bash -s -- --prefix "${INSTALL_DIR}"
+"${INSTALL_DIR}/git-conceal" unlock "env:${env_var_name}"
