@@ -1,5 +1,12 @@
 # Migration Instructions for Major Releases
 
+## From 5.0.0 to 6.0.0
+
+Breaking changes in this release only affect pipelines building on Windows agents:
+* The `prepare_windows_host_for_app_distribution.ps1` script has been removed, as its functionality is now pre-provisioned in our custom Windows AMI. Remove any calls to this script from your pipeline steps.
+* Scripts to install Python and Windows 10 SDK have been removed, as they are now pre-installed in our custom Windows AMI. Remove any calls to these scripts from your pipeline steps.
+* The script to refresh the environment after a Chocolatey install has been removed, as this functionality is now available in the custom Windows AMI. Remove any calls to this script from your pipeline steps.
+
 ## From 4.0.0 to 5.0.0
 
 * Use `prepare_windows_host_for_app_distribution.ps1` instead of `prepare_windows_host_for_node.ps1`.
