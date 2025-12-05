@@ -26,11 +26,11 @@ steps:
       restore_cache $(hash_file package-lock.json)
 
     plugins:
-      - automattic/a8c-ci-toolkit#5.7.0:
+      - automattic/a8c-ci-toolkit#6.0.0:
           bucket: a8c-ci-cache # optional
 ```
 
-Don't forget to verify what [the latest release](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/releases/latest) is and use that value instead of `5.7.0`.
+Don't forget to verify what [the latest release](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/releases/latest) is and use that value instead of `6.0.0`.
 
 ## Configuration
 
