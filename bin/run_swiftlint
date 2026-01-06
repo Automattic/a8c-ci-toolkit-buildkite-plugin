@@ -64,12 +64,16 @@ ERRORS=$(echo -e "$SWIFTLINT_OUTPUT" | awk -F': ' '/: error:/ {printf "- `%s`: %
 
 if [ -n "$WARNINGS" ]; then
   echo "$WARNINGS"
-  printf "**SwiftLint Warnings**\n%b" "$WARNINGS" | buildkite-agent annotate --style 'warning'
+  if [ -n "${BUILDKITE_JOB_ID:-}" ]; then
+    printf "**SwiftLint Warnings**\n%b" "$WARNINGS" | buildkite-agent annotate --style 'warning'
+  fi
 fi
 
 if [ -n "$ERRORS" ]; then
   echo "$ERRORS"
-  printf "**SwiftLint Errors**\n%b" "$ERRORS" | buildkite-agent annotate --style 'error'
+  if [ -n "${BUILDKITE_JOB_ID:-}" ]; then
+    printf "**SwiftLint Errors**\n%b" "$ERRORS" | buildkite-agent annotate --style 'error'
+  fi
 fi
 
 printf "SwiftLint completed with %s.\n" $SWIFTLINT_EXIT_STATUS
