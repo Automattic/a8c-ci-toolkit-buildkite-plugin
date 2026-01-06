@@ -71,4 +71,7 @@ if [ -n "$ERRORS" ]; then
   printf "**SwiftLint Errors**\n%b" "$ERRORS" | buildkite-agent annotate --style 'error'
 fi
 
+printf "SwiftLint completed with %s.\n" $SWIFTLINT_EXIT_STATUS
+printf "Will exit script with the same exit code.\n"
+
 exit $SWIFTLINT_EXIT_STATUS
