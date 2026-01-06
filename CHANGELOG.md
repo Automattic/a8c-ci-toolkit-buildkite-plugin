@@ -42,11 +42,17 @@ _None._
 
 ### Bug Fixes
 
-- `run_swiftlint` now supports SwiftLint 0.60.0 and above. [#199]
+_None._
 
 ### Internal Changes
 
 _None._
+
+## 6.0.1
+
+### Bug Fixes
+
+- `run_swiftlint` now supports SwiftLint 0.60.0 and above. [#199]
 
 ## 6.0.0
 
