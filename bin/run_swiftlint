@@ -51,10 +51,11 @@ if [ -z "$SWIFTLINT_VERSION" ]; then
   echo "Your \`$FIRST_CONFIG_FILE\` file must contain a key for \`swiftlint_version:\` so that we know which version of SwiftLint to use to lint your codebase."
   exit 1
 fi
-SWIFTLINT_DOCKER_CMD=(docker run --rm -v "$PWD":/workspace -w /workspace ghcr.io/realm/swiftlint:"$SWIFTLINT_VERSION" swiftlint)
+SWIFTLINT_DOCKER_CMD=(docker run --rm -v "$PWD":/workspace -w /workspace --entrypoint swiftlint ghcr.io/realm/swiftlint:"$SWIFTLINT_VERSION")
 
 set +e
-SWIFTLINT_OUTPUT=$("${SWIFTLINT_DOCKER_CMD[@]}" lint "${SWIFTLINT_ARGUMENTS[@]}")
+# The set -x in the subshell will print the full cmd making the logs clearer
+SWIFTLINT_OUTPUT=$(set -x; "${SWIFTLINT_DOCKER_CMD[@]}" lint "${SWIFTLINT_ARGUMENTS[@]}")
 SWIFTLINT_EXIT_STATUS=$?
 set -e
 
@@ -63,12 +64,18 @@ ERRORS=$(echo -e "$SWIFTLINT_OUTPUT" | awk -F': ' '/: error:/ {printf "- `%s`: %
 
 if [ -n "$WARNINGS" ]; then
   echo "$WARNINGS"
-  printf "**SwiftLint Warnings**\n%b" "$WARNINGS" | buildkite-agent annotate --style 'warning'
+  if [ -n "${BUILDKITE_JOB_ID:-}" ]; then
+    printf "**SwiftLint Warnings**\n%b" "$WARNINGS" | buildkite-agent annotate --style 'warning'
+  fi
 fi
 
 if [ -n "$ERRORS" ]; then
   echo "$ERRORS"
-  printf "**SwiftLint Errors**\n%b" "$ERRORS" | buildkite-agent annotate --style 'error'
+  if [ -n "${BUILDKITE_JOB_ID:-}" ]; then
+    printf "**SwiftLint Errors**\n%b" "$ERRORS" | buildkite-agent annotate --style 'error'
+  fi
 fi
+
+printf "SwiftLint completed with exit code %d\n" "$SWIFTLINT_EXIT_STATUS"
 
 exit $SWIFTLINT_EXIT_STATUS
