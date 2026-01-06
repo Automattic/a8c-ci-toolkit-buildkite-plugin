@@ -76,7 +76,6 @@ if [ -n "$ERRORS" ]; then
   fi
 fi
 
-printf "SwiftLint completed with %s.\n" $SWIFTLINT_EXIT_STATUS
-printf "Will exit script with the same exit code.\n"
+printf "SwiftLint completed with exit code %d\n" "$SWIFTLINT_EXIT_STATUS"
 
 exit $SWIFTLINT_EXIT_STATUS
