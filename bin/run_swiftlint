@@ -51,7 +51,7 @@ if [ -z "$SWIFTLINT_VERSION" ]; then
   echo "Your \`$FIRST_CONFIG_FILE\` file must contain a key for \`swiftlint_version:\` so that we know which version of SwiftLint to use to lint your codebase."
   exit 1
 fi
-SWIFTLINT_DOCKER_CMD=(docker run --rm -v "$PWD":/workspace -w /workspace ghcr.io/realm/swiftlint:"$SWIFTLINT_VERSION" swiftlint)
+SWIFTLINT_DOCKER_CMD=(docker run --rm -v "$PWD":/workspace -w /workspace --entrypoint swiftlint ghcr.io/realm/swiftlint:"$SWIFTLINT_VERSION")
 
 set +e
 SWIFTLINT_OUTPUT=$("${SWIFTLINT_DOCKER_CMD[@]}" lint "${SWIFTLINT_ARGUMENTS[@]}")
