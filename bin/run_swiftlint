@@ -54,7 +54,8 @@ fi
 SWIFTLINT_DOCKER_CMD=(docker run --rm -v "$PWD":/workspace -w /workspace --entrypoint swiftlint ghcr.io/realm/swiftlint:"$SWIFTLINT_VERSION")
 
 set +e
-SWIFTLINT_OUTPUT=$("${SWIFTLINT_DOCKER_CMD[@]}" lint "${SWIFTLINT_ARGUMENTS[@]}")
+# The set -x in the subshell will print the full cmd making the logs clearer
+SWIFTLINT_OUTPUT=$(set -x; "${SWIFTLINT_DOCKER_CMD[@]}" lint "${SWIFTLINT_ARGUMENTS[@]}")
 SWIFTLINT_EXIT_STATUS=$?
 set -e
 
