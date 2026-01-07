@@ -13,17 +13,25 @@ Write-Output "--- :lock_with_ink_pen: Download Code Signing Certificate"
 
 $certificateBinPath = "certificate.bin"
 
-$EncodedText = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate `
-  | jq -r '.SecretString' `
-  | Out-File $certificateBinPath
+$secretJson = aws secretsmanager get-secret-value --secret-id windows-code-signing-certificate 2>&1
+If ($LastExitCode -ne 0) {
+  Write-Output "[!] Failed to retrieve secret from AWS SecretsManager."
+  Write-Output $secretJson
+  Exit $LastExitCode
+}
+
+$secretJson | jq -r '.SecretString' | Out-File $certificateBinPath
+If ($LastExitCode -ne 0) {
+  Write-Output "[!] Failed to parse secret JSON with jq."
+  Exit $LastExitCode
+}
 
 $certificatePfxPath = "certificate.pfx"
 
 certutil -decode $certificateBinPath $certificatePfxPath
-
 If ($LastExitCode -ne 0) {
-  Write-Output "[!] Failed to download code signing certificate."
+  Write-Output "[!] Failed to decode certificate."
   Exit $LastExitCode
-} else {
-  Write-Output "Code signing certificate downloaded at: $((Get-Item $certificatePfxPath).FullName)"
 }
+
+Write-Output "Code signing certificate downloaded at: $((Get-Item $certificatePfxPath).FullName)"
