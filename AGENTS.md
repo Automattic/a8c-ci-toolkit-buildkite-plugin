@@ -14,8 +14,6 @@ The scripts in the `bin/` directory are available in the `$PATH` of all our CI j
 
 All `make` targets require Docker to be running.
 
-When writing Bash scripts, refer to the rules in:
-@.cursor/rules/bash_scripts.mdc
+When writing Bash scripts, read `.cursor/rules/bash_scripts.mdc` for conventions.
 
-When writing PowerShell scripts, refer to the rules in:
-@.cursor/rules/powershell_scripts.mdc
+When writing PowerShell scripts, read `.cursor/rules/powershell_scripts.mdc` for conventions.
