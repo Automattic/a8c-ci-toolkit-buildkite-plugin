@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- Enhanced error handling in `setup_windows_code_signing.ps1` [#201]
 
 ## 6.0.1
 
