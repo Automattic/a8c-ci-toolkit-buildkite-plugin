@@ -53,7 +53,6 @@ param (
 )
 
 $ErrorActionPreference = "Stop"
-Set-StrictMode -Version Latest
 
 # ── Validate required environment variables ──────────────────────────
 
@@ -204,3 +203,6 @@ if ($SkipSmokeTest) {
 }
 
 Write-Host "Azure Trusted Signing is ready."
+
+# Ensure $LastExitCode is 0 for callers that check it after & invocation.
+cmd /c "exit 0"
