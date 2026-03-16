@@ -66,8 +66,9 @@ $REQUIRED_ENV_VARS = @(
 )
 
 foreach ($var in $REQUIRED_ENV_VARS) {
-    if (-not (Test-Path "env:$var")) {
-        Write-Host "Error: Required environment variable $var is not set" -ForegroundColor Red
+    $value = [Environment]::GetEnvironmentVariable($var)
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        Write-Host "Error: Required environment variable $var is missing or empty" -ForegroundColor Red
         Exit 1
     }
 }
