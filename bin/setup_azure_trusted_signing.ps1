@@ -145,15 +145,6 @@ $metadata = @{
 Set-Content -Path $metadataPath -Value $metadata
 Write-Host "Generated metadata.json at: $metadataPath"
 
-# ── Export environment variables ─────────────────────────────────────
-
-$env:AZURE_CODE_SIGNING_DLIB = $dlibPath
-$env:AZURE_METADATA_JSON = $metadataPath
-$env:SIGNTOOL_PATH = $signtoolPath
-$env:AZURE_FILE_DIGEST = "SHA256"
-$env:AZURE_TIMESTAMP_DIGEST = "SHA256"
-$env:AZURE_TIMESTAMP_SERVER = "https://timestamp.acs.microsoft.com"
-
 # ── Ensure .NET 6+ runtime is available ──────────────────────────────
 #
 # The DLib is a C++/CLI assembly (via Ijwhost.dll) that requires the
@@ -175,6 +166,15 @@ if (-not $hasNet6Plus) {
     If ($LastExitCode -ne 0) { Exit $LastExitCode }
     $env:PATH = "$env:ProgramFiles\dotnet;$env:PATH"
 }
+
+# ── Export environment variables ─────────────────────────────────────
+
+$env:AZURE_CODE_SIGNING_DLIB = $dlibPath
+$env:AZURE_METADATA_JSON = $metadataPath
+$env:SIGNTOOL_PATH = $signtoolPath
+$env:AZURE_FILE_DIGEST = "SHA256"
+$env:AZURE_TIMESTAMP_DIGEST = "SHA256"
+$env:AZURE_TIMESTAMP_SERVER = "https://timestamp.acs.microsoft.com"
 
 # ── Smoke test ───────────────────────────────────────────────────────
 
