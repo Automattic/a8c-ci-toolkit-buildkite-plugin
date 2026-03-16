@@ -73,20 +73,19 @@ foreach ($var in $REQUIRED_ENV_VARS) {
     }
 }
 
+$workingDir = Join-Path $env:TEMP ("AzureCodeSigning-" + [guid]::NewGuid().ToString())
+$packageDir = Join-Path $workingDir "packages"
+New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
+
 # ── Download Azure Trusted Signing Client (DLib DLL) ─────────────────
 
 Write-Host "~~~ Installing Microsoft.Trusted.Signing.Client NuGet package..."
-$nugetDir = "$env:TEMP\AzureCodeSigning"
-if (-not (Test-Path $nugetDir)) {
-    New-Item -ItemType Directory -Path $nugetDir -Force | Out-Null
-}
-
 $nupkgUrl = "https://www.nuget.org/api/v2/package/Microsoft.Trusted.Signing.Client"
-$nupkgPath = "$nugetDir\Microsoft.Trusted.Signing.Client.zip"
+$nupkgPath = Join-Path $packageDir "Microsoft.Trusted.Signing.Client.zip"
 Invoke-WebRequest -Uri $nupkgUrl -OutFile $nupkgPath
-Expand-Archive -Path $nupkgPath -DestinationPath "$nugetDir\Microsoft.Trusted.Signing.Client" -Force
+Expand-Archive -Path $nupkgPath -DestinationPath (Join-Path $packageDir "Microsoft.Trusted.Signing.Client") -Force
 
-$dlibPath = (Get-ChildItem -Path $nugetDir -Recurse -Filter "Azure.CodeSigning.Dlib.dll" |
+$dlibPath = (Get-ChildItem -Path $packageDir -Recurse -Filter "Azure.CodeSigning.Dlib.dll" |
     Where-Object { $_.FullName -like "*x64*" } |
     Select-Object -First 1).FullName
 
@@ -105,8 +104,8 @@ Write-Host "Found DLib at: $dlibPath"
 
 Write-Host "~~~ Installing modern signtool via Microsoft.Windows.SDK.BuildTools..."
 $sdkToolsUrl = "https://www.nuget.org/api/v2/package/Microsoft.Windows.SDK.BuildTools"
-$sdkToolsZip = "$nugetDir\Microsoft.Windows.SDK.BuildTools.zip"
-$sdkToolsDir = "$nugetDir\Microsoft.Windows.SDK.BuildTools"
+$sdkToolsZip = Join-Path $packageDir "Microsoft.Windows.SDK.BuildTools.zip"
+$sdkToolsDir = Join-Path $packageDir "Microsoft.Windows.SDK.BuildTools"
 Invoke-WebRequest -Uri $sdkToolsUrl -OutFile $sdkToolsZip
 Expand-Archive -Path $sdkToolsZip -DestinationPath $sdkToolsDir -Force
 
@@ -125,10 +124,7 @@ Write-Host "Found signtool at: $signtoolPath"
 # Use the full resolved path to avoid 8.3 short names (e.g. BUILDK~1)
 # which the Azure DLib may not handle.
 
-$metadataPath = [System.IO.Path]::Combine(
-    [System.IO.Path]::GetFullPath($env:TEMP),
-    "metadata.json"
-)
+$metadataPath = Join-Path $workingDir "metadata.json"
 
 $metadata = @{
     Endpoint               = $env:AZURE_ENDPOINT
@@ -186,10 +182,10 @@ if ($SkipSmokeTest) {
     Write-Host "Skipping signing smoke test."
 } else {
     Write-Host "~~~ Smoke testing Azure Trusted Signing..."
-    $dummyExe = "$env:TEMP\signing-test.exe"
+    $dummyExe = Join-Path $workingDir "signing-test.exe"
     Copy-Item "C:\Windows\System32\cmd.exe" $dummyExe -Force
 
-    $outFile = "$env:TEMP\signtool-out.txt"
+    $outFile = Join-Path $workingDir "signtool-out.txt"
     cmd /c "`"$signtoolPath`" sign /v /fd $env:AZURE_FILE_DIGEST /tr $env:AZURE_TIMESTAMP_SERVER /td $env:AZURE_TIMESTAMP_DIGEST /dlib `"$dlibPath`" /dmdf `"$metadataPath`" `"$dummyExe`" > `"$outFile`" 2>&1"
     $signtoolExitCode = $LastExitCode
     Get-Content $outFile
