@@ -18,7 +18,7 @@ _None._
 
 ### New Features
 
-- Add support for Windows code signing via Azure Artifacts Signing [#203]
+_None._
 
 ### Bug Fixes
 
@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Add support for Windows code signing via Azure Artifacts Signing [#203]
 
 ### Bug Fixes
 
