@@ -109,7 +109,7 @@ Write-Output "Found DLib at: $dlibPath"
 # Microsoft.Windows.SDK.BuildTools NuGet package.
 
 Write-Output "~~~ Installing modern signtool via Microsoft.Windows.SDK.BuildTools..."
-$sdkToolsUrl = "https://www.nuget.org/api/v2/package/Microsoft.Windows.SDK.BuildTools"
+$sdkToolsUrl = "https://www.nuget.org/api/v2/package/Microsoft.Windows.SDK.BuildTools/10.0.26100.7705"
 $sdkToolsZip = Join-Path $packageDir "Microsoft.Windows.SDK.BuildTools.zip"
 $sdkToolsDir = Join-Path $packageDir "Microsoft.Windows.SDK.BuildTools"
 Invoke-WebRequest -Uri $sdkToolsUrl -OutFile $sdkToolsZip
