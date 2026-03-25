@@ -152,7 +152,7 @@ $env:AZURE_METADATA_JSON = $metadataPath
 $env:SIGNTOOL_PATH = $signtoolPath
 $env:AZURE_FILE_DIGEST = "SHA256"
 $env:AZURE_TIMESTAMP_DIGEST = "SHA256"
-$env:AZURE_TIMESTAMP_SERVER = "http://timestamp.acs.microsoft.com"
+$env:AZURE_TIMESTAMP_SERVER = "https://timestamp.acs.microsoft.com"
 
 # ── Ensure .NET 6+ runtime is available ──────────────────────────────
 #
