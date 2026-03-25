@@ -16,7 +16,7 @@
     - `SIGNTOOL_PATH`           — path to modern `signtool.exe`
     - `AZURE_FILE_DIGEST`       — `SHA256`
     - `AZURE_TIMESTAMP_DIGEST`  — `SHA256`
-    - `AZURE_TIMESTAMP_SERVER`  — `http://timestamp.acs.microsoft.com`
+    - `AZURE_TIMESTAMP_SERVER`  — `https://timestamp.acs.microsoft.com`
 
 .PARAMETER SkipSmokeTest
     Skip the signing smoke test. Useful when Azure credentials are not
@@ -31,6 +31,7 @@
     Runs the setup without verifying signing works.
 
 .NOTES
+    Version 1.0 - Initial release
     Requirements: Windows PowerShell 5.1
     Administrator privileges: No
 
@@ -46,13 +47,18 @@
 
 .OUTPUTS
     Sets process-level environment variables (see DESCRIPTION).
+
+.RETURNVALUES
+    Exit code 0 on success, non-zero on failure.
 #>
 
+[CmdletBinding()]
 param (
     [switch]$SkipSmokeTest
 )
 
 $ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
 
 # ── Validate required environment variables ──────────────────────────
 
@@ -68,7 +74,7 @@ $REQUIRED_ENV_VARS = @(
 foreach ($var in $REQUIRED_ENV_VARS) {
     $value = [Environment]::GetEnvironmentVariable($var)
     if ([string]::IsNullOrWhiteSpace($value)) {
-        Write-Host "Error: Required environment variable $var is missing or empty" -ForegroundColor Red
+        Write-Output "Error: Required environment variable $var is missing or empty"
         Exit 1
     }
 }
@@ -79,7 +85,7 @@ New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
 
 # ── Download Azure Trusted Signing Client (DLib DLL) ─────────────────
 
-Write-Host "~~~ Installing Microsoft.Trusted.Signing.Client NuGet package..."
+Write-Output "~~~ Installing Microsoft.Trusted.Signing.Client NuGet package..."
 $nupkgUrl = "https://www.nuget.org/api/v2/package/Microsoft.Trusted.Signing.Client"
 $nupkgPath = Join-Path $packageDir "Microsoft.Trusted.Signing.Client.zip"
 Invoke-WebRequest -Uri $nupkgUrl -OutFile $nupkgPath
@@ -90,10 +96,10 @@ $dlibPath = (Get-ChildItem -Path $packageDir -Recurse -Filter "Azure.CodeSigning
     Select-Object -First 1).FullName
 
 if (-not $dlibPath) {
-    Write-Host "Error: Azure.CodeSigning.Dlib.dll not found" -ForegroundColor Red
+    Write-Output "Error: Azure.CodeSigning.Dlib.dll not found"
     Exit 1
 }
-Write-Host "Found DLib at: $dlibPath"
+Write-Output "Found DLib at: $dlibPath"
 
 # ── Download modern signtool (SDK 10.0.22621+) ──────────────────────
 #
@@ -102,7 +108,7 @@ Write-Host "Found DLib at: $dlibPath"
 # with an older SDK, so we fetch a modern copy via the
 # Microsoft.Windows.SDK.BuildTools NuGet package.
 
-Write-Host "~~~ Installing modern signtool via Microsoft.Windows.SDK.BuildTools..."
+Write-Output "~~~ Installing modern signtool via Microsoft.Windows.SDK.BuildTools..."
 $sdkToolsUrl = "https://www.nuget.org/api/v2/package/Microsoft.Windows.SDK.BuildTools"
 $sdkToolsZip = Join-Path $packageDir "Microsoft.Windows.SDK.BuildTools.zip"
 $sdkToolsDir = Join-Path $packageDir "Microsoft.Windows.SDK.BuildTools"
@@ -114,10 +120,10 @@ $signtoolPath = (Get-ChildItem -Path $sdkToolsDir -Recurse -Filter "signtool.exe
     Select-Object -First 1).FullName
 
 if (-not $signtoolPath) {
-    Write-Host "Error: signtool.exe not found in SDK BuildTools package" -ForegroundColor Red
+    Write-Output "Error: signtool.exe not found in SDK BuildTools package"
     Exit 1
 }
-Write-Host "Found signtool at: $signtoolPath"
+Write-Output "Found signtool at: $signtoolPath"
 
 # ── Generate metadata.json ───────────────────────────────────────────
 #
@@ -143,14 +149,14 @@ $metadata = @{
     )
 } | ConvertTo-Json
 Set-Content -Path $metadataPath -Value $metadata
-Write-Host "Generated metadata.json at: $metadataPath"
+Write-Output "Generated metadata.json at: $metadataPath"
 
 # ── Ensure .NET 6+ runtime is available ──────────────────────────────
 #
 # The DLib is a C++/CLI assembly (via Ijwhost.dll) that requires the
 # .NET runtime.
 
-Write-Host "~~~ Checking .NET runtime..."
+Write-Output "~~~ Checking .NET runtime..."
 $dotnetRuntimes = $null
 try { $dotnetRuntimes = & dotnet --list-runtimes 2>&1 } catch {}
 
@@ -159,7 +165,7 @@ $hasNet6Plus = $dotnetRuntimes |
     Select-Object -First 1
 
 if (-not $hasNet6Plus) {
-    Write-Host "Installing .NET 8 Runtime..."
+    Write-Output "Installing .NET 8 Runtime..."
     $dotnetInstallScript = "$env:TEMP\dotnet-install.ps1"
     Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile $dotnetInstallScript
     & $dotnetInstallScript -Runtime dotnet -Channel 8.0 -InstallDir "$env:ProgramFiles\dotnet"
@@ -179,9 +185,9 @@ $env:AZURE_TIMESTAMP_SERVER = "https://timestamp.acs.microsoft.com"
 # ── Smoke test ───────────────────────────────────────────────────────
 
 if ($SkipSmokeTest) {
-    Write-Host "Skipping signing smoke test."
+    Write-Output "Skipping signing smoke test."
 } else {
-    Write-Host "~~~ Smoke testing Azure Trusted Signing..."
+    Write-Output "~~~ Smoke testing Azure Trusted Signing..."
     $dummyExe = Join-Path $workingDir "signing-test.exe"
     Copy-Item "C:\Windows\System32\cmd.exe" $dummyExe -Force
 
@@ -192,14 +198,14 @@ if ($SkipSmokeTest) {
     Remove-Item $outFile -ErrorAction SilentlyContinue
 
     if ($signtoolExitCode -ne 0) {
-        Write-Host "Error: Smoke test failed (exit code $signtoolExitCode)" -ForegroundColor Red
+        Write-Output "Error: Smoke test failed (exit code $signtoolExitCode)"
         Exit 1
     }
-    Write-Host "Smoke test passed."
+    Write-Output "Smoke test passed."
     Remove-Item $dummyExe -Force
 }
 
-Write-Host "Azure Trusted Signing is ready."
+Write-Output "Azure Trusted Signing is ready."
 
 # Ensure $LastExitCode is 0 for callers that check it after & invocation.
 cmd /c "exit 0"
