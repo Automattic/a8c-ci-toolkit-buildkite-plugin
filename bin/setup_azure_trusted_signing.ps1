@@ -86,7 +86,7 @@ New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
 # ── Download Azure Trusted Signing Client (DLib DLL) ─────────────────
 
 Write-Output "~~~ Installing Microsoft.Trusted.Signing.Client NuGet package..."
-$nupkgUrl = "https://www.nuget.org/api/v2/package/Microsoft.Trusted.Signing.Client"
+$nupkgUrl = "https://www.nuget.org/api/v2/package/Microsoft.Trusted.Signing.Client/1.0.95"
 $nupkgPath = Join-Path $packageDir "Microsoft.Trusted.Signing.Client.zip"
 Invoke-WebRequest -Uri $nupkgUrl -OutFile $nupkgPath
 Expand-Archive -Path $nupkgPath -DestinationPath (Join-Path $packageDir "Microsoft.Trusted.Signing.Client") -Force
