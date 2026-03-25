@@ -169,7 +169,12 @@ if (-not $hasNet6Plus) {
     $dotnetInstallScript = "$env:TEMP\dotnet-install.ps1"
     Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile $dotnetInstallScript
     & $dotnetInstallScript -Runtime dotnet -Channel 8.0 -InstallDir "$env:ProgramFiles\dotnet"
-    If ($LastExitCode -ne 0) { Exit $LastExitCode }
+    # $? is used instead of $LastExitCode because dotnet-install.ps1 is a
+    # PowerShell script, not a native command.  $LastExitCode is only set by
+    # native executables, and under Set-StrictMode -Version Latest reading it
+    # before any native command has run throws a "variable has not been set"
+    # error.
+    if (-not $?) { Exit 1 }
     $env:PATH = "$env:ProgramFiles\dotnet;$env:PATH"
 }
 
