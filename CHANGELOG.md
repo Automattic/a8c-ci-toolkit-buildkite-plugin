@@ -38,11 +38,21 @@ _None._
 
 ### New Features
 
-- Add support for Windows code signing via Azure Artifacts Signing [#203]
+_None._
 
 ### Bug Fixes
 
 _None._
+
+### Internal Changes
+
+_None._
+
+## 6.1.0
+
+### New Features
+
+- Add support for Windows code signing via Azure Artifacts Signing [#203]
 
 ### Internal Changes
 
