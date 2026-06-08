@@ -1,0 +1,177 @@
+#!/bin/bash -eu
+
+# Usage
+# sign_and_notarize [--team-id TEAM_ID] [--entitlements FILE] <artifact> [<artifact>...]
+#
+# Code-signs (Developer ID, hardened runtime) and notarizes one or more macOS artifacts: bare
+# executables, `.app` bundles, `.dmg`, or `.pkg`. Build-agnostic — point it at whatever your build
+# produced.
+#
+# The Developer ID Application certificate must already be in the keychain (e.g. fetched via
+# `fastlane match` / a `set_up_signing` lane before calling this). The identity is resolved from the
+# keychain by team id; set `IDENTITY` to force a specific one.
+#
+# Required environment (App Store Connect API key, used by notarytool):
+#   APP_STORE_CONNECT_API_KEY_KEY_ID
+#   APP_STORE_CONNECT_API_KEY_ISSUER_ID
+#   APP_STORE_CONNECT_API_KEY_KEY      (the .p8 PEM; `\n` escapes are decoded)
+#
+# Options:
+#   --team-id TEAM_ID       Apple team id used to resolve the signing identity (default: PZYM8XX95Q).
+#   --entitlements FILE     Entitlements plist to sign with; omit for a plain CLI under hardened runtime.
+
+TEAM_ID_DEFAULT="PZYM8XX95Q"
+
+team_id="${TEAM_ID:-$TEAM_ID_DEFAULT}"
+entitlements=""
+artifacts=()
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--team-id)
+			team_id="${2-}"
+			[ -n "$team_id" ] || { echo "missing value for --team-id" >&2; exit 1; }
+			shift 2
+			;;
+		--entitlements)
+			entitlements="${2-}"
+			[ -n "$entitlements" ] || { echo "missing value for --entitlements" >&2; exit 1; }
+			shift 2
+			;;
+		-h|--help)
+			echo "usage: sign_and_notarize [--team-id TEAM_ID] [--entitlements FILE] <artifact> [<artifact>...]"
+			exit 0
+			;;
+		-*)
+			echo "unknown option: $1" >&2
+			exit 1
+			;;
+		*)
+			artifacts+=("$1")
+			shift
+			;;
+	esac
+done
+
+if [ "${#artifacts[@]}" -eq 0 ]; then
+	echo "you must pass at least one artifact to sign and notarize" >&2
+	exit 1
+fi
+
+key_id="${APP_STORE_CONNECT_API_KEY_KEY_ID-}"
+issuer_id="${APP_STORE_CONNECT_API_KEY_ISSUER_ID-}"
+key_pem="${APP_STORE_CONNECT_API_KEY_KEY-}"
+
+if [ -z "$key_id" ] || [ -z "$issuer_id" ] || [ -z "$key_pem" ]; then
+	echo "missing API key env: set APP_STORE_CONNECT_API_KEY_{KEY_ID,ISSUER_ID,KEY}" >&2
+	exit 2
+fi
+
+if [ -n "$entitlements" ] && [ ! -f "$entitlements" ]; then
+	echo "entitlements file not found: $entitlements" >&2
+	exit 3
+fi
+
+# Resolve the Developer ID Application identity from the keychain by team id, so this works for any
+# such cert without hardcoding the org name. `IDENTITY` bypasses the lookup.
+identity="${IDENTITY:-}"
+if [ -z "$identity" ]; then
+	identity=$(security find-identity -v -p codesigning | awk -v team="($team_id)" '
+		/Developer ID Application:/ && index($0, team) {
+			sub(/^[^"]*"/, "")
+			sub(/"[^"]*$/, "")
+			print
+			exit
+		}
+	')
+fi
+
+if [ -z "$identity" ]; then
+	echo "no Developer ID Application identity for team $team_id in keychain (set IDENTITY= to override)" >&2
+	exit 4
+fi
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+# notarytool wants the key as a .p8 file. The env var stores the PEM with `\n` as a literal
+# backslash-n; %b decodes the escapes, and the trailing newline avoids notarytool rejecting the PEM
+# as `invalidPEMDocument`.
+p8="$work/AuthKey_$key_id.p8"
+printf '%b\n' "$key_pem" > "$p8"
+chmod 600 "$p8"
+
+sign() {
+	local target="$1"
+	local opts=(--force --options runtime --timestamp --sign "$identity")
+	if [ -n "$entitlements" ]; then
+		opts+=(--entitlements "$entitlements")
+	fi
+	echo "==> codesigning $target"
+	codesign "${opts[@]}" "$target"
+	codesign --verify --strict --verbose=2 "$target"
+}
+
+notarize() {
+	local target="$1"
+	local payload="$target"
+
+	# .dmg and .pkg submit directly; everything else (bare binary, .app bundle) must be zipped first.
+	case "$target" in
+		*.dmg|*.pkg) ;;
+		*)
+			payload="$work/$(basename "$target").zip"
+			if [ -d "$target" ]; then
+				ditto -c -k --keepParent "$target" "$payload"
+			else
+				ditto -c -k "$target" "$payload"
+			fi
+			;;
+	esac
+
+	echo "==> notarizing $target (waiting on Apple, can take a few minutes)"
+	local out="$work/notary.json"
+	xcrun notarytool submit "$payload" \
+		--key "$p8" \
+		--key-id "$key_id" \
+		--issuer "$issuer_id" \
+		--wait \
+		--output-format json > "$out"
+
+	local status submission_id
+	status=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["status"])' "$out")
+	submission_id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' "$out")
+
+	if [ "$status" != "Accepted" ]; then
+		echo "==> notarization $status — fetching log" >&2
+		xcrun notarytool log "$submission_id" --key "$p8" --key-id "$key_id" --issuer "$issuer_id" >&2
+		exit 5
+	fi
+
+	# Stapling attaches the ticket for offline Gatekeeper checks. Only bundles and installers can hold
+	# a ticket; a bare binary relies on online notarization, so there's nothing to staple.
+	case "$target" in
+		*.dmg|*.pkg)
+			xcrun stapler staple "$target"
+			;;
+		*)
+			if [ -d "$target" ]; then
+				xcrun stapler staple "$target"
+			else
+				echo "==> bare binary: notarized, nothing to staple"
+			fi
+			;;
+	esac
+
+	echo "==> notarized $target (id=$submission_id)"
+}
+
+for artifact in "${artifacts[@]}"; do
+	if [ ! -e "$artifact" ]; then
+		echo "no such artifact: $artifact" >&2
+		exit 6
+	fi
+	echo "--- :apple: $artifact"
+	sign "$artifact"
+	notarize "$artifact"
+done

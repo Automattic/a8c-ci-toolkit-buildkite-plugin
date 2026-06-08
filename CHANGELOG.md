@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Add `sign_and_notarize`: code-sign (Developer ID, hardened runtime) and notarize macOS artifacts — bare binaries, `.app`, `.dmg`, or `.pkg`.
 
 ### Bug Fixes
 
