@@ -110,6 +110,9 @@ sign() {
 	echo "==> codesigning $target"
 	codesign "${opts[@]}" "$target"
 	codesign --verify --strict --verbose=2 "$target"
+	# Surface which cert and team identifier actually applied — invaluable when a
+	# Gatekeeper rejection lands in production and you need to confirm the signer.
+	codesign --display --verbose=2 "$target" 2>&1 | grep -E "Authority|TeamIdentifier|Signature|flags|Hash" || true
 }
 
 notarize() {
