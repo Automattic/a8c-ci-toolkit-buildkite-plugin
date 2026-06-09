@@ -4,7 +4,7 @@
 # sign_and_notarize [--team-id TEAM_ID] [--entitlements FILE] <artifact> [<artifact>...]
 #
 # Code-signs (Developer ID, hardened runtime) and notarizes one or more macOS artifacts: bare
-# executables, `.app` bundles, `.dmg`, or `.pkg`. Build-agnostic — point it at whatever your build
+# executables, `.app` bundles, or `.dmg`. Build-agnostic — point it at whatever your build
 # produced.
 #
 # The Developer ID Application certificate must already be in the keychain (e.g. fetched via
@@ -119,9 +119,9 @@ notarize() {
 	local target="$1"
 	local payload="$target"
 
-	# .dmg and .pkg submit directly; everything else (bare binary, .app bundle) must be zipped first.
+	# .dmg submits directly; everything else (bare binary, .app bundle) must be zipped first.
 	case "$target" in
-		*.dmg|*.pkg) ;;
+		*.dmg) ;;
 		*)
 			payload="$work/$(basename "$target").zip"
 			if [ -d "$target" ]; then
@@ -151,10 +151,10 @@ notarize() {
 		exit 5
 	fi
 
-	# Stapling attaches the ticket for offline Gatekeeper checks. Only bundles and installers can hold
+	# Stapling attaches the ticket for offline Gatekeeper checks. Only bundles and disk images can hold
 	# a ticket; a bare binary relies on online notarization, so there's nothing to staple.
 	case "$target" in
-		*.dmg|*.pkg)
+		*.dmg)
 			xcrun stapler staple "$target"
 			;;
 		*)
