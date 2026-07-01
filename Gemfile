@@ -2,4 +2,4 @@
 
 source 'https://rubygems.org'
 
-gem 'danger-dangermattic', '~> 1.1'
+gem 'danger-dangermattic', '~> 1.3'
