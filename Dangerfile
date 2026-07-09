@@ -5,7 +5,7 @@ warn('Please add an entry in the `CHANGELOG.md` file to describe the changes mad
 
 pr_size_checker.check_diff_size(max_size: 500)
 
-# skip remaining checks if the PR is still a Draft
+# Skip remaining checks if the PR is still a Draft
 if github.pr_draft?
   message('This PR is still a Draft: some checks will be skipped.')
   return
@@ -16,4 +16,4 @@ labels_checker.check(
   required_labels: []
 )
 
-warn("This PR has no reviewers. Please request a review from **@\u2060Automattic/apps-infrastructure**.") unless github_utils.requested_reviewers?
+warn("This PR has no reviewers. Please request a review from **@\u2060Automattic/apps-infra-tooling**.") unless github_utils.requested_reviewers?
