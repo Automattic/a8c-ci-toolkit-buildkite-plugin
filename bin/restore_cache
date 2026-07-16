@@ -27,8 +27,13 @@ echo "Using $S3_BUCKET_NAME as cache bucket"
 NAS_CACHE_HOST="cache.ci.internal"
 NAS_CACHE_ADDRESS="192.168.0.250"
 
+# The NAS is only reachable from the macOS (CyberLynk) fleet, so only those
+# hosts try it; everything else goes straight to S3.
+SHOULD_TRY_NAS=false
+[[ "$(uname)" == "Darwin" ]] && SHOULD_TRY_NAS=true
+
 restore_from_nas() {
-	[[ "$(uname)" == "Darwin" ]] || return 1
+	[[ "$SHOULD_TRY_NAS" == true ]] || return 1
 	local url="http://$NAS_CACHE_ADDRESS/cache/$CACHE_KEY"
 	curl -fsS --head --max-time 5 -H "Host: $NAS_CACHE_HOST" "$url" > /dev/null 2>&1 || return 1
 	echo "	Fetching from NAS (Synology)"
@@ -50,7 +55,7 @@ restore_from_s3() {
 }
 
 annotate() {
-	[[ "$(uname)" == "Darwin" ]] || return 0
+	[[ "$SHOULD_TRY_NAS" == true ]] || return 0
 	command -v buildkite-agent > /dev/null 2>&1 || return 0
 	printf -- "- %s\n" "$1" | buildkite-agent annotate --context cache-restore --scope job --style warning --append || echo "⚠️ cache-restore annotation failed"
 }
