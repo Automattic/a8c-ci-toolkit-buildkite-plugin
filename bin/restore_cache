@@ -43,6 +43,7 @@ restore_from_s3() {
 	# If the bucket has transfer acceleration enabled, use it!
 	ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$S3_BUCKET_NAME" | jq '.Status' -r || true)
 	if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
+		echo "Downloading with transfer acceleration"
 		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet --endpoint-url https://s3-accelerate.amazonaws.com
 	else
 		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet
