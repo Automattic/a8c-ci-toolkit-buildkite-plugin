@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- `restore_cache` now fetches from the on-premises Synology NAS before falling back to S3 on macOS hosts, avoiding billed S3 egress, and annotates the job whenever a restore still falls back to S3. [#216]
+- `restore_cache` now fetches from the on-premises Synology NAS before falling back to S3 on the macOS fleet, avoiding billed S3 egress, and annotates the job whenever a restore falls back to S3. [#216]
 
 ### Bug Fixes
 

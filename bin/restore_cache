@@ -20,17 +20,17 @@ fi
 
 echo "Using $S3_BUCKET_NAME as cache bucket"
 
-# On the macOS (CyberLynk) fleet, a Synology NAS mirrors the cache bucket on the
-# LAN and serves it over HTTP, so we fetch from it first to avoid billed S3
-# egress and fall back to S3. Mirrors hostmgr: connect by IP, set the Host header
-# (see https://github.com/Automattic/hostmgr/blob/fa4ed2b10e3163aec6bcffe4d6b94fc94f3466ec/Sources/libhostmgr/Servers/CacheServer.swift#L46-L72).
-NAS_CACHE_HOST="cache.ci.internal"
-NAS_CACHE_ADDRESS="192.168.0.250"
+# A Synology NAS on the macOS (CyberLynk) fleet's LAN mirrors the cache bucket
+# and serves it over HTTP, so we fetch from it first to avoid billed S3 egress
+# and fall back to S3. BUILDKITE_NAS_CACHE_HOST / _ADDRESS are exported only on
+# those agents (via buildkite-ci's macOS environment hooks); the BUILDKITE_ prefix
+# is what lets hostmgr forward them into the build VM, so their presence enables
+# the NAS path. Mirrors hostmgr: connect by IP, set the Host header (see https://github.com/Automattic/hostmgr/blob/fa4ed2b10e3163aec6bcffe4d6b94fc94f3466ec/Sources/libhostmgr/Servers/CacheServer.swift#L46-L72).
+NAS_CACHE_HOST=${BUILDKITE_NAS_CACHE_HOST:-}
+NAS_CACHE_ADDRESS=${BUILDKITE_NAS_CACHE_ADDRESS:-}
 
-# The NAS is only reachable from the macOS (CyberLynk) fleet, so only those
-# hosts try it; everything else goes straight to S3.
 SHOULD_TRY_NAS=false
-[[ "$(uname)" == "Darwin" ]] && SHOULD_TRY_NAS=true
+[[ -n "$NAS_CACHE_HOST" && -n "$NAS_CACHE_ADDRESS" ]] && SHOULD_TRY_NAS=true
 
 restore_from_nas() {
 	[[ "$SHOULD_TRY_NAS" == true ]] || return 1
