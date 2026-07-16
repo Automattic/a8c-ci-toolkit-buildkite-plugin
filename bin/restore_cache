@@ -32,12 +32,14 @@ restore_from_nas() {
 	local url="http://$NAS_CACHE_ADDRESS/cache/$CACHE_KEY"
 	curl -fsS --head --max-time 5 -H "Host: $NAS_CACHE_HOST" "$url" > /dev/null 2>&1 || return 1
 	echo "	Fetching from NAS (Synology)"
+	SOURCE="✅ NAS"
 	curl -fsS -H "Host: $NAS_CACHE_HOST" "$url" -o "$CACHE_KEY"
 }
 
 restore_from_s3() {
 	aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1 || return 1
 	echo "	Fetching from AWS S3"
+	SOURCE="⚠️ S3"
 	# If the bucket has transfer acceleration enabled, use it!
 	ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$S3_BUCKET_NAME" | jq '.Status' -r || true)
 	if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
@@ -45,6 +47,12 @@ restore_from_s3() {
 	else
 		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet
 	fi
+}
+
+annotate() {
+	[[ "$(uname)" == "Darwin" ]] || return 0
+	command -v buildkite-agent > /dev/null 2>&1 || return 0
+	buildkite-agent annotate "- $1" --context cache-restore --append > /dev/null 2>&1 || true
 }
 
 SECONDS=0
@@ -58,10 +66,13 @@ if restore_from_nas || restore_from_s3; then
 	echo "	Cleaning Up"
 	rm "$CACHE_KEY"
 
+	annotate "$SOURCE \`$CACHE_KEY\` ($(bytes_to_mb "$CACHE_SIZE") MB)"
+
 	duration=$SECONDS
 	echo "Cache entry successfully restored"
 	echo "	Duration: $((duration / 60)) minutes and $((duration % 60)) seconds"
 	echo "	Cache Size: $(bytes_to_mb "$CACHE_SIZE") MB"
 else
 	echo "No cache entry found for '$CACHE_KEY'"
+	annotate "ℹ️ none \`$CACHE_KEY\` – resolved fresh"
 fi
