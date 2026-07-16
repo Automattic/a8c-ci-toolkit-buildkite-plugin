@@ -20,22 +20,38 @@ fi
 
 echo "Using $S3_BUCKET_NAME as cache bucket"
 
-if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
-	SECONDS=0
-	echo "Restoring cache entry $CACHE_KEY"
+# On the macOS (CyberLynk) fleet, a Synology NAS mirrors the cache bucket on the
+# LAN and serves it over HTTP, so we fetch from it first to avoid billed S3
+# egress and fall back to S3. Mirrors hostmgr: connect by IP, set the Host header
+# (see https://github.com/Automattic/hostmgr/blob/fa4ed2b10e3163aec6bcffe4d6b94fc94f3466ec/Sources/libhostmgr/Servers/CacheServer.swift#L46-L72).
+NAS_CACHE_HOST="cache.ci.internal"
+NAS_CACHE_ADDRESS="192.168.0.250"
 
-	echo "	Downloading"
+restore_from_nas() {
+	[[ "$(uname)" == "Darwin" ]] || return 1
+	local url="http://$NAS_CACHE_ADDRESS/cache/$CACHE_KEY"
+	curl -fsS --head --max-time 5 -H "Host: $NAS_CACHE_HOST" "$url" > /dev/null 2>&1 || return 1
+	echo "	Fetching from NAS (Synology)"
+	curl -fsS -H "Host: $NAS_CACHE_HOST" "$url" -o "$CACHE_KEY"
+}
+
+restore_from_s3() {
+	aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1 || return 1
+	echo "	Fetching from AWS S3"
 	# If the bucket has transfer acceleration enabled, use it!
 	ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$S3_BUCKET_NAME" | jq '.Status' -r || true)
-
 	if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
-		echo "Downloading with transfer acceleration"
 		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet --endpoint-url https://s3-accelerate.amazonaws.com
 	else
 		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet
 	fi
+}
 
+SECONDS=0
+if restore_from_nas || restore_from_s3; then
+	echo "Restoring cache entry $CACHE_KEY"
 	CACHE_SIZE=$(wc -c < "$CACHE_KEY")
+
 	echo "	Decompressing"
 	tar -xf "$CACHE_KEY"
 
