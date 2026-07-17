@@ -20,22 +20,55 @@ fi
 
 echo "Using $S3_BUCKET_NAME as cache bucket"
 
-if aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1; then
-	SECONDS=0
-	echo "Restoring cache entry $CACHE_KEY"
+# Our Synology NAS maintains a mirror of the S3 cache bucket (via Synology CloudSync) and serves it over HTTP.
+# See https://github.com/Automattic/buildkite-ci/blob/trunk/docs/synology/synology-nas.md
+# So if we are on the same LAN as this NAS (i.e. macOS fleet in MacMiniVault), we fetch from it first
+# to avoid billed S3 egress, and only fall back to S3 on cache miss on the NAS.
+# Mirrors hostmgr behavior (connect by IP, set the Host header, see https://github.com/Automattic/hostmgr/blob/fa4ed2b10e3163aec6bcffe4d6b94fc94f3466ec/Sources/libhostmgr/Servers/CacheServer.swift#L46-L72).
 
-	echo "	Downloading"
+# Those `BUILDKITE_NAS_CACHE_*` vars are defined in the `environment` Buildkite hook of our CI machines living in MacMiniVault in the same LAN as the NAS
+# See https://github.com/Automattic/buildkite-ci/pull/902
+NAS_CACHE_HOST=${BUILDKITE_NAS_CACHE_HOST:-}
+NAS_CACHE_ADDRESS=${BUILDKITE_NAS_CACHE_ADDRESS:-}
+
+SHOULD_TRY_NAS=false
+[[ -n "$NAS_CACHE_HOST" && -n "$NAS_CACHE_ADDRESS" ]] && SHOULD_TRY_NAS=true
+
+restore_from_nas() {
+	[[ "$SHOULD_TRY_NAS" == true ]] || return 1
+	local url="http://$NAS_CACHE_ADDRESS/cache/$CACHE_KEY"
+	curl -fsS --head --max-time 5 -H "Host: $NAS_CACHE_HOST" "$url" > /dev/null 2>&1 || return 1
+	echo "	Fetching from NAS (Synology)"
+	curl -fsS -H "Host: $NAS_CACHE_HOST" "$url" -o "$CACHE_KEY"
+}
+
+restore_from_s3() {
+	aws s3api head-object --bucket "$S3_BUCKET_NAME" --key "$CACHE_KEY" > /dev/null 2>&1 || return 1
+	echo "	Fetching from AWS S3"
 	# If the bucket has transfer acceleration enabled, use it!
 	ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$S3_BUCKET_NAME" | jq '.Status' -r || true)
-
 	if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
 		echo "Downloading with transfer acceleration"
 		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet --endpoint-url https://s3-accelerate.amazonaws.com
 	else
 		aws s3 cp "s3://$S3_BUCKET_NAME/$CACHE_KEY" "$CACHE_KEY" --quiet
+	fi || return 1
+	# Only annotate about S3 fallback if we had to try NAS first and we tried S3 because NAS failed
+	if [[ "$SHOULD_TRY_NAS" == true ]]; then
+		annotate "Cache miss on NAS but hit on S3 fallback: \`$CACHE_KEY\`"
 	fi
+}
 
+annotate() {
+	command -v buildkite-agent > /dev/null 2>&1 || return 0
+	printf -- "- %s\n" "$1" | buildkite-agent annotate --context cache-restore --scope job --style warning --append || echo "⚠️ cache-restore annotation failed"
+}
+
+SECONDS=0
+if restore_from_nas || restore_from_s3; then
+	echo "Restoring cache entry $CACHE_KEY"
 	CACHE_SIZE=$(wc -c < "$CACHE_KEY")
+
 	echo "	Decompressing"
 	tar -xf "$CACHE_KEY"
 
