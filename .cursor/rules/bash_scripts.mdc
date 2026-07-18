@@ -15,11 +15,11 @@ For all bash shell scripts:
 ## Best Practices
 
 For all bash shell scripts:
-- Use `#!/bin/bash` as the first line of the script (a.k.a. shebang)
+- Use `#!/usr/bin/env bash` as the first line of the script (a.k.a. shebang), with a single parameter and no flags after `bash` (the kernel passes `env` everything after the interpreter as one argument, so `#!/usr/bin/env bash -eu` is not portable)
 - Use `set -e` to exit on error
 - Use `set -u` to error on undefined variables
 - Use `set -o pipefail` for proper error handling
-- Combine those options in a single `set -euo pipefail` command, or as part of the shebang line, as appropriate
+- Combine those options in a single `set -euo pipefail` command near the top of the script body
 - Always use `$()` instead of backticks to execute commands
 - Quote all variable expansions
 - Use `[[ ]]` for conditional expressions
@@ -52,7 +52,7 @@ When editing or creating files:
 ## Documentation Template
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Script: {filename}
 # 
