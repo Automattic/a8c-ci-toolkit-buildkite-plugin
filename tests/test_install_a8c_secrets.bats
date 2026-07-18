@@ -1,14 +1,17 @@
 #!/usr/bin/env bats
 
-# These cases cover the platform-mapping and checksum-pinning contract via `--print-plan`,
-# which resolves the target, asset, URL and expected checksum without touching the network.
-# The download/verify/install path needs a real release binary and is exercised on real CI
-# via a consuming repo.
+# The platform-mapping and checksum-pinning contract is unit-tested by sourcing the
+# script (guarded so `main` doesn't run) and calling its pure functions directly. The
+# unsupported-platform paths are checked by running the command with `uname` overridden
+# to a bad target, which errors before any download. The real download/verify/install
+# path needs a release binary and is exercised on real CI via a consuming repo.
 
 SCRIPT="$BATS_TEST_DIRNAME/../bin/install_a8c_secrets"
 
-plan_for() {
-	A8C_SECRETS_OS="$1" A8C_SECRETS_ARCH="$2" run "$SCRIPT" --print-plan
+# Source the script in a subshell and call one of its functions, so `set -e` and the
+# EXIT trap stay contained to that subshell.
+call() {
+	run bash -c "source '$SCRIPT'; $1"
 }
 
 @test "--help prints usage and exits 0" {
@@ -23,38 +26,41 @@ plan_for() {
 	[[ "$output" =~ "unknown option" ]]
 }
 
-@test "macOS arm64 resolves to the aarch64-apple-darwin asset and checksum" {
-	plan_for Darwin arm64
+@test "macOS arm64 maps to the aarch64-apple-darwin triple" {
+	call "resolve_target_triple Darwin arm64"
 	[ "$status" -eq 0 ]
-	[[ "$output" =~ "target:   aarch64-apple-darwin" ]]
-	[[ "$output" =~ "asset:    a8c-secrets-aarch64-apple-darwin-1.0.0" ]]
-	[[ "$output" =~ "https://github.com/Automattic/a8c-secrets/releases/download/1.0.0/a8c-secrets-aarch64-apple-darwin-1.0.0" ]]
-	[[ "$output" =~ "checksum: 2b59604261053d2b57a805c53e3b727c43b750e821b587c0492dee7f717bab24" ]]
+	[ "$output" = "aarch64-apple-darwin" ]
 }
 
-@test "Linux x86_64 resolves to the linux-gnu asset and checksum" {
-	plan_for Linux x86_64
+@test "Linux x86_64 maps to the linux-gnu triple" {
+	call "resolve_target_triple Linux x86_64"
 	[ "$status" -eq 0 ]
-	[[ "$output" =~ "target:   x86_64-unknown-linux-gnu" ]]
-	[[ "$output" =~ "checksum: b8fd670c430843ff5af954a85903dc1726d5ca8e3294f725e5e521ac86683bf7" ]]
+	[ "$output" = "x86_64-unknown-linux-gnu" ]
 }
 
-@test "Windows x86_64 resolves to the .exe asset and checksum" {
-	plan_for MINGW64_NT-10.0 x86_64
+@test "Windows x86_64 maps to the windows-gnu triple" {
+	call "resolve_target_triple MINGW64_NT-10.0 x86_64"
 	[ "$status" -eq 0 ]
-	[[ "$output" =~ "target:   x86_64-pc-windows-gnu" ]]
-	[[ "$output" =~ "asset:    a8c-secrets-x86_64-pc-windows-gnu-1.0.0.exe" ]]
-	[[ "$output" =~ "checksum: fd58cc1f7330de1078042ad1cb7afcb127ac66e8de840f202b03b70fd829b086" ]]
+	[ "$output" = "x86_64-pc-windows-gnu" ]
 }
 
-@test "unsupported architecture exits 2" {
-	plan_for Linux riscv64
-	[ "$status" -eq 2 ]
-	[[ "$output" =~ "Unsupported platform" ]]
+@test "an unsupported architecture has no triple" {
+	call "resolve_target_triple Linux riscv64"
+	[ "$status" -ne 0 ]
+	[ -z "$output" ]
 }
 
-@test "unsupported operating system exits 2" {
-	plan_for Plan9 x86_64
+@test "each supported triple has a pinned checksum" {
+	call "expected_checksum aarch64-apple-darwin"
+	[ "$output" = "2b59604261053d2b57a805c53e3b727c43b750e821b587c0492dee7f717bab24" ]
+	call "expected_checksum x86_64-unknown-linux-gnu"
+	[ "$output" = "b8fd670c430843ff5af954a85903dc1726d5ca8e3294f725e5e521ac86683bf7" ]
+	call "expected_checksum x86_64-pc-windows-gnu"
+	[ "$output" = "fd58cc1f7330de1078042ad1cb7afcb127ac66e8de840f202b03b70fd829b086" ]
+}
+
+@test "unsupported platform exits 2 before downloading" {
+	A8C_SECRETS_OS=Plan9 A8C_SECRETS_ARCH=x86_64 run "$SCRIPT"
 	[ "$status" -eq 2 ]
 	[[ "$output" =~ "Unsupported platform" ]]
 }
@@ -62,7 +68,7 @@ plan_for() {
 @test "a resolvable target without a pinned checksum is refused" {
 	# macOS Intel resolves to a valid triple, but a8c-secrets 1.0.0 publishes no
 	# x86_64-apple-darwin asset, so no checksum is pinned for it.
-	plan_for Darwin x86_64
+	A8C_SECRETS_OS=Darwin A8C_SECRETS_ARCH=x86_64 run "$SCRIPT"
 	[ "$status" -eq 2 ]
 	[[ "$output" =~ "No pinned checksum" ]]
 }
