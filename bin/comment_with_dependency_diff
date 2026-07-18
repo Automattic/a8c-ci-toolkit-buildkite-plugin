@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script is used in a Buildkite CI pipeline to analyze and comment on dependency changes in a
 # GitHub pull request (PR). It compares the Gradle project dependencies and build environment between the

@@ -1,4 +1,5 @@
-#!/bin/bash -eu
+#!/usr/bin/env bash
+set -eu
 
 # Usage: validate_podspec [OPTIONS] [PODSPEC(S)_PATH(S)...] 
 #

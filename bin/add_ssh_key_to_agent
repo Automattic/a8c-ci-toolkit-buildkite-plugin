@@ -1,4 +1,5 @@
-#!/bin/bash -eu
+#!/usr/bin/env bash
+set -eu
 
 NEW_SSH_KEY=$1
 NEW_SSH_KEY_NAME=$2

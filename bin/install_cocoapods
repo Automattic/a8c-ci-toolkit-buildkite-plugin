@@ -1,4 +1,5 @@
-#!/bin/bash -eu
+#!/usr/bin/env bash
+set -eu
 
 # Start by restoring specs repo and pod cache:
 # - The specs repo cache holds all of the Podspec files. This avoids having download them all from the CDN.

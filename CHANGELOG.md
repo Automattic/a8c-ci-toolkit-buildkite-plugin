@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- Switch all `bin/` and `hooks/` bash scripts from `#!/bin/bash` to `#!/usr/bin/env bash`, and update the `.cursor` bash guidance to match. Scripts that carried flags in the shebang (`#!/bin/bash -eu`) now set them in the body (`set -eu`), since flags after `bash` are not portable with `env`. [#PR]
 
 ## 6.1.1
 

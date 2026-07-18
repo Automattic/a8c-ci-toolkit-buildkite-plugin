@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script is used to craft a comment with a dependency diff and a build environment diff.
 # It's extracted from comment_with_dependency_diff to be tested in isolation.

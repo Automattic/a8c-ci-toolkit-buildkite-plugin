@@ -1,4 +1,5 @@
-#!/bin/bash -eu
+#!/usr/bin/env bash
+set -eu
 #
 # Any arguments passed to this script will be passed through to `fastlane`.
 # If no argument is passed, the `test` lane will be called by default.
