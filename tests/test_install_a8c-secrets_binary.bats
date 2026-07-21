@@ -79,6 +79,44 @@ call() {
 	[[ "$output" =~ "missing value for --os" ]]
 }
 
+@test "--install-dir missing its value fails" {
+	run "$SCRIPT" --install-dir
+	[ "$status" -eq 1 ]
+	[[ "$output" =~ "missing value for --install-dir" ]]
+}
+
+@test "--install-dir appears in the usage string" {
+	run "$SCRIPT" --help
+	[ "$status" -eq 0 ]
+	[[ "$output" =~ "--install-dir <path>" ]]
+}
+
+@test "an --install-dir value overrides the default location" {
+	call "resolve_install_dir aarch64-apple-darwin /opt/tools/bin"
+	[ "$status" -eq 0 ]
+	[ "$output" = "/opt/tools/bin" ]
+}
+
+@test "without an override, Windows installs under LOCALAPPDATA" {
+	run bash -c "export LOCALAPPDATA='C:/Users/ci/AppData/Local'; source '$SCRIPT'; resolve_install_dir x86_64-pc-windows-gnu ''"
+	[ "$status" -eq 0 ]
+	[ "$output" = "C:/Users/ci/AppData/Local/Programs/a8c-secrets" ]
+}
+
+@test "without an override or LOCALAPPDATA, Windows falls back to the home dir" {
+	run bash -c "unset LOCALAPPDATA; source '$SCRIPT'; resolve_install_dir x86_64-pc-windows-gnu ''"
+	[ "$status" -eq 0 ]
+	[ "$output" = "$HOME/.local/bin" ]
+}
+
+@test "--install-dir is accepted alongside the platform flags" {
+	# The unsupported platform errors before any download, so reaching that error proves
+	# --install-dir parsed rather than being rejected as an unknown option.
+	run "$SCRIPT" --install-dir "$BATS_TEST_TMPDIR/bin" --os Plan9 --arch x86_64
+	[ "$status" -eq 2 ]
+	[[ "$output" =~ "Unsupported platform" ]]
+}
+
 @test "--arch alone still detects the host OS" {
 	# A bogus arch on the host's own OS resolves to no triple, proving --arch was read
 	# and the OS fell back to `uname -s`.
