@@ -85,6 +85,21 @@ call() {
 	[[ "$output" =~ "missing value for --install-dir" ]]
 }
 
+@test "--prefix is an alias for --install-dir" {
+	# Only proves --prefix is accepted, not that it lands in the install dir: the parsed
+	# value is first observable after the download this suite can't reach. It shares a
+	# `case` arm with --install-dir, so the two cannot diverge silently.
+	run "$SCRIPT" --prefix "$BATS_TEST_TMPDIR/bin" --os Plan9 --arch x86_64
+	[ "$status" -eq 2 ]
+	[[ "$output" =~ "Unsupported platform" ]]
+}
+
+@test "--prefix missing its value fails" {
+	run "$SCRIPT" --prefix
+	[ "$status" -eq 1 ]
+	[[ "$output" =~ "missing value for --prefix" ]]
+}
+
 @test "--install-dir appears in the usage string" {
 	run "$SCRIPT" --help
 	[ "$status" -eq 0 ]
@@ -108,6 +123,12 @@ call() {
 	[ "$status" -eq 0 ]
 	[ "$output" = "$HOME/.local/bin" ]
 }
+
+# The non-Windows default (`/usr/local/bin` when writable, else `$HOME/.local/bin`) has
+# no test: it branches on whether the machine running the suite happens to have a
+# writable `/usr/local/bin`, so either assertion passes on some of our agents and fails
+# on others. Pinning it would mean injecting the writability check, which buys less than
+# it costs. The override path below is what callers actually rely on.
 
 @test "--install-dir is accepted alongside the platform flags" {
 	# The unsupported platform errors before any download, so reaching that error proves
