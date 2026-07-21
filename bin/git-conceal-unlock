@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Description:
 #   A wrapper script to run `git-conceal unlock` on CI

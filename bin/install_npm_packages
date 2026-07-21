@@ -1,4 +1,6 @@
-#!/bin/bash -eu
+#!/usr/bin/env bash
+
+set -eu
 
 # Ensure package.json is present
 if [ ! -f package.json ]; then

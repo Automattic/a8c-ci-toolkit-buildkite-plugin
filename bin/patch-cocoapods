@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This is a hack to workaround https://github.com/CocoaPods/CocoaPods/issues/12033.
 # We can remove this script once the issue is fixed.

@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- Switch all `bin/` and `hooks/` bash scripts from `#!/bin/bash` to `#!/usr/bin/env bash`. [#219]
 
 ## 6.1.1
 

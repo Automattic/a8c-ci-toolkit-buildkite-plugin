@@ -1,4 +1,6 @@
-#!/bin/bash -eu
+#!/usr/bin/env bash
+
+set -eu
 
 # Usage: publish_private_pod [OPTIONS] PODSPEC_PATH PRIVATE_SPECS_REPO DEPLOY_KEY
 #

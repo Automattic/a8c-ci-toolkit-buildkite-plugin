@@ -1,4 +1,6 @@
-#!/bin/bash -eu
+#!/usr/bin/env bash
+
+set -eu
 
 # The key is shared with `bin/restore_gradle_dependency_cache`
 GRADLE_DEPENDENCY_CACHE_KEY="${BUILDKITE_PIPELINE_SLUG}_GRADLE_DEPENDENCY_CACHE_V2"
