@@ -2,7 +2,7 @@
 
 # The platform-mapping and checksum-pinning contract is unit-tested by sourcing the
 # script (guarded so `main` doesn't run) and calling its pure functions directly. The
-# unsupported-platform paths are checked by running the command with `uname` overridden
+# unsupported-platform paths are checked by running the command with `--os`/`--arch` set
 # to a bad target, which errors before any download. The real download/verify/install
 # path needs a release binary and is exercised on real CI via a consuming repo.
 
@@ -60,7 +60,7 @@ call() {
 }
 
 @test "unsupported platform exits 2 before downloading" {
-	A8C_SECRETS_OS=Plan9 A8C_SECRETS_ARCH=x86_64 run "$SCRIPT"
+	run "$SCRIPT" --os Plan9 --arch x86_64
 	[ "$status" -eq 2 ]
 	[[ "$output" =~ "Unsupported platform" ]]
 }
@@ -68,7 +68,21 @@ call() {
 @test "a resolvable target without a pinned checksum is refused" {
 	# macOS Intel resolves to a valid triple, but a8c-secrets 1.0.0 publishes no
 	# x86_64-apple-darwin asset, so no checksum is pinned for it.
-	A8C_SECRETS_OS=Darwin A8C_SECRETS_ARCH=x86_64 run "$SCRIPT"
+	run "$SCRIPT" --os Darwin --arch x86_64
 	[ "$status" -eq 2 ]
 	[[ "$output" =~ "No pinned checksum" ]]
+}
+
+@test "an option missing its value fails" {
+	run "$SCRIPT" --os
+	[ "$status" -eq 1 ]
+	[[ "$output" =~ "missing value for --os" ]]
+}
+
+@test "--arch alone still detects the host OS" {
+	# A bogus arch on the host's own OS resolves to no triple, proving --arch was read
+	# and the OS fell back to `uname -s`.
+	run "$SCRIPT" --arch riscv64
+	[ "$status" -eq 2 ]
+	[[ "$output" =~ "os=$(uname -s) arch=riscv64" ]]
 }
