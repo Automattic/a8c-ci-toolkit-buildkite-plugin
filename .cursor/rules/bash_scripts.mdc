@@ -19,7 +19,7 @@ For all bash shell scripts:
 - Use `set -e` to exit on error
 - Use `set -u` to error on undefined variables
 - Use `set -o pipefail` for proper error handling
-- Combine those options in a single `set -euo pipefail` command near the top of the script body
+- Combine those options in a single `set -euo pipefail` command immediately after the shebang, separated with one empty line
 - Always use `$()` instead of backticks to execute commands
 - Quote all variable expansions
 - Use `[[ ]]` for conditional expressions
