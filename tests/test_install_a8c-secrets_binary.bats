@@ -6,7 +6,7 @@
 # to a bad target, which errors before any download. The real download/verify/install
 # path needs a release binary and is exercised on real CI via a consuming repo.
 
-SCRIPT="$BATS_TEST_DIRNAME/../bin/install_a8c_secrets"
+SCRIPT="$BATS_TEST_DIRNAME/../bin/install_a8c-secrets_binary"
 
 # Source the script in a subshell and call one of its functions, so `set -e` and the
 # EXIT trap stay contained to that subshell.
@@ -17,7 +17,7 @@ call() {
 @test "--help prints usage and exits 0" {
 	run "$SCRIPT" --help
 	[ "$status" -eq 0 ]
-	[[ "$output" =~ "usage: install_a8c_secrets" ]]
+	[[ "$output" =~ "usage: install_a8c-secrets_binary" ]]
 }
 
 @test "unknown option fails" {
