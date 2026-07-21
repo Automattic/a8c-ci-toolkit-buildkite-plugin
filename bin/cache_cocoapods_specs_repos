@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 set -eu
 
 # Update CocoaPods's master specs repo (used when you don't use the CDN)

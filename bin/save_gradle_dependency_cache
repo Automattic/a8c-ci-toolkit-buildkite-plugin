@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 set -eu
 
 # The key is shared with `bin/restore_gradle_dependency_cache`

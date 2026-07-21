@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 set -eu
 
 # We always need to run `bundle install` first, otherwise we can't compare

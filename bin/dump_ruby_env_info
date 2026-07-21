@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 set -eu
 
 echo "--- :ruby: Ruby environment info dump ${1:-}"

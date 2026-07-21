@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 set -eu
 
 # Parameter can be just a host name, or a full http, https or git URL.

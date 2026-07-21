@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 set -eu
 
 # Similar to `gh api <endpoint>`, this utility makes API calls to GitHub.

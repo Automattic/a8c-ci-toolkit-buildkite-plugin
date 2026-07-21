@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 set -eu
 
 # This script checks if files are changed in a PR.
