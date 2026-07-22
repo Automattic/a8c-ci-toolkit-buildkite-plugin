@@ -38,11 +38,21 @@ _None._
 
 ### New Features
 
-- Add `install_a8c-secrets_binary`, which installs the `a8c-secrets` CLI from a version-pinned release and verifies its SHA-256 against a vendored checksum before installing, so consuming repos stop piping the mutable upstream `install.sh` from `main`. [#218]
+_None._
 
 ### Bug Fixes
 
 _None._
+
+### Internal Changes
+
+_None._
+
+## 6.2.0
+
+### New Features
+
+- Add `install_a8c-secrets_binary`, which installs the `a8c-secrets` CLI from a version-pinned release and verifies its SHA-256 against a vendored checksum before installing, so consuming repos stop piping the mutable upstream `install.sh` from `main`. [#218]
 
 ### Internal Changes
 
