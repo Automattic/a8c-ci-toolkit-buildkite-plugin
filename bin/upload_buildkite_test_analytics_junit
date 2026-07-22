@@ -1,4 +1,6 @@
-#!/bin/bash -eu
+#!/usr/bin/env bash
+
+set -eu
 
 if [ -z "${1: }" ]; then
   echo "You must pass a path to the file you want to upload to Test Analytics"

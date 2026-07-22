@@ -1,4 +1,6 @@
-#!/bin/bash -eu
+#!/usr/bin/env bash
+
+set -eu
 
 CACHE_FILE=$1
 CACHE_KEY=$2

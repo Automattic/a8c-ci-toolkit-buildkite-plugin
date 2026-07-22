@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PARAMS=(--sha1="$BUILDKITE_COMMIT")
 [[ -n "$BUILDKITE_TAG" ]] && PARAMS+=(--tag-name="$BUILDKITE_TAG")

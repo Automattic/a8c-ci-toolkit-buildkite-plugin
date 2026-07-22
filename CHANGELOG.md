@@ -48,6 +48,22 @@ _None._
 
 _None._
 
+## 6.2.0
+
+### New Features
+
+- Add `install_a8c-secrets_binary`, which installs the `a8c-secrets` CLI from a version-pinned release and verifies its SHA-256 against a vendored checksum before installing, so consuming repos stop piping the mutable upstream `install.sh` from `main`. [#218]
+
+### Internal Changes
+
+- Switch all `bin/` and `hooks/` bash scripts from `#!/bin/bash` to `#!/usr/bin/env bash`. [#219]
+
+## 6.1.1
+
+### Internal Changes
+
+- `restore_cache` now fetches from the on-premises Synology NAS before falling back to S3 on the macOS fleet, avoiding billed S3 egress, and annotates the job whenever a restore falls back to S3. [#216]
+
 ## 6.1.0
 
 ### New Features

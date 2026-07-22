@@ -1,4 +1,6 @@
-#!/bin/bash -eu
+#!/usr/bin/env bash
+
+set -eu
 
 CHECKSUM_URLS=$(curl -s https://services.gradle.org/versions/all | jq -r ".[].wrapperChecksumUrl? | select(.)")
 

@@ -1,4 +1,6 @@
-#!/bin/bash -eu
+#!/usr/bin/env bash
+
+set -eu
 
 PODFILE_SHA1=$(ruby -e "require 'yaml';puts YAML.load_file('Podfile.lock')['PODFILE CHECKSUM']")
 RESULT=$(echo "$PODFILE_SHA1 *Podfile" | shasum -c)
