@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-- Add a CI integration test that runs `install_a8c_secrets` on real Linux and macOS agents and checks the installed binary runs. [#220]
+- Add a CI integration test that runs `install_a8c-secrets_binary` on real Linux and macOS agents and checks the installed binary runs. [#220]
 
 ## 6.2.0
 
