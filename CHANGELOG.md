@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- `install_a8c-secrets_binary` now retries a failed download instead of giving up on the first one, so a transient hiccup on the GitHub releases CDN no longer fails the job. [#220]
 
 ### Internal Changes
 
