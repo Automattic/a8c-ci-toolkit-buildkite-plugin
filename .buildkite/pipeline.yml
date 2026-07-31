@@ -5,7 +5,7 @@
 agents:
   queue: mac
 env:
-  IMAGE_ID: xcode-15.4
+  IMAGE_ID: $IMAGE_ID
 
 steps:
   - label: ":sleuth_or_spy: Lint"
