@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- Bump the Xcode image used by this repo's own CI from `xcode-15.4` to `xcode-26.6`, and introduce `.buildkite/shared-pipeline-vars` so that version is now defined in a single place. [#222]
 
 ## 6.2.0
 

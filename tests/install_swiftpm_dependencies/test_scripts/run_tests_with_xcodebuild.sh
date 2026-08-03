@@ -6,5 +6,5 @@ echo "--- :xcode: Run tests to verify packages have been fetched and are availab
 xcodebuild test \
   -scheme Demo \
   -configuration Debug \
-  -destination 'platform=iOS Simulator' \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
   | xcbeautify
