@@ -139,18 +139,27 @@ stub_curl() {
 
 @test "a download that fails once succeeds on the retry" {
 	stub_curl 1
-	export PATH="$BATS_TEST_TMPDIR/stub:$PATH" DOWNLOAD_RETRY_DELAY=0
-	call "download http://example.invalid/asset '$BATS_TEST_TMPDIR/asset'"
+	export PATH="$BATS_TEST_TMPDIR/stub:$PATH"
+	call "download http://example.invalid/asset '$BATS_TEST_TMPDIR/asset' 3 0"
 	[ "$status" -eq 0 ]
 	[ "$(cat "$BATS_TEST_TMPDIR/curl_calls")" -eq 2 ]
 }
 
-@test "a download failing every attempt gives up after DOWNLOAD_ATTEMPTS" {
+@test "a download failing every attempt gives up after the attempt limit" {
 	stub_curl 99
-	export PATH="$BATS_TEST_TMPDIR/stub:$PATH" DOWNLOAD_ATTEMPTS=4 DOWNLOAD_RETRY_DELAY=0
-	call "download http://example.invalid/asset '$BATS_TEST_TMPDIR/asset'"
+	export PATH="$BATS_TEST_TMPDIR/stub:$PATH"
+	call "download http://example.invalid/asset '$BATS_TEST_TMPDIR/asset' 4 0"
 	[ "$status" -ne 0 ]
 	[ "$(cat "$BATS_TEST_TMPDIR/curl_calls")" -eq 4 ]
+}
+
+# Only the delay is overridden, so this pins the attempt count `main` actually gets.
+@test "a download defaults to three attempts" {
+	stub_curl 99
+	export PATH="$BATS_TEST_TMPDIR/stub:$PATH"
+	call "download http://example.invalid/asset '$BATS_TEST_TMPDIR/asset' '' 0"
+	[ "$status" -ne 0 ]
+	[ "$(cat "$BATS_TEST_TMPDIR/curl_calls")" -eq 3 ]
 }
 
 @test "--arch alone still detects the host OS" {
