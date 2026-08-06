@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- Add `checkout_release_branch`, which checks out the `release/*` branch for a given release version and hard-resets it onto `origin`, so the repos that each carried their own copy of `.buildkite/commands/checkout-release-branch.sh` can drop it and call the toolkit command instead. [#223]
+- Add `checkout_release_branch` command [#223]
 
 ### Bug Fixes
 
