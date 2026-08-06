@@ -30,10 +30,9 @@ echo "--- :mag: Verify the installed binary runs"
 version="$("$install_dir/a8c-secrets" --version)"
 echo "$version"
 
-case "$version" in
-	*"$expected_version"*) echo "OK: a8c-secrets $expected_version installed and runnable" ;;
-	*)
-		echo "Expected a8c-secrets $expected_version, got: $version" >&2
-		exit 1
-		;;
-esac
+if [[ "$version" != "a8c-secrets $expected_version" ]]; then
+	echo "Expected 'a8c-secrets $expected_version', got: '$version'" >&2
+	exit 1
+fi
+
+echo "OK: a8c-secrets $expected_version installed and runnable"
