@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Script: checkout_release_branch
+#
+# Description:
+#   Checks out the `release/*` branch matching a given release version, and hard-resets it
+#   to the commit currently on `origin`.
+#
+#   Buildkite checks out a specific commit by default, leaving the working copy in a detached
+#   HEAD state. Some release steps need to be on the `release/*` branch instead, namely:
+#    - when a `release-pipelines/*.yml` needs to `git push` to the `release/*` branch (for version bumps)
+#    - when a job `pipeline upload`'d by such a pipeline builds from that branch, so that the build
+#      includes the commit that the version bump just added.
+#
+# Usage:
+#   checkout_release_branch [<release-version>]
+#
+# Options:
+#   -h, --help  Print usage and exit.
+#
+# Arguments:
+#   <release-version>  The version whose `release/*` branch to check out, e.g. `25.4`.
+#                      Optional; see the fallbacks described in the notes below.
+#
+# Examples:
+#   # Explicit version, the form to prefer in a pipeline step
+#   checkout_release_branch "$RELEASE_VERSION"
+#
+#   # Version taken from the `RELEASE_VERSION` environment variable
+#   RELEASE_VERSION=25.4 checkout_release_branch
+#
+#   # Version inferred from the `release/25.4` branch the build runs on
+#   checkout_release_branch
+#
+# Notes:
+#   The release version is taken from the first of these that is set and non-empty:
+#    1. the first argument
+#    2. the `RELEASE_VERSION` environment variable
+#    3. the `release/*` branch the build is running on, via `BUILDKITE_BRANCH`
+#
+#   The branch is reset to `FETCH_HEAD` rather than pulled, because Buildkite can reuse a
+#   working copy where a previous job left the local branch at a different commit:
+#    - `reset --hard` rather than `git pull`, to avoid merging if the two have diverged
+#    - `FETCH_HEAD` rather than `origin/<branch>`, which `git fetch <branch>` only updates
+#      opportunistically
+#
+#   Runs on macOS, Linux and Windows agents. On a Windows agent whose step command is not
+#   already running under bash, invoke it as `bash checkout_release_branch <version>`.
+#
+# Returns:
+#   0 on success
+#   1 on a usage error, or when no release version could be determined
+#   The exit code of `git` when the fetch, checkout or reset fails
+#
+# Requirements:
+#   `git`, and a working copy whose `origin` remote holds the release branch.
+
+usage() {
+	echo "usage: checkout_release_branch [<release-version>]"
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+	usage
+	exit 0
+fi
+
+if [[ "${1:-}" == -* ]]; then
+	echo "Error: unknown option '$1'." >&2
+	usage >&2
+	exit 1
+fi
+
+if [[ $# -gt 1 ]]; then
+	echo "Error: too many arguments." >&2
+	usage >&2
+	exit 1
+fi
+
+echo "--- :git: Checkout Release Branch"
+
+RELEASE_VERSION="${1:-${RELEASE_VERSION:-}}"
+
+if [[ -z "$RELEASE_VERSION" && "${BUILDKITE_BRANCH:-}" =~ ^release/ ]]; then
+	RELEASE_VERSION="${BUILDKITE_BRANCH#release/}"
+fi
+
+if [[ -z "$RELEASE_VERSION" ]]; then
+	echo "Error: no release version. Pass it as \$1, set RELEASE_VERSION, or run on a release/* branch." >&2
+	exit 1
+fi
+
+BRANCH_NAME="release/${RELEASE_VERSION}"
+git fetch origin "$BRANCH_NAME"
+git checkout "$BRANCH_NAME"
+git reset --hard FETCH_HEAD
