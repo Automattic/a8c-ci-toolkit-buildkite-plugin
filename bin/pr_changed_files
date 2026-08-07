@@ -112,12 +112,12 @@ while [[ "$#" -gt 0 ]]; do
                 exit 255
             fi
             ;;
-        --*) 
-            echo "Error: unknown option $1" >&2
+        --*)
+            echo "Error: unknown option '$1'." >&2
             exit 255
             ;;
         *)
-            echo "Error: unexpected argument $1" >&2
+            echo "Error: unexpected argument '$1'." >&2
             exit 255
             ;;
     esac
