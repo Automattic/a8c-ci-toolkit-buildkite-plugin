@@ -107,6 +107,12 @@ assert_working_copy_untouched() {
 	assert_checked_out 1.2
 }
 
+@test "an empty first argument falls through to RELEASE_VERSION" {
+	run env RELEASE_VERSION=1.2 "$SCRIPT" ""
+	[ "$status" -eq 0 ]
+	assert_checked_out 1.2
+}
+
 @test "an empty RELEASE_VERSION falls through to BUILDKITE_BRANCH" {
 	run env RELEASE_VERSION= BUILDKITE_BRANCH=release/1.2 "$SCRIPT"
 	[ "$status" -eq 0 ]
@@ -133,6 +139,13 @@ assert_working_copy_untouched() {
 	assert_working_copy_untouched
 }
 
+@test "a BUILDKITE_BRANCH of exactly release/ yields no version" {
+	run env BUILDKITE_BRANCH=release/ "$SCRIPT"
+	[ "$status" -eq 1 ]
+	[[ "$output" =~ "no release version" ]]
+	assert_working_copy_untouched
+}
+
 @test "a branch merely containing release/ is not used as a version" {
 	run env BUILDKITE_BRANCH=feature/release/1.2 "$SCRIPT"
 	[ "$status" -eq 1 ]
@@ -150,4 +163,12 @@ assert_working_copy_untouched() {
 	run env GIT_FAIL_ON=checkout "$SCRIPT" 1.2
 	[ "$status" -eq 128 ]
 	[ "$(wc -l < "$GIT_LOG" | tr -d '[:space:]')" = "2" ]
+}
+
+# `reset --hard FETCH_HEAD` is the line this command was extracted to preserve, so its
+# failure needs to surface rather than be swallowed by the last-command exit status.
+@test "a failing reset propagates git's exit code" {
+	run env GIT_FAIL_ON=reset "$SCRIPT" 1.2
+	[ "$status" -eq 128 ]
+	[ "$(wc -l < "$GIT_LOG" | tr -d '[:space:]')" = "3" ]
 }
