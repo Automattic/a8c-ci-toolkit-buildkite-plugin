@@ -63,7 +63,7 @@ Three things make that work:
 
 - Listing this plugin alongside `docker`. Every plugin's `environment` hook runs before any plugin's `command` hook, so the variable is exported before the `docker` plugin assembles its `docker run` arguments — whichever order the two are listed in.
 - `expand-volume-vars: true`, without which the `docker` plugin passes the `volumes` entry through verbatim instead of interpolating the variable.
-- The `$$` in both `$$A8C_CI_TOOLKIT_PLUGIN_DIR` and `$$PATH`. A single `$` is resolved when the pipeline is uploaded, where neither variable has a value yet; `$$` defers it to when the job runs.
+- The `$$` in both `$$A8C_CI_TOOLKIT_PLUGIN_DIR` and `$$PATH`. A single `$` is resolved when the pipeline is uploaded, where neither variable has a value yet; `$$` defers it to when the job runs. Note that this is only needed if you write that line directly in the `.yml`; if instead your `command:` calls a dedicated `.sh` script you can do `export PATH=$PATH:/a8c-ci-toolkit/bin` in that `.sh` file instead of in the `.yml` and avoid the need for the `$$` escape.
 
 Only the commands whose dependencies the image provides will work, of course — `checkout_release_branch` needs `bash` and `git` inside the container, for instance.
 
