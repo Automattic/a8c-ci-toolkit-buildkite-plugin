@@ -76,13 +76,13 @@ call() {
 @test "an option missing its value fails" {
 	run "$SCRIPT" --os
 	[ "$status" -eq 1 ]
-	[[ "$output" =~ "missing value for --os" ]]
+	[[ "$output" =~ "missing value for '--os'" ]]
 }
 
 @test "--install-dir missing its value fails" {
 	run "$SCRIPT" --install-dir
 	[ "$status" -eq 1 ]
-	[[ "$output" =~ "missing value for --install-dir" ]]
+	[[ "$output" =~ "missing value for '--install-dir'" ]]
 }
 
 @test "--install-dir appears in the usage string" {
