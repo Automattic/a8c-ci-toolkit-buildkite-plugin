@@ -38,7 +38,7 @@ set -euo pipefail
 #   The release version is taken from the first of these that is set and non-empty:
 #    1. the first argument
 #    2. the `RELEASE_VERSION` environment variable
-#    3. the `release/*` branch the build is running on, via `BUILDKITE_BRANCH`
+#    3. the branch the build is running on, if it is in the `release/*` form, via `BUILDKITE_BRANCH`
 #
 #   The branch is reset to `FETCH_HEAD` rather than pulled, because Buildkite can reuse a
 #   working copy where a previous job left the local branch at a different commit:
