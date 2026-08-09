@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Add `checkout_release_branch` command [#223]
 
 ### Bug Fixes
 
