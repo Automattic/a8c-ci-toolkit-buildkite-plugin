@@ -42,10 +42,11 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- `install_a8c-secrets_binary` now retries a failed download instead of giving up on the first one, so a transient hiccup on the GitHub releases CDN no longer fails the job. [#220]
 
 ### Internal Changes
 
+- Add a CI integration test that runs `install_a8c-secrets_binary` on real Linux and macOS agents and checks the installed binary runs. [#220]
 - Bump the Xcode image used by this repo's own CI from `xcode-15.4` to `xcode-26.6`, and introduce `.buildkite/shared-pipeline-vars` so that version is now defined in a single place. [#222]
 
 ## 6.2.0
