@@ -10,7 +10,13 @@ set -e
 echo "~~~ :file_cabinet: Loading Automattic plugin commands in the environment"
 
 HOOKS_ROOT=$( dirname "${BASH_SOURCE[0]}" )
-PLUGIN_ROOT=$( dirname "$HOOKS_ROOT" )
+PLUGIN_ROOT=$( cd "$( dirname "$HOOKS_ROOT" )" && pwd )
+
+# Steps that run their command inside a container don't inherit the `$PATH` we set below,
+# because the plugin's files live on the agent host rather than in the image. Exposing the
+# path lets them mount it in and reach the commands anyway. See the README for the recipe.
+export A8C_CI_TOOLKIT_PLUGIN_DIR="$PLUGIN_ROOT"
+echo "Plugin directory available to mount as \$A8C_CI_TOOLKIT_PLUGIN_DIR: $A8C_CI_TOOLKIT_PLUGIN_DIR"
 
 OS=$(uname -s)
 echo "FYI: Running on OS $OS"

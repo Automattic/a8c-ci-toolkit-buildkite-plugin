@@ -39,6 +39,7 @@ _None._
 ### New Features
 
 - Add `checkout_release_branch` command [#223]
+- Export `$A8C_CI_TOOLKIT_PLUGIN_DIR`, so steps running in a container can mount the plugin and use its commands [#224]
 
 ### Bug Fixes
 
