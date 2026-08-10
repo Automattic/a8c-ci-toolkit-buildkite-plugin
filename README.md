@@ -26,11 +26,11 @@ steps:
       restore_cache $(hash_file package-lock.json)
 
     plugins:
-      - automattic/a8c-ci-toolkit#6.2.0:
+      - automattic/a8c-ci-toolkit#6.3.0:
           bucket: a8c-ci-cache # optional
 ```
 
-Don't forget to verify what [the latest release](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/releases/latest) is and use that value instead of `6.2.0`.
+Don't forget to verify what [the latest release](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/releases/latest) is and use that value instead of `6.3.0`.
 
 ## Configuration
 
@@ -51,7 +51,7 @@ steps:
 
       checkout_release_branch "$RELEASE_VERSION"
     plugins:
-      - automattic/a8c-ci-toolkit#6.2.0
+      - automattic/a8c-ci-toolkit#6.3.0
       - docker#v5.13.0:
           image: node:22-bookworm
           expand-volume-vars: true
