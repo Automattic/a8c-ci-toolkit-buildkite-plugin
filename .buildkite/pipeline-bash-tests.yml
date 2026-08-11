@@ -132,3 +132,21 @@ steps:
         notify:
           - github_commit_status:
               context: "pr_changed_files Tests: Edge Cases"
+
+  - group: ":closed_lock_with_key: install_a8c-secrets_binary Integration Tests"
+    steps:
+      - label: ":linux: Install and run a8c-secrets"
+        command: tests/install_a8c-secrets_binary/test_install.sh
+        agents:
+          queue: default
+        notify:
+          - github_commit_status:
+              context: "install_a8c-secrets_binary Tests: Linux"
+
+      - label: ":apple: Install and run a8c-secrets"
+        command: tests/install_a8c-secrets_binary/test_install.sh
+        agents:
+          queue: mac
+        notify:
+          - github_commit_status:
+              context: "install_a8c-secrets_binary Tests: macOS"

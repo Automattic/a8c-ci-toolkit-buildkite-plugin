@@ -123,6 +123,45 @@ call() {
 	[[ "$output" =~ "Unsupported platform" ]]
 }
 
+# Put a `curl` stub on PATH that fails its first $1 invocations, counting them in a file
+# so the count survives across the stub's separate processes.
+stub_curl() {
+	mkdir -p "$BATS_TEST_TMPDIR/stub"
+	cat > "$BATS_TEST_TMPDIR/stub/curl" <<-STUB
+		#!/usr/bin/env bash
+		count_file="$BATS_TEST_TMPDIR/curl_calls"
+		count=\$(( \$(cat "\$count_file" 2>/dev/null || echo 0) + 1 ))
+		echo "\$count" > "\$count_file"
+		[[ "\$count" -gt $1 ]]
+	STUB
+	chmod +x "$BATS_TEST_TMPDIR/stub/curl"
+}
+
+@test "a download that fails once succeeds on the retry" {
+	stub_curl 1
+	export PATH="$BATS_TEST_TMPDIR/stub:$PATH"
+	call "download http://example.invalid/asset '$BATS_TEST_TMPDIR/asset' 3 0"
+	[ "$status" -eq 0 ]
+	[ "$(cat "$BATS_TEST_TMPDIR/curl_calls")" -eq 2 ]
+}
+
+@test "a download failing every attempt gives up after the attempt limit" {
+	stub_curl 99
+	export PATH="$BATS_TEST_TMPDIR/stub:$PATH"
+	call "download http://example.invalid/asset '$BATS_TEST_TMPDIR/asset' 4 0"
+	[ "$status" -ne 0 ]
+	[ "$(cat "$BATS_TEST_TMPDIR/curl_calls")" -eq 4 ]
+}
+
+# Only the delay is overridden, so this pins the attempt count `main` actually gets.
+@test "a download defaults to three attempts" {
+	stub_curl 99
+	export PATH="$BATS_TEST_TMPDIR/stub:$PATH"
+	call "download http://example.invalid/asset '$BATS_TEST_TMPDIR/asset' '' 0"
+	[ "$status" -ne 0 ]
+	[ "$(cat "$BATS_TEST_TMPDIR/curl_calls")" -eq 3 ]
+}
+
 @test "--arch alone still detects the host OS" {
 	# A bogus arch on the host's own OS resolves to no triple, proving --arch was read
 	# and the OS fell back to `uname -s`.

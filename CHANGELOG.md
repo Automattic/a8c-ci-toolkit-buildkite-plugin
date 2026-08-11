@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- Add `checkout_release_branch` command [#223]
+_None._
 
 ### Bug Fixes
 
@@ -46,7 +46,24 @@ _None._
 
 ### Internal Changes
 
+_None._
+
+## 6.3.0
+
+### New Features
+
+- Add `checkout_release_branch` command [#223]
+- Export `$A8C_CI_TOOLKIT_PLUGIN_DIR`, so steps running in a container can mount the plugin and use its commands [#224]
+
+### Bug Fixes
+
+- `install_a8c-secrets_binary` now retries a failed download instead of giving up on the first one, so a transient hiccup on the GitHub releases CDN no longer fails the job. [#220]
+
+### Internal Changes
+
+- Add a CI integration test that runs `install_a8c-secrets_binary` on real Linux and macOS agents and checks the installed binary runs. [#220]
 - Bump the Xcode image used by this repo's own CI from `xcode-15.4` to `xcode-26.6`, and introduce `.buildkite/shared-pipeline-vars` so that version is now defined in a single place. [#222]
+- Update Ruby to `3.4.9` in `.ruby-version` and `bundler` to `4.0.18` in `Gemfile.lock` [#228]
 
 ## 6.2.0
 
