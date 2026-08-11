@@ -61,37 +61,48 @@ usage() {
 	echo "usage: checkout_release_branch [<release-version>]"
 }
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-	usage
-	exit 0
-fi
+main() {
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+			-h | --help)
+				usage
+				return 0
+				;;
+			-*)
+				echo "Error: unknown option '$1'." >&2
+				usage >&2
+				return 1
+				;;
+			*)
+				break
+				;;
+		esac
+	done
 
-if [[ "${1:-}" == -* ]]; then
-	echo "Error: unknown option '$1'." >&2
-	usage >&2
-	exit 1
-fi
+	if [[ $# -gt 1 ]]; then
+		echo "Error: too many arguments." >&2
+		usage >&2
+		return 1
+	fi
 
-if [[ $# -gt 1 ]]; then
-	echo "Error: too many arguments." >&2
-	usage >&2
-	exit 1
-fi
+	echo "--- :git: Checkout Release Branch"
 
-echo "--- :git: Checkout Release Branch"
+	# Lowercase local so the `RELEASE_VERSION` on the right stays the environment one.
+	local release_version="${1:-${RELEASE_VERSION:-}}"
 
-RELEASE_VERSION="${1:-${RELEASE_VERSION:-}}"
+	if [[ -z "$release_version" && "${BUILDKITE_BRANCH:-}" =~ ^release/ ]]; then
+		release_version="${BUILDKITE_BRANCH#release/}"
+	fi
 
-if [[ -z "$RELEASE_VERSION" && "${BUILDKITE_BRANCH:-}" =~ ^release/ ]]; then
-	RELEASE_VERSION="${BUILDKITE_BRANCH#release/}"
-fi
+	if [[ -z "$release_version" ]]; then
+		echo "Error: no release version. Pass it as \$1, set RELEASE_VERSION, or run on a release/* branch." >&2
+		return 1
+	fi
 
-if [[ -z "$RELEASE_VERSION" ]]; then
-	echo "Error: no release version. Pass it as \$1, set RELEASE_VERSION, or run on a release/* branch." >&2
-	exit 1
-fi
+	local branch_name="release/${release_version}"
+	git fetch origin "$branch_name"
+	git checkout "$branch_name"
+	git reset --hard FETCH_HEAD
+}
 
-BRANCH_NAME="release/${RELEASE_VERSION}"
-git fetch origin "$BRANCH_NAME"
-git checkout "$BRANCH_NAME"
-git reset --hard FETCH_HEAD
+main "$@"
