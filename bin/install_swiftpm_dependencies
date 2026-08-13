@@ -96,6 +96,26 @@ cd "${SPM_CACHE_LOCATION}"
 restore_cache "${CACHE_KEY}"
 cd -
 
+ARTIFACTS_LOCATION="${SPM_CACHE_LOCATION}/artifacts"
+# A sibling of the cache, so holding artifacts aside is a rename rather than a copy of several GB.
+ARTIFACTS_HELD_ASIDE="${SPM_CACHE_LOCATION}.artifacts-held-aside"
+
+# Merges rather than renames when the destination exists, because `mv` would otherwise nest the
+# held-aside directory inside it.
+return_artifacts_to_cache() {
+  [[ -d "${ARTIFACTS_HELD_ASIDE}" ]] || return 0
+  if [[ -d "${ARTIFACTS_LOCATION}" ]]; then
+    find "${ARTIFACTS_HELD_ASIDE}" -mindepth 1 -maxdepth 1 -exec mv -f {} "${ARTIFACTS_LOCATION}/" \;
+    rmdir "${ARTIFACTS_HELD_ASIDE}"
+  else
+    mv "${ARTIFACTS_HELD_ASIDE}" "${ARTIFACTS_LOCATION}"
+  fi
+}
+
+# Agents are reused, so a run killed between holding artifacts aside and returning them leaves them
+# for the next build. Recover before resolving, so that build gets them instead of re-downloading.
+return_artifacts_to_cache
+
 # This will let Xcode use the system SSH config for downloading packages
 sudo defaults write com.apple.dt.Xcode IDEPackageSupportUseBuiltinSCM YES
 
@@ -121,15 +141,18 @@ elif [[ "${USE_SPM}" == "true" ]]; then
   swift package resolve
 fi
 
-# `checkouts` can be removed because the system can quickly generate them
-# instead of needing to download them in the cache each time.
-#
-# `artifacts` should be removed because it causes issues when downloading
-# certain packages to have the artifacts already present after extracting
-# cache
-echo "~~~ Cleaning up cache files before saving cache"
-rm -rf "${SPM_CACHE_LOCATION}/checkouts" "${SPM_CACHE_LOCATION}/artifacts"
-echo "Done. Removed checkouts and artifacts subfolders from $SPM_CACHE_LOCATION"
+# Binary artifacts stay on disk so later steps in this job reuse them, but are held out of
+# the uploaded tarball. Sharing them across jobs needs an atomic cache restore first: SwiftPM
+# keeps an archive that fails validation and replays it on every later resolve
+# (swiftlang/swift-package-manager#10164 fixes this on `main` only, so no shipping Xcode has it).
+echo "~~~ Holding binary artifacts out of the cache"
+if [[ -d "${ARTIFACTS_LOCATION}" ]]; then
+  trap return_artifacts_to_cache EXIT
+  mv "${ARTIFACTS_LOCATION}" "${ARTIFACTS_HELD_ASIDE}"
+  echo "Held $(find "${ARTIFACTS_HELD_ASIDE}" -type f | wc -l | tr -d ' ') binary artifact(s) aside; they stay on disk at ${ARTIFACTS_LOCATION} for the rest of this job."
+else
+  echo "No binary artifacts to hold aside."
+fi
 
 # If this is the first time we've seen this particular cache key, save it for the future
 echo "~~~ Saving SPM Cache"

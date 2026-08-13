@@ -42,11 +42,11 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- `install_swiftpm_dependencies` now leaves downloaded binary artifacts on disk instead of deleting them, so a later resolution in the same job reuses them rather than downloading every XCFramework again. They are still held out of the uploaded cache. [#233]
 
 ### Internal Changes
 
-_None._
+- Add assertion tests for `install_swiftpm_dependencies`, pinning which parts of the SwiftPM cache reach the uploaded tarball. [#233]
 
 ## 6.3.0
 
