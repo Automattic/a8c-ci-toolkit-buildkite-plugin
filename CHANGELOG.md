@@ -47,6 +47,7 @@ _None._
 ### Internal Changes
 
 - Add assertion tests for `install_swiftpm_dependencies`, pinning which parts of the SwiftPM cache reach the uploaded tarball. [#233]
+- Give the `install_swiftpm_dependencies` integration fixtures their first binary target, so the macOS jobs exercise the artifact-handling path against real Apple tooling. [#233]
 
 ## 6.3.0
 
