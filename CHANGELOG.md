@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- `setup_azure_trusted_signing` now documents `AZURE_TIMESTAMP_SERVER` with the `http://` scheme it actually exports. Overriding it with an `https://` URL produces untimestamped signatures, because the Windows signing transport rejects the scheme. [#232]
 
 ## 6.3.0
 
