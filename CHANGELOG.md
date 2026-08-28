@@ -42,13 +42,13 @@ _None._
 
 ### Bug Fixes
 
-- `install_swiftpm_dependencies` now leaves downloaded binary artifacts on disk instead of deleting them, so a later resolution in the same job reuses them rather than downloading every XCFramework again. They are still held out of the uploaded cache. [#233]
+- `install_swiftpm_dependencies` keeps downloaded binary artifacts on disk, so a later resolution in the same job reuses them. They stay out of the uploaded cache. [#233]
 
 ### Internal Changes
 
 - `setup_azure_trusted_signing` documents why `AZURE_TIMESTAMP_SERVER` needs the `http://` scheme. [#232]
-- Add assertion tests for `install_swiftpm_dependencies`, pinning which parts of the SwiftPM cache reach the uploaded tarball. [#233]
-- Give the `install_swiftpm_dependencies` integration fixtures their first binary target, so the macOS jobs exercise the artifact-handling path against real Apple tooling. [#233]
+- Add assertion tests for `install_swiftpm_dependencies` covering what reaches the uploaded cache. [#233]
+- Give the `install_swiftpm_dependencies` integration fixtures a binary target. [#233]
 
 ## 6.3.0
 
