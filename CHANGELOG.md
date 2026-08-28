@@ -46,6 +46,7 @@ _None._
 
 ### Internal Changes
 
+- `setup_azure_trusted_signing` documents why `AZURE_TIMESTAMP_SERVER` needs the `http://` scheme. [#232]
 - Add assertion tests for `install_swiftpm_dependencies`, pinning which parts of the SwiftPM cache reach the uploaded tarball. [#233]
 - Give the `install_swiftpm_dependencies` integration fixtures their first binary target, so the macOS jobs exercise the artifact-handling path against real Apple tooling. [#233]
 

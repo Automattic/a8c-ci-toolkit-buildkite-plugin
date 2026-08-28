@@ -16,7 +16,7 @@
     - `SIGNTOOL_PATH`           — path to modern `signtool.exe`
     - `AZURE_FILE_DIGEST`       — `SHA256`
     - `AZURE_TIMESTAMP_DIGEST`  — `SHA256`
-    - `AZURE_TIMESTAMP_SERVER`  — `https://timestamp.acs.microsoft.com`
+    - `AZURE_TIMESTAMP_SERVER`  — `http://timestamp.acs.microsoft.com`
 
 .PARAMETER SkipSmokeTest
     Skip the signing smoke test. Useful when Azure credentials are not
@@ -185,6 +185,9 @@ $env:AZURE_METADATA_JSON = $metadataPath
 $env:SIGNTOOL_PATH = $signtoolPath
 $env:AZURE_FILE_DIGEST = "SHA256"
 $env:AZURE_TIMESTAMP_DIGEST = "SHA256"
+# Keep the `http://` scheme. `mssign32.dll` rejects any timestamp URL that
+# doesn't start with `http`, even though the endpoint itself serves RFC 3161
+# over TLS: https://github.com/PowerShell/PowerShell/issues/25130
 $env:AZURE_TIMESTAMP_SERVER = "http://timestamp.acs.microsoft.com"
 
 # ── Smoke test ───────────────────────────────────────────────────────
