@@ -1,0 +1,67 @@
+#!/bin/bash -eu
+
+function usage {
+  echo "Usage $0 --file=/path/to/file --name=file_name_on_S3 [--bucket=S3_bucket_name]"
+}
+
+# Option parsing logic based upon https://stackoverflow.com/a/28466267/809944
+function exit_with_message() {
+  echo "$*" >&2; exit 1;
+}
+
+function needs_arg() {
+  if [ -z "$OPTARG" ]; then
+    exit_with_message "No argument for --$OPT option. Use format --$OPT=value.";
+  fi
+}
+
+while getopts "f:n:b:-:" OPT; do
+  if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
+    OPT="${OPTARG%%=*}"       # extract long option name
+    OPTARG="${OPTARG#"$OPT"}" # extract long option argument (may be empty)
+    OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
+  fi
+
+  case "$OPT" in
+    f | file)
+      needs_arg; ARTIFACT_PATH="$OPTARG";;
+    b | bucket)
+      needs_arg; BUCKET="$OPTARG";;
+    n | name)
+      needs_arg; NAME="$OPTARG";;
+    ??*) # bad long option
+      usage
+      exit_with_message "Illegal option --$OPT"
+      ;;
+    ?) # bad short option
+      usage
+      exit 1;;
+  esac
+done
+
+if [[ -z ${ARTIFACT_PATH:-} ]] || [[ -z ${NAME:-} ]]; then
+  usage
+  exit 1
+fi
+
+if [ ! -f "$ARTIFACT_PATH" ]; then
+	echo "No file found at $ARTIFACT_PATH"
+	exit 2
+fi
+
+BUCKET=${ARTIFACTS_S3_BUCKET-}
+
+if [ -z "$BUCKET" ]; then
+	echo "You must either pass an S3 bucket via the -b or --bucket option, or set the \`ARTIFACTS_S3_BUCKET\` environment variable."
+	exit 3
+fi
+
+# If the bucket has transfer acceleration enabled, use it!
+ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$BUCKET" | jq '.Status' -r || true)
+
+if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
+	echo "Uploading with transfer acceleration"
+	aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$NAME" --endpoint-url https://s3-accelerate.amazonaws.com
+else
+	aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$NAME"
+fi
