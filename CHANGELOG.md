@@ -14,7 +14,7 @@ When releasing a new version:
 
 ### Breaking Changes
 
-_None._
+- Remove `git-conceal-unlock` helper, given the tool was never used and is now superseded by `a8c-secrets`. [#235]
 
 ### New Features
 
