@@ -35,7 +35,7 @@ _None._
 ### Breaking Changes
 
 - Remove `git-conceal-unlock` helper, given the tool was never used and is now superseded by `a8c-secrets`. [#235]
-- Remove all CocoaPods-related commands. [#236]
+- Remove all CocoaPods-related commands, and stop auto-installing CocoaPods dependencies in `lint_localized_strings_format`. [#236]
 
 ### New Features
 

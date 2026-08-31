@@ -4,10 +4,19 @@
 
 * The `git-conceal-unlock` helper has been removed.
   Use [`a8c-secrets`](https://github.com/Automattic/a8c-secrets) instead, installing it with `install_a8c-secrets_binary`.
-* All the CocoaPods commands have been removed: `build_and_test_pod`, `cache_cocoapods`, `cache_cocoapods_specs_repos`, `install_cocoapods`, `lint_pod`, `patch-cocoapods`, `publish_pod`, `publish_private_pod`, `slack_notify_pod_published`, `validate_podfile_lock`, and `validate_podspec`.
-  This plugin offers no replacement for them, so pipelines that still build or publish with CocoaPods need to stay pinned to a `6.x` version.
-* `lint_localized_strings_format` no longer runs `install_cocoapods` when it finds a `Podfile.lock`.
-  Install the pods before calling it if the strings generation depends on them.
+* CocoaPods is no longer supported. All the CocoaPods commands have been removed:
+  * `build_and_test_pod`
+  * `cache_cocoapods`
+  * `cache_cocoapods_specs_repos`
+  * `install_cocoapods`
+  * `lint_pod`
+  * `patch-cocoapods`
+  * `publish_pod`
+  * `publish_private_pod`
+  * `slack_notify_pod_published`
+  * `validate_podfile_lock`
+  * `validate_podspec`
+* As a result of the above, `lint_localized_strings_format` no longer runs `install_cocoapods` when it finds a `Podfile.lock`.
 
 ## From 5.0.0 to 6.0.0
 
