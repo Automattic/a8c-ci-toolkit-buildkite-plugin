@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-set -eu
-
-# This file is deprecated, but is being kept around until v2.0
-
-cache_cocoapods_specs_repos

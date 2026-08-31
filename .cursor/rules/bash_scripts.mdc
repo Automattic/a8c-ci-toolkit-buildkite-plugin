@@ -118,7 +118,6 @@ You can assume the following external commands/programs will be available on the
 
 - `bundle`
 - `gem`
-- `pod`
 - `ruby`
 
 ### For bash scripts related to Android tools and intended to be run on Linux systems
