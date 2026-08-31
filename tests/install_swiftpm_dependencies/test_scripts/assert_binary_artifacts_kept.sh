@@ -22,9 +22,4 @@ if ! find "${ARTIFACTS_LOCATION}" -type f -name '*EventHorizon*' | grep -q .; th
   exit 1
 fi
 
-if [[ -e "${SPM_CACHE_LOCATION}.artifacts-held-aside" ]]; then
-  echo "Artifacts were left held aside — the next run would upload them as part of the cache."
-  exit 1
-fi
-
 echo "Binary artifacts are still in ${ARTIFACTS_LOCATION}."

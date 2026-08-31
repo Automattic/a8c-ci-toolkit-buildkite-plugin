@@ -3,7 +3,7 @@
 # Pins the cache-payload contract: binary artifacts stay on disk for the rest of the job but
 # never reach the tarball. Everything Apple is stubbed, so these run anywhere — the companion
 # end-to-end fixtures under `install_swiftpm_dependencies/` cover real `xcodebuild`/`swift`
-# behaviour on macOS agents.
+# behaviour on macOS agents, and `test_save_cache.bats` covers the exclusion itself.
 
 SCRIPT="$BATS_TEST_DIRNAME/../bin/install_swiftpm_dependencies"
 
@@ -25,11 +25,9 @@ setup() {
 	mkdir -p "$STUB_BIN"
 	export PATH="$STUB_BIN:$PATH"
 
-	# `save_cache` records the cache directory's top-level contents at the moment it is called.
-	# That listing IS the payload contract — asserting on it needs no tar and no S3.
-	SAVED_PAYLOAD="$TEST_TMP/saved_payload.txt"
-	export SAVED_PAYLOAD
-	stub save_cache 'ls "$1" > "$SAVED_PAYLOAD"'
+	SAVE_CACHE_ARGS="$TEST_TMP/save_cache_args.txt"
+	export SAVE_CACHE_ARGS
+	stub save_cache 'printf "%s\n" "$@" > "$SAVE_CACHE_ARGS"'
 
 	stub hash_file 'echo deadbeef'
 	stub restore_cache ''
@@ -64,22 +62,14 @@ run_in_work_dir() {
 	[ "$(cat "$SPM_CACHE/artifacts/https___example_com_One_xcframework_zip")" = "zip-one" ]
 }
 
-@test "the saved payload excludes binary artifacts and keeps everything else" {
+@test "the whole cache directory is saved, with the artifacts excluded" {
 	run_in_work_dir
 	[ "$status" -eq 0 ]
 
-	run cat "$SAVED_PAYLOAD"
-	[[ ! "$output" =~ artifacts ]]
-	[[ "$output" =~ manifests ]]
-	[[ "$output" =~ repositories ]]
-}
-
-@test "nothing is left beside the cache once the run finishes" {
-	run_in_work_dir
-	[ "$status" -eq 0 ]
-
-	# A leftover would be silently re-uploaded by the next run, which saves the whole cache dir.
-	[ ! -e "$SPM_CACHE.artifacts-held-aside" ]
+	run cat "$SAVE_CACHE_ARGS"
+	[[ "$output" =~ org.swift.swiftpm ]]
+	[[ "$output" =~ "--exclude" ]]
+	[[ "$output" =~ "./artifacts" ]]
 }
 
 @test "a repo with no binary targets is unaffected" {
@@ -88,31 +78,13 @@ run_in_work_dir() {
 	[ "$status" -eq 0 ]
 
 	[ ! -e "$SPM_CACHE/artifacts" ]
-	run cat "$SAVED_PAYLOAD"
-	[[ "$output" =~ manifests ]]
-	[[ "$output" =~ repositories ]]
 }
 
-@test "recovers when an earlier run was killed while artifacts were held aside" {
-	# Agents are reused, so a SIGKILL mid-run leaves this behind for the next build to trip over.
-	mkdir -p "$SPM_CACHE.artifacts-held-aside"
-	echo zip-stale > "$SPM_CACHE.artifacts-held-aside/https___example_com_Stale_xcframework_zip"
-
-	run_in_work_dir
-	[ "$status" -eq 0 ]
-
-	[ ! -e "$SPM_CACHE.artifacts-held-aside" ]
-	[ ! -e "$SPM_CACHE/artifacts/artifacts" ]
-	[ -f "$SPM_CACHE/artifacts/https___example_com_One_xcframework_zip" ]
-	[ -f "$SPM_CACHE/artifacts/https___example_com_Stale_xcframework_zip" ]
-}
-
-@test "binary artifacts are returned to the cache even when saving fails" {
+@test "binary artifacts survive a failing cache save" {
 	stub save_cache 'exit 1'
 	run_in_work_dir
 	[ "$status" -ne 0 ]
 
 	# The job continues on a cache-save failure, so the artifacts must survive it.
 	[ -f "$SPM_CACHE/artifacts/https___example_com_One_xcframework_zip" ]
-	[ ! -e "$SPM_CACHE.artifacts-held-aside" ]
 }
