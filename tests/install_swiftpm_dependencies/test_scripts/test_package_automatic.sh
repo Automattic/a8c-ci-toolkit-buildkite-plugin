@@ -10,5 +10,7 @@ pushd "$TESTS_LOCATION/../package"
 echo "--- :wrench: Run install_swiftpm_dependencies"
 install_swiftpm_dependencies
 
+"$TESTS_LOCATION/assert_binary_artifacts_kept.sh"
+
 echo "--- :xcode: Run tests to verify packages have been fetched and are available"
 swift test

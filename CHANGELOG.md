@@ -38,11 +38,11 @@ _None._
 
 ### New Features
 
-_None._
+- `save_cache` takes a repeatable `--exclude PATTERN` to keep entries out of the archive, and accepts its flags in any order. [#233]
 
 ### Bug Fixes
 
-_None._
+- `install_swiftpm_dependencies` keeps downloaded binary artifacts on disk, so a later resolution in the same job reuses them. They stay out of the uploaded cache. [#233]
 
 ### Internal Changes
 
