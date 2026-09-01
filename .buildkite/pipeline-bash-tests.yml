@@ -8,6 +8,13 @@ env:
   IMAGE_ID: $IMAGE_ID
 
 steps:
+  # VALIDATION ONLY — not for merge. Runs first so it answers before the slow jobs.
+  - label: ":package: save_cache --exclude round trip"
+    command: tests/save_cache/test_exclude_round_trip.sh
+    notify:
+      - github_commit_status:
+          context: "save_cache: --exclude round trip"
+
   - group: ":c: get_libc_version Tests"
     steps:
       - label: ":c: Test get_libc_version on {{matrix}}"
