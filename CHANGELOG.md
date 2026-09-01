@@ -47,8 +47,6 @@ _None._
 ### Internal Changes
 
 - `setup_azure_trusted_signing` documents why `AZURE_TIMESTAMP_SERVER` needs the `http://` scheme. [#232]
-- Add assertion tests for `save_cache` and `install_swiftpm_dependencies` covering what reaches the uploaded cache. [#233]
-- Give the `install_swiftpm_dependencies` integration fixtures a binary target. [#233]
 
 ## 6.3.0
 
