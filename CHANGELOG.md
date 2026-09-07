@@ -39,7 +39,7 @@ _None._
 
 ### New Features
 
-_None._
+- `install_swiftpm_dependencies`: Add optional flag to exit non-zero if the `Package.resolved` is not current [#141]
 
 ### Bug Fixes
 
