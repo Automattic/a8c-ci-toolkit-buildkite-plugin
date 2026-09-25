@@ -3,38 +3,89 @@
 set -eu
 
 print_usage() {
-  echo "Usage:"
-  echo "  Using the \`Package.resolved\` of an Xcode \`.xworkspace\`:"
-  echo "    ${0##*/} --workspace PATH"
-  echo "  Using the \`Package.resolved\` of an Xcode \`.xcodeproj\`:"
-  echo "    ${0##*/} --project PATH"
-  echo "  Using the \`Package.resolved\` at the root, managed by \`swift package\` instead of Xcode:"
-  echo "    ${0##*/} --use-spm"
+  cat <<EOF
+Usage:
+  Install SwiftPM dependencies using the \`Package.resolved\` file:
+
+  1. For an Xcode \`.xcworkspace\`:
+       ${0##*/} --workspace PATH [--strict-package-check]
+
+  2. For an Xcode \`.xcodeproj\`:
+       ${0##*/} --project PATH [--strict-package-check]
+
+  3. For a Swift package managed by \`swift package\` instead of Xcode:
+       ${0##*/} --use-spm [--strict-package-check]
+
+  4. Default behavior (Attept to find an appropriate workspace, project, or swift package):
+       ${0##*/} [--strict-package-check]
+
+Options:
+  --workspace PATH          Specify the path to the Xcode workspace.
+  --project PATH            Specify the path to the Xcode project.
+  --use-spm                 Use the Swift package manager at the root.
+  --strict-package-check    Fail the installation if the \`Package.resolved\` file has uncommitted changes or is out of date.
+                            If specified more than once, the last value will be used.
+
+Examples:
+  Install dependencies for an Xcode workspace:
+      ${0##*/} --workspace MyApp.xcworkspace
+
+  Install dependencies with strict package check:
+      ${0##*/} --project MyApp.xcodeproj --strict-package-check
+
+  Install dependencies for a Swift package at the root:
+      ${0##*/} --use-spm
+EOF
 }
 
 # Parse input parameters
 XCWORKSPACE_PATH=
 XCODEPROJ_PATH=
 USE_SPM=false
+STRICT_PACKAGE_CHECK=false
 
-case ${1:-} in
-  --workspace)
-    XCWORKSPACE_PATH="${2:?you need to provide a value after the --workspace option}"
-    shift; shift
-    ;;
-  --project)
-    XCODEPROJ_PATH=${2:?you need to provide a value after the --project option}
-    shift; shift
-    ;;
-  --use-spm)
-    USE_SPM=true
-    shift
-    ;;
-  -h|--help)
-    print_usage
-    exit 0
-    ;;
-esac
+# Track the number of targets found in the arguments
+TARGET_COUNT=0
+
+while [[ $# -gt 0 ]]; do
+  case ${1:-} in
+    --workspace)
+      if [[ -n $XCWORKSPACE_PATH || -n $XCODEPROJ_PATH || $USE_SPM == "true" ]]; then
+        echo "Error: only one target can be used: --workspace, --project, or --use-spm"
+        exit 1
+      fi
+      XCWORKSPACE_PATH="${2:?you need to provide a value after the --workspace option}"
+      TARGET_COUNT=$((TARGET_COUNT + 1))
+      shift; shift
+      ;;
+    --project)
+      if [[ -n $XCWORKSPACE_PATH || -n $XCODEPROJ_PATH || $USE_SPM == "true" ]]; then
+        echo "Error: only one target can be used: --workspace, --project, or --use-spm"
+        exit 1
+      fi
+      XCODEPROJ_PATH=${2:?you need to provide a value after the --project option}
+      TARGET_COUNT=$((TARGET_COUNT + 1))
+      shift; shift
+      ;;
+    --use-spm)
+      if [[ -n $XCWORKSPACE_PATH || -n $XCODEPROJ_PATH || $USE_SPM == "true" ]]; then
+        echo "Error: only one target can be used: --workspace, --project, or --use-spm"
+        exit 1
+      fi
+      USE_SPM=true
+      TARGET_COUNT=$((TARGET_COUNT + 1))
+      shift
+      ;;
+    --strict-package-check)
+      STRICT_PACKAGE_CHECK="true"
+      shift
+      ;;
+    -h|--help)
+      print_usage
+      exit 0
+      ;;
+  esac
+done
 
 if [[ "$#" -gt 0 ]]; then
   echo "Unexpected extra arguments: $*" >&2
@@ -111,14 +162,25 @@ if [[ -d "${XCWORKSPACE_PATH}" ]]; then
   # (despite the help page of `xcodebuild` suggesting that it should work without `-scheme`). Since the dependency resolution doesn't really depend on the scheme
   # and we don't want to have to provide or guess it, using `-list` instead stops making `xcodebuild` complain about `-workspace` not being used in conjunction
   # with `-scheme` (even if in practice we don't care about the scheme list it returns)
-  xcodebuild -workspace "${XCWORKSPACE_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile -list
+  xcodebuild -workspace "${XCWORKSPACE_PATH}" -resolvePackageDependencies -skipPackageUpdates -list
 elif [[ -d "${XCODEPROJ_PATH}" ]]; then
   echo "~~~ Resolving Swift Packages with \`xcodebuild\`"
   echo "Using -project \"${XCODEPROJ_PATH}\""
-  xcodebuild -project "${XCODEPROJ_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile
+  xcodebuild -project "${XCODEPROJ_PATH}" -resolvePackageDependencies -skipPackageUpdates
 elif [[ "${USE_SPM}" == "true" ]]; then
   echo "~~~ Resolving packages with \`swift package\`"
   swift package resolve
+fi
+
+# If STRICT_PACKAGE_CHECK is enabled, check to see if the `Package.resolved` has uncommitted changes
+if [[ "$STRICT_PACKAGE_CHECK" == "true" ]]; then
+  CHANGES=$(git status --porcelain -- "$PACKAGE_RESOLVED_LOCATION")
+
+  if [[ -n "$CHANGES" ]]; then
+    echo "Uncommitted changes detected in $PACKAGE_RESOLVED_LOCATION:"
+    echo "$CHANGES"
+    exit 1
+  fi
 fi
 
 # `checkouts` can be removed because the system can quickly generate them
