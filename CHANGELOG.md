@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- `comment_with_dependency_diff` could skip the diff when Gradle files had changed: `grep --quiet` can exit before `git diff` finishes, and under `pipefail` that SIGPIPE read as "no changes". Flagged by the latest ShellCheck (SC2337). [#239]
 
 ### Internal Changes
 
