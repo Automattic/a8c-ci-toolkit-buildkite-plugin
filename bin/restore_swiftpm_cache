@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Script: restore_swiftpm_cache
+#
+# Description:
+#   Restores the Swift Package Manager caches saved by `save_swiftpm_cache`, and sets the
+#   agent up to fetch packages, without resolving them.
+#
+#   Use it instead of `install_swiftpm_dependencies` when the build resolves the packages
+#   itself (e.g. `xcodebuild build`, or `swift test`). Resolving in a separate step first
+#   makes the build resolve a second time. Call `save_swiftpm_cache` with the same options
+#   once the build has resolved the packages.
+#
+#   Two caches can be restored:
+#
+#   - SwiftPM's shared cache (`~/Library/Caches/org.swift.swiftpm`), always. This is the
+#     same cache entry `install_swiftpm_dependencies` uses. It holds the package
+#     repositories, but not the binary frameworks they download.
+#   - With `--artifacts`, the binary frameworks (`artifacts/`) of a source packages
+#     directory, together with the `workspace-state.json` that records them. SwiftPM
+#     downloads binary frameworks again unless the state file lists them.
+#
+# Usage:
+#   restore_swiftpm_cache --package-resolved <path> [--artifacts <source-packages-dir>]
+#
+# Options:
+#   --package-resolved <path>       The `Package.resolved` file. Its hash is the cache key.
+#   --artifacts <source-packages-dir>
+#                                   Also restore the binary frameworks into this directory.
+#                                   `DerivedData/SourcePackages` for `xcodebuild` (or the
+#                                   `-clonedSourcePackagesDirPath` value), `.build` for
+#                                   `swift build` and `swift test`.
+#   -h, --help                      Print usage and exit.
+#
+# Examples:
+#   restore_swiftpm_cache --package-resolved Package.resolved --artifacts .build
+#   restore_swiftpm_cache --package-resolved App.xcworkspace/xcshareddata/swiftpm/Package.resolved \
+#     --artifacts DerivedData/SourcePackages
+#
+# Notes:
+#   The binary frameworks are skipped when `<source-packages-dir>` already has a
+#   `workspace-state.json`, so a warm directory is never overwritten.
+#
+#   Relies on the `BUILDKITE_PIPELINE_SLUG` environment variable for the cache keys.
+#
+# Returns:
+#   0 on success, including on a cache miss; 1 on a usage error.
+#
+# Requirements:
+#   Runs on a Mac CI agent. Uses the toolkit's own `hash_file`, `restore_cache` and
+#   `add_host_to_ssh_known_hosts` helpers.
+
+usage() {
+	echo "usage: restore_swiftpm_cache --package-resolved <path> [--artifacts <source-packages-dir>]"
+}
+
+main() {
+	local package_resolved="" source_packages=""
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+			-h | --help)
+				usage
+				return 0
+				;;
+			--package-resolved | --artifacts)
+				if [[ $# -lt 2 ]]; then
+					echo "Error: missing value for '$1'." >&2
+					usage >&2
+					return 1
+				fi
+				case "$1" in
+					--package-resolved) package_resolved="$2" ;;
+					--artifacts) source_packages="$2" ;;
+				esac
+				shift 2
+				;;
+			*)
+				echo "Error: unknown option '$1'." >&2
+				usage >&2
+				return 1
+				;;
+		esac
+	done
+
+	if [[ -z "$package_resolved" ]]; then
+		echo "Error: '--package-resolved' is required." >&2
+		usage >&2
+		return 1
+	fi
+	if [[ ! -f "$package_resolved" ]]; then
+		echo "Error: unable to find \`Package.resolved\` at '$package_resolved'." >&2
+		return 1
+	fi
+
+	# The location and keys are shared with `bin/save_swiftpm_cache`
+	local spm_cache_location="$HOME/Library/Caches/org.swift.swiftpm"
+	local package_resolved_hash
+	package_resolved_hash="$(hash_file "$package_resolved")"
+
+	echo "~~~ Restoring SPM cache if available"
+	mkdir -p "$spm_cache_location"
+	pushd "$spm_cache_location" > /dev/null
+	restore_cache "${BUILDKITE_PIPELINE_SLUG}-spm-cache-${package_resolved_hash}"
+	popd > /dev/null
+
+	if [[ -n "$source_packages" ]]; then
+		echo "~~~ Restoring SPM binary frameworks if available"
+		if [[ -f "$source_packages/workspace-state.json" ]]; then
+			echo "'$source_packages' already has a \`workspace-state.json\` – skipping."
+		else
+			mkdir -p "$source_packages"
+			pushd "$source_packages" > /dev/null
+			restore_cache "${BUILDKITE_PIPELINE_SLUG}-spm-artifacts-v1-${package_resolved_hash}"
+			popd > /dev/null
+		fi
+	fi
+
+	# This will let Xcode use the system SSH config for downloading packages
+	sudo defaults write com.apple.dt.Xcode IDEPackageSupportUseBuiltinSCM YES
+
+	# Trust all GitHub.com and BitBucket.org keys – this allows checking out dependencies via SSH
+	add_host_to_ssh_known_hosts bitbucket.org
+	add_host_to_ssh_known_hosts github.com
+}
+
+# Run unless sourced, so the tests can source this file.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+	main "$@"
+fi

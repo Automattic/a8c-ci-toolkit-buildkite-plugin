@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Script: save_swiftpm_cache
+#
+# Description:
+#   Saves the Swift Package Manager caches that `restore_swiftpm_cache` restores. Call it
+#   after the build has resolved the packages, with the same options.
+#
+#   Two caches can be saved:
+#
+#   - SwiftPM's shared cache (`~/Library/Caches/org.swift.swiftpm`), always. Its
+#     `checkouts/` and `artifacts/` folders are deleted first, as
+#     `install_swiftpm_dependencies` does: checkouts are quick to recreate, and artifacts
+#     left in the shared cache break some package downloads.
+#   - With `--artifacts`, the binary frameworks (`artifacts/`) of a source packages
+#     directory, together with its `workspace-state.json`. These don't sit in the shared
+#     cache, so they don't have that problem.
+#
+#   An existing cache entry is never overwritten. As the keys are the hash of
+#   `Package.resolved`, only the first build after a dependency change uploads anything.
+#
+# Usage:
+#   save_swiftpm_cache --package-resolved <path> [--artifacts <source-packages-dir>]
+#
+# Options:
+#   --package-resolved <path>       The `Package.resolved` file. Its hash is the cache key.
+#   --artifacts <source-packages-dir>
+#                                   Also save the binary frameworks in this directory. See
+#                                   `restore_swiftpm_cache`.
+#   -h, --help                      Print usage and exit.
+#
+# Examples:
+#   save_swiftpm_cache --package-resolved Package.resolved --artifacts .build
+#
+# Notes:
+#   Nothing is saved for `--artifacts` when the directory has no `artifacts/` folder or no
+#   `workspace-state.json`, e.g. when no package uses a binary target.
+#
+#   Relies on the `BUILDKITE_PIPELINE_SLUG` environment variable for the cache keys.
+#
+# Returns:
+#   0 on success; 1 on a usage error, or if an upload fails.
+#
+# Requirements:
+#   Runs on a Mac CI agent. Uses the toolkit's own `hash_file` and `save_cache` helpers.
+
+usage() {
+	echo "usage: save_swiftpm_cache --package-resolved <path> [--artifacts <source-packages-dir>]"
+}
+
+STAGING_DIR=""
+cleanup() {
+	if [[ -n "$STAGING_DIR" ]]; then
+		rm -rf "$STAGING_DIR"
+	fi
+}
+trap cleanup EXIT
+
+main() {
+	local package_resolved="" source_packages=""
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+			-h | --help)
+				usage
+				return 0
+				;;
+			--package-resolved | --artifacts)
+				if [[ $# -lt 2 ]]; then
+					echo "Error: missing value for '$1'." >&2
+					usage >&2
+					return 1
+				fi
+				case "$1" in
+					--package-resolved) package_resolved="$2" ;;
+					--artifacts) source_packages="$2" ;;
+				esac
+				shift 2
+				;;
+			*)
+				echo "Error: unknown option '$1'." >&2
+				usage >&2
+				return 1
+				;;
+		esac
+	done
+
+	if [[ -z "$package_resolved" ]]; then
+		echo "Error: '--package-resolved' is required." >&2
+		usage >&2
+		return 1
+	fi
+	if [[ ! -f "$package_resolved" ]]; then
+		echo "Error: unable to find \`Package.resolved\` at '$package_resolved'." >&2
+		return 1
+	fi
+
+	# The location and keys are shared with `bin/restore_swiftpm_cache`
+	local spm_cache_location="$HOME/Library/Caches/org.swift.swiftpm"
+	local package_resolved_hash
+	package_resolved_hash="$(hash_file "$package_resolved")"
+
+	echo "~~~ Cleaning up cache files before saving cache"
+	mkdir -p "$spm_cache_location"
+	# `checkouts` can be removed as the system can quickly generate them from the cache's git bare repo
+	# `artifacts` should be removed because it causes issues when downloading certain packages
+	# to have the artifacts already present after extracting cache
+	rm -rf "$spm_cache_location/checkouts" "$spm_cache_location/artifacts"
+	echo "Done. Removed checkouts and artifacts subfolders from $spm_cache_location"
+
+	echo "~~~ Saving SPM Cache"
+	save_cache "$spm_cache_location" "${BUILDKITE_PIPELINE_SLUG}-spm-cache-${package_resolved_hash}" false --use_relative_path_in_tar
+
+	if [[ -n "$source_packages" ]]; then
+		echo "~~~ Saving SPM binary frameworks"
+		if [[ ! -f "$source_packages/workspace-state.json" || ! -d "$source_packages/artifacts" ]]; then
+			echo "No binary frameworks to save in '$source_packages'."
+			return 0
+		fi
+		# Stage only the two items to cache. On APFS `cp -c` clones the files, which takes no
+		# time or space; elsewhere it falls back to a plain copy.
+		STAGING_DIR="$(mktemp -d)"
+		if ! cp -c -R "$source_packages/artifacts" "$STAGING_DIR/artifacts" 2> /dev/null; then
+			rm -rf "$STAGING_DIR/artifacts"
+			cp -R "$source_packages/artifacts" "$STAGING_DIR/artifacts"
+		fi
+		cp "$source_packages/workspace-state.json" "$STAGING_DIR/"
+		save_cache "$STAGING_DIR" "${BUILDKITE_PIPELINE_SLUG}-spm-artifacts-v1-${package_resolved_hash}" false --use_relative_path_in_tar
+	fi
+}
+
+# Run unless sourced, so the tests can source this file.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+	main "$@"
+fi

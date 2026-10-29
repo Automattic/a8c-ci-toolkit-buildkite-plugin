@@ -69,7 +69,8 @@ echo "--> Base branch is $BASE_BRANCH"
 
 git merge "origin/$BASE_BRANCH" --no-edit
 
-if (git diff --name-status "origin/$BASE_BRANCH" | grep -E "\.gradle(\.kts)?|\.toml" --quiet); then
+# Not `grep --quiet`: it can exit before `git diff` finishes, and under `pipefail` the SIGPIPE fails the check
+if git diff --name-status "origin/$BASE_BRANCH" | grep -E "\.gradle(\.kts)?|\.toml" > /dev/null; then
     echo "Gradle files have been changed. Looking for caused dependency changes"
 else
     echo "Gradle files haven't been changed. There is no need to run the diff"

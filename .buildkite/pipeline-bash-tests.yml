@@ -37,6 +37,12 @@ steps:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Standalone Swift Package - Explicit"
 
+      - label: ":swift: Standalone Swift Package - Restore and save without resolving"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_package_restore_and_save.sh
+        notify:
+          - github_commit_status:
+              context: "install_swiftpm_dependencies Tests: Standalone Swift Package - Restore and save"
+
       - label: ":xcode: Xcode Project - Autodetect"
         command: tests/install_swiftpm_dependencies/test_scripts/test_project_automatic.sh
         notify:
@@ -66,6 +72,12 @@ steps:
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Xcode Workspace - Explicit"
+
+      - label: ":xcode: Xcode Workspace - Binary frameworks cache"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_artifacts.sh
+        notify:
+          - github_commit_status:
+              context: "install_swiftpm_dependencies Tests: Xcode Workspace - Binary frameworks cache"
 
       - label: ":xcode: Xcode Workspace and Project - Autodetect"
         command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_and_project_automatic.sh
