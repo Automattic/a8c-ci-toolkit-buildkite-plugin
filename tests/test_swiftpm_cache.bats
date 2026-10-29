@@ -30,7 +30,8 @@ setup() {
 	done
 	chmod +x "$STUBS"/*
 
-	export PATH="$STUBS:$PATH"
+	# `bin/` is on the PATH, as on CI, so `install_swiftpm_dependencies` finds the commands it calls
+	export PATH="$STUBS:$BIN:$PATH"
 	export HOME="$BATS_TEST_TMPDIR/home"
 	export BUILDKITE_PIPELINE_SLUG="my-pipeline"
 	mkdir -p "$HOME"
@@ -128,4 +129,48 @@ setup() {
 	[[ "$output" =~ "No binary frameworks to save" ]]
 	run grep -c save_cache "$CALLS"
 	[ "$output" = "1" ]
+}
+
+# `install_swiftpm_dependencies --artifacts`, with `xcodebuild` and `swift` stubbed too
+
+stub_resolvers() {
+	for tool in xcodebuild swift; do
+		printf '#!/usr/bin/env bash\necho "%s $*" >> "$CALLS"\n' "$tool" > "$STUBS/$tool"
+	done
+	chmod +x "$STUBS/xcodebuild" "$STUBS/swift"
+}
+
+@test "install --use-spm --artifacts resolves into that directory and caches it" {
+	stub_resolvers
+	run "$BIN/install_swiftpm_dependencies" --use-spm --artifacts .build
+	[ "$status" -eq 0 ]
+	run grep -E "^(swift|restore_cache .*artifacts)" "$CALLS"
+	[ "${lines[0]}" = "restore_cache my-pipeline-spm-artifacts-v1-abc123 in $BATS_TEST_TMPDIR/.build" ]
+	[ "${lines[1]}" = "swift package resolve --scratch-path .build" ]
+}
+
+@test "install --artifacts works before or after the mode option" {
+	stub_resolvers
+	mkdir -p App.xcworkspace/xcshareddata/swiftpm
+	echo '{}' > App.xcworkspace/xcshareddata/swiftpm/Package.resolved
+	run "$BIN/install_swiftpm_dependencies" --artifacts DerivedData/SourcePackages --workspace App.xcworkspace
+	[ "$status" -eq 0 ]
+	run grep "^xcodebuild" "$CALLS"
+	[ "$output" = "xcodebuild -workspace App.xcworkspace -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile -clonedSourcePackagesDirPath DerivedData/SourcePackages -list" ]
+}
+
+@test "install without --artifacts resolves and caches as before" {
+	stub_resolvers
+	run "$BIN/install_swiftpm_dependencies" --use-spm
+	[ "$status" -eq 0 ]
+	run grep -c "spm-artifacts" "$CALLS"
+	[ "$output" = "0" ]
+	run grep "^swift" "$CALLS"
+	[ "$output" = "swift package resolve" ]
+}
+
+@test "install rejects an unknown option" {
+	run "$BIN/install_swiftpm_dependencies" --use-spm --nope
+	[ "$status" -eq 2 ]
+	[[ "$output" =~ "Unexpected extra arguments: --nope" ]]
 }

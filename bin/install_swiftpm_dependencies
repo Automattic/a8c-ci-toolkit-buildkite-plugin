@@ -10,36 +10,53 @@ print_usage() {
   echo "    ${0##*/} --project PATH"
   echo "  Using the \`Package.resolved\` at the root, managed by \`swift package\` instead of Xcode:"
   echo "    ${0##*/} --use-spm"
+  echo ""
+  echo "Options:"
+  echo "  --artifacts DIR  Also cache the binary frameworks the packages download. DIR is where the build"
+  echo "                   keeps its packages: \`DerivedData/SourcePackages\` for \`xcodebuild -derivedDataPath DerivedData\`,"
+  echo "                   \`.build\` for \`swift build\`. The packages are resolved into DIR, so the build finds them there."
 }
 
 # Parse input parameters
 XCWORKSPACE_PATH=
 XCODEPROJ_PATH=
 USE_SPM=false
+SOURCE_PACKAGES_PATH=
 
-case ${1:-} in
-  --workspace)
-    XCWORKSPACE_PATH="${2:?you need to provide a value after the --workspace option}"
-    shift; shift
-    ;;
-  --project)
-    XCODEPROJ_PATH=${2:?you need to provide a value after the --project option}
-    shift; shift
-    ;;
-  --use-spm)
-    USE_SPM=true
-    shift
-    ;;
-  -h|--help)
-    print_usage
-    exit 0
-    ;;
-esac
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --workspace)
+      XCWORKSPACE_PATH="${2:?you need to provide a value after the --workspace option}"
+      shift; shift
+      ;;
+    --project)
+      XCODEPROJ_PATH=${2:?you need to provide a value after the --project option}
+      shift; shift
+      ;;
+    --use-spm)
+      USE_SPM=true
+      shift
+      ;;
+    --artifacts)
+      SOURCE_PACKAGES_PATH="${2:?you need to provide a value after the --artifacts option}"
+      shift; shift
+      ;;
+    -h|--help)
+      print_usage
+      exit 0
+      ;;
+    *)
+      echo "Unexpected extra arguments: $*" >&2
+      print_usage
+      exit 2
+      ;;
+  esac
+done
 
-if [[ "$#" -gt 0 ]]; then
-  echo "Unexpected extra arguments: $*" >&2
-  print_usage
-  exit 2
+# Passed on to `restore_swiftpm_cache` and `save_swiftpm_cache`, and to the resolve step below
+ARTIFACTS_OPTIONS=()
+if [[ -n "${SOURCE_PACKAGES_PATH}" ]]; then
+  ARTIFACTS_OPTIONS=(--artifacts "${SOURCE_PACKAGES_PATH}")
 fi
 
 # Try to guess what to do if no option provided explicitly
@@ -85,7 +102,15 @@ if [[ ! -f "${PACKAGE_RESOLVED_LOCATION}" ]]; then
 fi
 
 # Restore SPM cache if it's available, and let Xcode fetch packages over SSH
-restore_swiftpm_cache --package-resolved "${PACKAGE_RESOLVED_LOCATION}"
+restore_swiftpm_cache --package-resolved "${PACKAGE_RESOLVED_LOCATION}" ${ARTIFACTS_OPTIONS[@]+"${ARTIFACTS_OPTIONS[@]}"}
+
+# With `--artifacts`, resolve into that directory, which is where the build will look for the packages
+XCODEBUILD_SOURCE_PACKAGES_OPTIONS=()
+SWIFT_SCRATCH_PATH_OPTIONS=()
+if [[ -n "${SOURCE_PACKAGES_PATH}" ]]; then
+  XCODEBUILD_SOURCE_PACKAGES_OPTIONS=(-clonedSourcePackagesDirPath "${SOURCE_PACKAGES_PATH}")
+  SWIFT_SCRATCH_PATH_OPTIONS=(--scratch-path "${SOURCE_PACKAGES_PATH}")
+fi
 
 # Resolve the packages using the correct method
 if [[ -d "${XCWORKSPACE_PATH}" ]]; then
@@ -95,15 +120,15 @@ if [[ -d "${XCWORKSPACE_PATH}" ]]; then
   # (despite the help page of `xcodebuild` suggesting that it should work without `-scheme`). Since the dependency resolution doesn't really depend on the scheme
   # and we don't want to have to provide or guess it, using `-list` instead stops making `xcodebuild` complain about `-workspace` not being used in conjunction
   # with `-scheme` (even if in practice we don't care about the scheme list it returns)
-  xcodebuild -workspace "${XCWORKSPACE_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile -list
+  xcodebuild -workspace "${XCWORKSPACE_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile ${XCODEBUILD_SOURCE_PACKAGES_OPTIONS[@]+"${XCODEBUILD_SOURCE_PACKAGES_OPTIONS[@]}"} -list
 elif [[ -d "${XCODEPROJ_PATH}" ]]; then
   echo "~~~ Resolving Swift Packages with \`xcodebuild\`"
   echo "Using -project \"${XCODEPROJ_PATH}\""
-  xcodebuild -project "${XCODEPROJ_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile
+  xcodebuild -project "${XCODEPROJ_PATH}" -resolvePackageDependencies -onlyUsePackageVersionsFromResolvedFile ${XCODEBUILD_SOURCE_PACKAGES_OPTIONS[@]+"${XCODEBUILD_SOURCE_PACKAGES_OPTIONS[@]}"}
 elif [[ "${USE_SPM}" == "true" ]]; then
   echo "~~~ Resolving packages with \`swift package\`"
-  swift package resolve
+  swift package resolve ${SWIFT_SCRATCH_PATH_OPTIONS[@]+"${SWIFT_SCRATCH_PATH_OPTIONS[@]}"}
 fi
 
 # Save the cache for the future, if this is the first time we've seen this `Package.resolved`
-save_swiftpm_cache --package-resolved "${PACKAGE_RESOLVED_LOCATION}"
+save_swiftpm_cache --package-resolved "${PACKAGE_RESOLVED_LOCATION}" ${ARTIFACTS_OPTIONS[@]+"${ARTIFACTS_OPTIONS[@]}"}
