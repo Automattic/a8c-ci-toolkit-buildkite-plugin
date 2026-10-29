@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Add `restore_swiftpm_cache` and `save_swiftpm_cache`, for builds that resolve Swift packages themselves. They use the same cache as `install_swiftpm_dependencies` without a separate resolve step, and `--artifacts <source-packages-dir>` also caches the binary frameworks that SwiftPM would otherwise download on every build. [#PR]
 
 ### Bug Fixes
 

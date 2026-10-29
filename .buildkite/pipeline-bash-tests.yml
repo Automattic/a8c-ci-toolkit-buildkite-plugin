@@ -37,6 +37,12 @@ steps:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Standalone Swift Package - Explicit"
 
+      - label: ":swift: Standalone Swift Package - Restore and save without resolving"
+        command: tests/install_swiftpm_dependencies/test_scripts/test_package_restore_and_save.sh
+        notify:
+          - github_commit_status:
+              context: "install_swiftpm_dependencies Tests: Standalone Swift Package - Restore and save"
+
       - label: ":xcode: Xcode Project - Autodetect"
         command: tests/install_swiftpm_dependencies/test_scripts/test_project_automatic.sh
         notify:
