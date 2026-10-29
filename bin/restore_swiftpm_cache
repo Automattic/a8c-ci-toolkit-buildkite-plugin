@@ -43,7 +43,7 @@ set -euo pipefail
 #   The binary frameworks are skipped when `<source-packages-dir>` already has a
 #   `workspace-state.json`, so a warm directory is never overwritten.
 #
-#   Set the `BUILDKITE_PIPELINE_SLUG` environment variable. It's part of the cache keys.
+#   Relies on the `BUILDKITE_PIPELINE_SLUG` environment variable for the cache keys.
 #
 # Returns:
 #   0 on success, including on a cache miss; 1 on a usage error.

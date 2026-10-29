@@ -38,7 +38,7 @@ set -euo pipefail
 #   Nothing is saved for `--artifacts` when the directory has no `artifacts/` folder or no
 #   `workspace-state.json`, e.g. when no package uses a binary target.
 #
-#   Set the `BUILDKITE_PIPELINE_SLUG` environment variable. It's part of the cache keys.
+#   Relies on the `BUILDKITE_PIPELINE_SLUG` environment variable for the cache keys.
 #
 # Returns:
 #   0 on success; 1 on a usage error, or if an upload fails.
@@ -103,6 +103,9 @@ main() {
 
 	echo "~~~ Cleaning up cache files before saving cache"
 	mkdir -p "$spm_cache_location"
+	# `checkouts` can be removed as the system can quickly generate them from the cache's git bare repo
+	# `artifacts` should be removed because it causes issues when downloading certain packages
+	# to have the artifacts already present after extracting cache
 	rm -rf "$spm_cache_location/checkouts" "$spm_cache_location/artifacts"
 	echo "Done. Removed checkouts and artifacts subfolders from $spm_cache_location"
 
