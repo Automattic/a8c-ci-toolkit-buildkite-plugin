@@ -15,7 +15,17 @@ if grep -q "nokogiri" Gemfile.lock; then
 else
   LIBC_VERSION=''
 fi
-CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$PLATFORM-$ARCHITECTURE$LIBC_VERSION-ruby$RUBY_VERSION-$GEMFILE_HASH"
+# The `openssl` gem's native extension links to the OpenSSL it was built against by absolute path,
+# e.g. `/opt/homebrew/opt/openssl@3/lib/libssl.3.dylib`. Mac CI images can swap Homebrew's OpenSSL
+# (e.g. `openssl@3` for `openssl@4`) without changing the macOS or Ruby version, and a cache built on
+# one image then fails to load on the other. To avoid that, add the installed Homebrew OpenSSL
+# formulae to the cache key if the Gemfile.lock includes the `openssl` gem.
+OPENSSL_VERSIONS=''
+if [[ "$PLATFORM" == 'Darwin' ]] && grep -qE '^    openssl \(' Gemfile.lock && command -v brew > /dev/null; then
+  OPENSSL_VERSIONS=$(brew list --formula --versions | awk '/^openssl@/ { gsub(/ /, "-"); printf "-%s", $0 }')
+  OPENSSL_VERSIONS=${OPENSSL_VERSIONS:--openssl-none}
+fi
+CACHEKEY="$BUILDKITE_PIPELINE_SLUG-$PLATFORM-$ARCHITECTURE$LIBC_VERSION$OPENSSL_VERSIONS-ruby$RUBY_VERSION-$GEMFILE_HASH"
 
 restore_cache "$CACHEKEY"
 

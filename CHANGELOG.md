@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- `install_gems` adds the installed Homebrew OpenSSL formulae to the cache key on macOS when the `Gemfile.lock` includes the `openssl` gem. The gem links to the OpenSSL it was built against by absolute path, so a cache from a Mac image with `openssl@3` failed to load on one with only `openssl@4`. [#PR]
 
 ### Internal Changes
 
