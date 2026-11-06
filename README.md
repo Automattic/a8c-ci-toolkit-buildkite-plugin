@@ -67,6 +67,36 @@ Three things make that work:
 
 Only the commands whose dependencies the image provides will work, of course — `checkout_release_branch` needs `bash` and `git` inside the container, for instance.
 
+## Checking changed files
+
+`pr_changed_files` checks a Buildkite PR against its merge base with the target branch.
+`commit_changed_files` uses the same matching rules to check a local commit, without
+requiring Buildkite or a PR:
+
+```bash
+# Skip only when every changed path is known to be irrelevant to this job.
+if commit_changed_files --all-match 'docs/*' 'README.md'; then
+  exit 0
+fi
+
+# Inspect a specific commit, or supply a base for a larger range.
+commit_changed_files --commit abc123 --any-match '*.swift'
+commit_changed_files --base "$PUSH_BASE" --stdout --any-match 'src/*'
+```
+
+The commit defaults to `HEAD`, and the base defaults to that commit's first parent.
+This captures a normal merge or squash commit's full change. For a multi-commit push
+or rebase merge, supply an explicit base to include the earlier commits. The command
+does not track previous builds or recover changes from canceled builds; callers choose
+which build types can use commit-based skipping. Both revisions must be available locally.
+
+Both commands support `--all-match`, `--any-match` and `--stdout`. Quote Bash patterns;
+`dir/*` matches that directory recursively. Renames include the old and new paths.
+An empty diff returns false. Exit codes are 0 for a match, 1 for no match, and 255 for
+an error. With `--stdout`, matches print `true`/`false` and exit 0; errors still exit 255
+without a boolean. Skip decisions must run the job on errors, including missing parents
+in root commits or shallow checkouts.
+
 ## Developing
 
 To run the linter and tests:

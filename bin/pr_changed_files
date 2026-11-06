@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -euo pipefail
 
 # This script checks if files are changed in a PR.
 #
@@ -13,7 +13,9 @@ set -eu
 # Result
 #  - By default, the script exits with code 0 if the condition is met (files changed / patterns matched), 1 if not. This is typically ideal to use in `if` conditions.
 #  - If you use the `--stdout` flag, it will output "true" or "false" instead of using the exit code (and exit 0 in both cases). Useful to assign the result to an environment variable for example.
-#  - The script will exit with code 255 if there is an error in the command invocation (bad parameters, not in PR context, etc.)
+#  - The script exits 255 on errors (bad parameters, invalid PR context, unavailable history, failed fetch/diff), without printing a boolean.
+#    Callers deciding whether to skip must treat errors as a reason to run the job.
+#  - Both paths of a rename are checked. Matching is shared with `commit_changed_files`.
 #
 # Format used for patterns:
 #  - The `<file-patterns>` are expected to be *bash* patterns, i.e. strings that can contain `*` to match any string, `?` to match a single character, or `[…]` to match any character in the provided set.
@@ -76,118 +78,39 @@ if [[ ! "${BUILDKITE_PULL_REQUEST:-invalid}" =~ ^[0-9]+$ ]]; then
     exit 255
 fi
 
-# Ensure we have the base branch locally
-git fetch origin "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" >/dev/null 2>&1 || {
-    echo "Error: failed to fetch base branch '$BUILDKITE_PULL_REQUEST_BASE_BRANCH'" >&2
-    exit 255
-}
-
-mode=""
-patterns=()
-use_stdout="false"
-
-# Define error message for mutually exclusive options
-EXCLUSIVE_OPTIONS_ERROR="Error: either specify --all-match or --any-match; cannot specify both"
-
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --stdout)
-            use_stdout="true"
-            shift
-            ;;
-        --all-match | --any-match)
-            if [[ -n "$mode" ]]; then
-                echo "$EXCLUSIVE_OPTIONS_ERROR" >&2
-                exit 255
-            fi
-            mode="${1#--}"
-            shift
-            # Check if there are any patterns after the flag
-            while [[ "$#" -gt 0 && "$1" != "--"* ]]; do
-                patterns+=("$1")
-                shift
-            done
-            if [[ "${#patterns[@]}" -eq 0 ]]; then
-                echo "Error: must specify at least one file pattern" >&2
-                exit 255
-            fi
-            ;;
-        --*)
-            echo "Error: unknown option '$1'." >&2
-            exit 255
-            ;;
-        *)
-            echo "Error: unexpected argument '$1'." >&2
+# Keep PR range selection fixed; these options belong to `commit_changed_files`.
+for argument in "$@"; do
+    case "$argument" in
+        --base | --commit)
+            echo "Error: unknown option '$argument'." >&2
             exit 255
             ;;
     esac
 done
 
-declare -a changed_files
-changed_files=()
-
-# Get list of changed files as an array
-while IFS= read -r -d '' file; do
-  changed_files+=("$file")
-done < <(git --no-pager diff --name-only -z --merge-base origin/"$BUILDKITE_PULL_REQUEST_BASE_BRANCH" HEAD | sort)
-
-exit_true() {
-    if [[ "$use_stdout" == "true" ]]; then
-        echo "true"
-        exit 0
-    fi
-    exit 0
-}
-
-exit_false() {
-    if [[ "$use_stdout" == "true" ]]; then
-        echo "false"
-        exit 0
-    fi
-    exit 1
-}
-
-if [[ -z "$mode" ]]; then
-    # No arguments = any change
-    if [[ ${#changed_files[@]} -gt 0 ]]; then
-        exit_true
-    else
-        exit_false
-    fi
+base_branch=${BUILDKITE_PULL_REQUEST_BASE_BRANCH:-}
+if [[ -z "$base_branch" ]]; then
+    echo "Error: missing BUILDKITE_PULL_REQUEST_BASE_BRANCH" >&2
+    exit 255
 fi
 
-# No changed files
-if [[ ${#changed_files[@]} -eq 0 ]]; then
-    exit_false
-fi
-
-# Returns 0 if the file matches any of the patterns, 1 otherwise
-file_matches_any_pattern() {
-    local file="$1"
-    shift
-    for pattern in "$@"; do
-        # shellcheck disable=SC2053 # We don't quote the rhs in the condition on the next line because we want to interpret pattern as a glob pattern
-        if [[ "$file" == ${pattern} ]]; then
-            return 0
-        fi
-    done
-    return 1
+# Use the fetched commit even when origin's fetch refspec doesn't update a tracking ref.
+git fetch -- origin "refs/heads/$base_branch" >/dev/null 2>&1 || {
+    echo "Error: failed to fetch base branch '$base_branch'" >&2
+    exit 255
 }
-
-if [[ "$mode" == "all-match" ]]; then
-    # Check if all changed files match at least one pattern
-    for file in "${changed_files[@]}"; do
-        if ! file_matches_any_pattern "$file" "${patterns[@]}"; then
-            exit_false
-        fi
-    done
-    exit_true
-elif [[ "$mode" == "any-match" ]]; then
-    # Check if any changed file matches any pattern
-    for file in "${changed_files[@]}"; do
-        if file_matches_any_pattern "$file" "${patterns[@]}"; then
-            exit_true
-        fi
-    done
-    exit_false
+base_commit=$(git merge-base --all FETCH_HEAD HEAD) || {
+    echo "Error: could not determine PR merge base" >&2
+    exit 255
+}
+if [[ "$base_commit" == *$'\n'* ]]; then
+    echo "Error: multiple PR merge bases found" >&2
+    exit 255
 fi
+
+helper="$(dirname "${BASH_SOURCE[0]}")/commit_changed_files"
+if [[ ! -x "$helper" ]]; then
+    echo "Error: cannot execute '$helper'" >&2
+    exit 255
+fi
+exec "$helper" --base "$base_commit" "$@"

@@ -38,11 +38,11 @@ _None._
 
 ### New Features
 
-_None._
+- Add `commit_changed_files` to check a commit against its first parent or an explicit base, with the same matching options as `pr_changed_files`.
 
 ### Bug Fixes
 
-_None._
+- Changed-file checks include both paths of renames and report Git failures as errors instead of treating them as empty diffs.
 
 ### Internal Changes
 
