@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Checks the files changed by a commit, or between two explicitly chosen commits.
+#
+# Usage:
+#   commit_changed_files [--commit <ref>] [--base <ref>] [--stdout]
+#   commit_changed_files [options] --all-match <patterns...>
+#   commit_changed_files [options] --any-match <patterns...>
+#
+# Options:
+#   --commit <ref>  Commit to inspect; defaults to `HEAD`.
+#   --base <ref>    Compare against this commit; defaults to the inspected commit's
+#                   first parent. Both revisions must be available locally.
+#   --all-match    True when every changed file matches at least one pattern.
+#   --any-match    True when at least one changed file matches a pattern.
+#   --stdout       Print `true` or `false` and exit 0 instead of using exit status.
+#
+# Without a match mode, checks whether any files changed. Empty diffs return false
+# in every mode. Patterns use Bash matching, as in `pr_changed_files`: quote them,
+# and use `dir/*` to match that directory recursively. Paths are repository-relative.
+# Renames include both the old and new path, regardless of Git's rename settings.
+#
+# Examples:
+#   commit_changed_files --all-match 'docs/*' 'README.md'
+#   commit_changed_files --commit abc123 --any-match '*.swift'
+#   commit_changed_files --base "$PUSH_BASE" --stdout --any-match 'src/*'
+#
+# The first-parent default covers a normal merge or squash commit's full change.
+# It does not cover earlier commits in a rebase merge, a multi-commit push, or a
+# canceled build. Use `--base` when a larger range is required. This command does
+# not choose which build types should skip jobs and does not query CI or fetch refs.
+#
+# Returns:
+#   0: condition met; 1: condition not met (including an empty diff).
+#   With `--stdout`, both outcomes exit 0. Errors always exit 255 without a boolean.
+#   Callers deciding whether to skip must treat errors as a reason to run the job.
+#
+# Requirements:
+#   Bash 3.2+, Git 2.30+, `mktemp` and `rm`; macOS, Linux and Git Bash on Windows.
+#   The default comparison fails if the commit's first parent is unavailable.
+
+fail() {
+    echo "Error: $*" >&2
+    exit 255
+}
+
+commit=HEAD
+base=""
+mode=""
+patterns=()
+use_stdout=false
+
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        --commit | --base)
+            [[ "$#" -ge 2 && -n "$2" && "$2" != --* ]] || fail "missing value for '$1'."
+            if [[ "$1" == --commit ]]; then
+                commit="$2"
+            else
+                base="$2"
+            fi
+            shift 2
+            ;;
+        --stdout)
+            use_stdout=true
+            shift
+            ;;
+        --all-match | --any-match)
+            [[ -z "$mode" ]] || fail "either specify --all-match or --any-match; cannot specify both"
+            mode="${1#--}"
+            shift
+            while [[ "$#" -gt 0 && "$1" != --* ]]; do
+                patterns+=("$1")
+                shift
+            done
+            [[ "${#patterns[@]}" -gt 0 ]] || fail "must specify at least one file pattern"
+            ;;
+        --*) fail "unknown option '$1'." ;;
+        *) fail "unexpected argument '$1'." ;;
+    esac
+done
+
+commit_sha=$(git rev-parse --verify --end-of-options "${commit}^{commit}") || fail "could not resolve commit '$commit'."
+base=${base:-${commit_sha}^1}
+base_sha=$(git rev-parse --verify --end-of-options "${base}^{commit}") || fail "could not resolve base '$base'."
+
+# Keep NUL-delimited paths intact and check Git's exit status before matching.
+# A process substitution would hide a failed diff and make it look like no changes.
+changed_files_path=$(mktemp) || fail "could not create temporary file."
+trap 'rm -f "$changed_files_path"' EXIT
+git diff-tree -r --name-only -z "$base_sha" "$commit_sha" > "$changed_files_path" || fail "could not determine changed files."
+
+changed_files=()
+while IFS= read -r -d '' file; do
+    changed_files+=("$file")
+done < "$changed_files_path" || fail "could not read changed files."
+
+exit_true() {
+    if [[ "$use_stdout" == true ]]; then
+        echo true
+    fi
+    exit 0
+}
+
+exit_false() {
+    if [[ "$use_stdout" == true ]]; then
+        echo false
+        exit 0
+    fi
+    exit 1
+}
+
+[[ "${#changed_files[@]}" -gt 0 ]] || exit_false
+[[ -n "$mode" ]] || exit_true
+
+file_matches_any_pattern() {
+    local file="$1"
+    local pattern
+    shift
+    for pattern in "$@"; do
+        # shellcheck disable=SC2053 # Interpret the supplied Bash pattern.
+        if [[ "$file" == $pattern ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+if [[ "$mode" == all-match ]]; then
+    for file in "${changed_files[@]}"; do
+        file_matches_any_pattern "$file" "${patterns[@]}" || exit_false
+    done
+    exit_true
+else
+    for file in "${changed_files[@]}"; do
+        if file_matches_any_pattern "$file" "${patterns[@]}"; then
+            exit_true
+        fi
+    done
+    exit_false
+fi
