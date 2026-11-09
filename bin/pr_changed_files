@@ -35,8 +35,9 @@ set -euo pipefail
 #       echo "Documentation was updated"
 #     fi
 #
-#   # Using stdout output
-#   $ DOCS_UPDATED=$(pr_changed_files --stdout --any-match 'docs/*' '*.md')
+#   # Using stdout output; assume docs changed if the check fails, so the job runs.
+#   $ DOCS_UPDATED=$(pr_changed_files --stdout --any-match 'docs/*' '*.md') || DOCS_UPDATED=true
+#   $ export DOCS_UPDATED
 #
 # Behavior:
 #   With no arguments:

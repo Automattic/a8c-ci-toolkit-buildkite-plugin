@@ -69,9 +69,19 @@ Only the commands whose dependencies the image provides will work, of course —
 
 ## Checking changed files
 
-`pr_changed_files` checks a Buildkite PR against its merge base with the target branch.
-`commit_changed_files` uses the same matching rules to check a local commit, without
-requiring Buildkite or a PR:
+[`pr_changed_files`](bin/pr_changed_files) checks a Buildkite PR against its merge base.
+[`commit_changed_files`](bin/commit_changed_files) checks `HEAD` against its first parent,
+or an explicit `--commit` / `--base`. See their script headers for options and matching rules.
+
+For trunk builds, the default does **not** cover earlier commits in a multi-commit push,
+rebase merge, or skipped, canceled or failed build. The next build could skip jobs for
+changes that remain untested or failing. Supply a `--base` covering those changes, or run
+jobs without skipping.
+
+Both commands return 0 when the condition holds (any files changed, or the requested
+patterns matched), 1 when it doesn't, and 255 on errors. `--stdout` prints `true`/`false`
+and exits 0 for either result; errors still exit 255 with no stdout. Skip only on the
+expected result, so errors leave the job running:
 
 ```bash
 # Skip only when every changed path is known to be irrelevant to this job.
@@ -79,23 +89,15 @@ if commit_changed_files --all-match 'docs/*' 'README.md'; then
   exit 0
 fi
 
-# Inspect a specific commit, or supply a base for a larger range.
-commit_changed_files --commit abc123 --any-match '*.swift'
-commit_changed_files --base "$PUSH_BASE" --stdout --any-match 'src/*'
+# With --any-match, only status 1 means no relevant changes. `if ! ...` also
+# catches errors, so it isn't safe for deciding whether to skip.
+status=0
+pr_changed_files --any-match 'src/*' || status=$?
+if [[ "$status" -eq 1 ]]; then
+  exit 0
+fi
+# Continue with the job on a match or an error.
 ```
-
-The commit defaults to `HEAD`, and the base defaults to that commit's first parent.
-This captures a normal merge or squash commit's full change. For a multi-commit push
-or rebase merge, supply an explicit base to include the earlier commits. The command
-does not track previous builds or recover changes from canceled builds; callers choose
-which build types can use commit-based skipping. Both revisions must be available locally.
-
-Both commands support `--all-match`, `--any-match` and `--stdout`. Quote Bash patterns;
-`dir/*` matches that directory recursively. Renames include the old and new paths.
-An empty diff returns false. Exit codes are 0 for a match, 1 for no match, and 255 for
-an error. With `--stdout`, matches print `true`/`false` and exit 0; errors still exit 255
-without a boolean. Skip decisions must run the job on errors, including missing parents
-in root commits or shallow checkouts.
 
 ## Developing
 

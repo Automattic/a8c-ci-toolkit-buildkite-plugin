@@ -38,11 +38,11 @@ _None._
 
 ### New Features
 
-- Add `commit_changed_files` to check a commit against its first parent or an explicit base, with the same matching options as `pr_changed_files`.
+- Add `commit_changed_files` to check a commit against its first parent or an explicit base, with the same matching options as `pr_changed_files`. [#243]
 
 ### Bug Fixes
 
-- Changed-file checks include both paths of renames and report Git failures as errors instead of treating them as empty diffs.
+- `pr_changed_files` checks both paths of renames and works when the clone does not track `origin/<base>`. Git failures (including unavailable or ambiguous merge bases) now exit 255 instead of being treated as empty diffs. **With `--stdout`, these failures print nothing to stdout instead of `false` (and still report the error on stderr).** Callers must handle the failure: a plain assignment under `set -e` can now stop the caller, while `export VAR=$(...)` hides the status and leaves an empty value. Skip jobs only on a confirmed match/no-match, never on an error. [#243]
 
 ### Internal Changes
 
