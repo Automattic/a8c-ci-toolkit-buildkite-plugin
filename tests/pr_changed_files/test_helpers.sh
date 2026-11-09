@@ -79,6 +79,19 @@ assert_result() {
     assert_equal "$actual_output" "$expected_output" "Output - $message"
 }
 
+# Run a command and check its status and stdout, including with `set -e` enabled.
+assert_command_result() {
+    local expected_code="$1"
+    local expected_output="$2"
+    local message="$3"
+    local output
+    local result=0
+    shift 3
+
+    output=$("$@") || result=$?
+    assert_result "$result" "$expected_code" "$output" "$expected_output" "$message"
+}
+
 # Helper function to assert that two values are equal
 # Arguments:
 #   $1 - Expected value
