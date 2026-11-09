@@ -73,10 +73,10 @@ Only the commands whose dependencies the image provides will work, of course —
 [`commit_changed_files`](bin/commit_changed_files) checks `HEAD` against its first parent,
 or an explicit `--commit` / `--base`. See their script headers for options and matching rules.
 
-For trunk builds, the default does **not** cover earlier commits in a multi-commit push,
-rebase merge, or skipped, canceled or failed build. The next build could skip jobs for
-changes that remain untested or failing. Supply a `--base` covering those changes, or run
-jobs without skipping.
+For trunk builds, the default does **not** cover earlier commits from a multi-commit push
+or rebase merge, or from a previous build that was skipped, canceled or failed. The next
+build could skip jobs for changes that remain untested or failing. Supply a `--base`
+covering those changes, or run jobs without skipping.
 
 Both commands return 0 when the condition holds (any files changed, or the requested
 patterns matched), 1 when it doesn't, and 255 on errors. `--stdout` prints `true`/`false`
@@ -91,9 +91,9 @@ fi
 
 # With --any-match, only status 1 means no relevant changes. `if ! ...` also
 # catches errors, so it isn't safe for deciding whether to skip.
-status=0
-pr_changed_files --any-match 'src/*' || status=$?
-if [[ "$status" -eq 1 ]]; then
+result=0
+pr_changed_files --any-match 'src/*' || result=$?
+if [[ "$result" -eq 1 ]]; then
   exit 0
 fi
 # Continue with the job on a match or an error.

@@ -42,7 +42,8 @@ _None._
 
 ### Bug Fixes
 
-- `pr_changed_files` checks both paths of renames and works when the clone does not track `origin/<base>`. Git failures (including unavailable or ambiguous merge bases) now exit 255 instead of being treated as empty diffs. **With `--stdout`, these failures print nothing to stdout instead of `false` (and still report the error on stderr).** Callers must handle the failure: a plain assignment under `set -e` can now stop the caller, while `export VAR=$(...)` hides the status and leaves an empty value. Skip jobs only on a confirmed match/no-match, never on an error. [#243]
+- `pr_changed_files` checks both paths of renames and works when the clone does not track `origin/<base>`. [#243]
+- `pr_changed_files` now exits 255 for diff/history failures, including unavailable or ambiguous merge bases. **With `--stdout`, these failures print nothing to stdout instead of `false` (and report the error on stderr).** A plain assignment under `set -e` can now stop the caller, while `export VAR=$(...)` hides the status and leaves an empty value. Handle errors before deciding whether to skip a job. [#243]
 
 ### Internal Changes
 

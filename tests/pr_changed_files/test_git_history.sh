@@ -16,7 +16,8 @@ for option in --base --commit; do
     assert_command_result 255 '' "PRs reject $option" pr_changed_files --stdout "$option" HEAD
 done
 unset BUILDKITE_PULL_REQUEST_BASE_BRANCH
-assert_command_result 255 '' 'Missing PR base branch is an error' pr_changed_files --stdout
+assert_command_result 255 '' 'Missing PR base branch is an error' pr_changed_files --stdout 2> "$repo_path/error"
+assert_equal "$(cat "$repo_path/error")" 'Error: missing BUILDKITE_PULL_REQUEST_BASE_BRANCH' 'Missing PR base branch fails before fetch'
 export BUILDKITE_PULL_REQUEST_BASE_BRANCH=base
 
 # Put the source file in the base so that the PR diff is a rename, not an add.
@@ -38,14 +39,16 @@ assert_command_result 0 '' 'PR rename includes old path' pr_changed_files --any-
 assert_command_result 0 true 'PR rename includes new path' pr_changed_files --stdout --any-match 'docs/*'
 assert_command_result 1 '' 'PR rename is not docs-only' pr_changed_files --all-match 'docs/*'
 
-# A single-branch clone has no origin/base tracking ref. A same-named tag must
-# not be used instead of the branch fetched into FETCH_HEAD.
+# A single-branch clone has no origin/base tracking ref. A same-named tag on the
+# remote must not be fetched instead of the branch into FETCH_HEAD.
 git clone --single-branch --branch pr "$repo_path/remote" "$repo_path/single-branch"
 cd "$repo_path/single-branch"
 git tag base HEAD
+git push origin refs/tags/base
 assert_command_result 1 '' 'Fixture does not track origin/base' git show-ref --verify --quiet refs/remotes/origin/base
 assert_command_result 0 true 'Untracked base uses the fetched branch' pr_changed_files --stdout --any-match 'src/*'
 assert_command_result 0 '' 'Untracked base preserves matching' pr_changed_files --all-match 'src/*' 'docs/*'
+git push origin :refs/tags/base
 
 git clone --depth 1 --branch pr "file://$repo_path/remote" "$repo_path/shallow"
 cd "$repo_path/shallow"
