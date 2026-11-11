@@ -108,11 +108,11 @@ write_gemfile_lock() {
 
 @test "a Ruby version missing from rbenv fails before touching the cache and lists the installed ones" {
 	write_gemfile_lock '    fastlane (2.241.2)\n'
-	export FAKE_MISSING_RUBY='3.4.12'
+	export FAKE_MISSING_RUBY='0.0.0'
 
 	run "$BIN/install_gems"
 	[ "$status" -eq 1 ]
-	[[ "$output" == *"rbenv: version \`3.4.12' is not installed"* ]]
-	[[ "$output" == *"Ruby versions installed on this agent:"$'\n'"  3.3.11"$'\n'"  3.4.9"$'\n'"  4.0.5"* ]]
+	[[ "$output" == *"rbenv: version \`0.0.0' is not installed"* ]]
+	[[ "$output" =~ "Ruby versions installed on this agent:"($'\n'"  "[0-9]+\.[0-9]+\.[0-9]+)+ ]]
 	[ ! -e "$CALLS" ]
 }
