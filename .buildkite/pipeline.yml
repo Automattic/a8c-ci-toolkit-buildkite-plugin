@@ -8,6 +8,12 @@ env:
   IMAGE_ID: $IMAGE_ID
 
 steps:
+  - label: ":rubygems: install_gems with a missing Ruby (expected to fail)"
+    command: tests/install_gems/run_with_missing_ruby.sh
+
+  - label: ":rubygems: install_gems with a missing Ruby (assertions)"
+    command: tests/install_gems/run_with_missing_ruby.sh --assert
+
   - label: ":sleuth_or_spy: Lint"
     command: make lint
     notify:
