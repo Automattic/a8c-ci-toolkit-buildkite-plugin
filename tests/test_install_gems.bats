@@ -25,7 +25,16 @@ setup() {
 	EOF
 	cat > "$STUBS/rbenv" <<-'EOF'
 		#!/usr/bin/env bash
-		echo "3.4.9"
+		case "$1" in
+		  version-name)
+		    if [[ -n "${FAKE_MISSING_RUBY:-}" ]]; then
+		      echo "rbenv: version \`$FAKE_MISSING_RUBY' is not installed (set by .ruby-version)" >&2
+		      exit 1
+		    fi
+		    echo "3.4.9"
+		    ;;
+		  versions) printf '3.3.11\n3.4.9\n4.0.5\n' ;;
+		esac
 	EOF
 	cat > "$STUBS/hash_file" <<-'EOF'
 		#!/usr/bin/env bash
@@ -95,4 +104,15 @@ write_gemfile_lock() {
 	run "$BIN/install_gems"
 	[ "$status" -eq 0 ]
 	grep -qx "restore_cache my-pipeline-Linux-arm64-ruby3.4.9-abc123" "$CALLS"
+}
+
+@test "a Ruby version missing from rbenv fails before touching the cache and lists the installed ones" {
+	write_gemfile_lock '    fastlane (2.241.2)\n'
+	export FAKE_MISSING_RUBY='0.0.0'
+
+	run "$BIN/install_gems"
+	[ "$status" -eq 1 ]
+	[[ "$output" == *"rbenv: version \`0.0.0' is not installed"* ]]
+	[[ "$output" =~ "Ruby versions installed on this agent:"($'\n'"  "[0-9]+\.[0-9]+\.[0-9]+)+ ]]
+	[ ! -e "$CALLS" ]
 }
