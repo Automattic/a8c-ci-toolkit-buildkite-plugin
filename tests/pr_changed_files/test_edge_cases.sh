@@ -90,18 +90,18 @@ output=$(pr_changed_files --stdout)
 result=$?
 assert_result $result 0 "$output" "false" "Should handle empty commit with --stdout"
 
-# [Test] Empty repository state - exit code only
+# [Test] Unrelated history has no PR merge base - exit code only
 git checkout --orphan empty
 git rm -rf .
 git commit --allow-empty -m "Empty initial commit"
 
 output=$(pr_changed_files)
 result=$?
-assert_result $result 1 "$output" "" "Should handle empty repository state"
+assert_result $result 255 "$output" "" "Should report unavailable PR merge base"
 
 # Test with stdout
 output=$(pr_changed_files --stdout)
 result=$?
-assert_result $result 0 "$output" "false" "Should handle empty repository state with --stdout"
+assert_result $result 255 "$output" "" "Should not print a boolean for unavailable PR merge base"
 
 echo -e "\n✅ Edge cases tests passed"

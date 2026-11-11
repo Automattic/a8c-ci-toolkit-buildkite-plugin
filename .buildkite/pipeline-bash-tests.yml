@@ -91,9 +91,24 @@ steps:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Xcode Workspace and Project - Explicit"
 
+  - group: ":git: commit_changed_files Tests"
+    steps:
+      - label: ":git: commit_changed_files Tests - Commit Ranges ({{matrix}})"
+        command: tests/commit_changed_files/test_commit_ranges.sh
+        agents:
+          queue: "{{matrix}}"
+        matrix:
+          - android
+          - default
+          - mac
+          - tumblr-metal
+        notify:
+          - github_commit_status:
+              context: "commit_changed_files Tests: Commit Ranges"
+
   - group: ":github: pr_changed_files Tests"
     steps:
-      - label: ":github: pr_changed_files Tests - Basic Changes"
+      - label: ":github: pr_changed_files Tests - Basic Changes ({{matrix}})"
         command: tests/pr_changed_files/test_basic_changes.sh
         agents:
           queue: "{{matrix}}"
@@ -106,7 +121,7 @@ steps:
           - github_commit_status:
               context: "pr_changed_files Tests: Basic Changes"
 
-      - label: ":github: pr_changed_files Tests - Any Match"
+      - label: ":github: pr_changed_files Tests - Any Match ({{matrix}})"
         command: tests/pr_changed_files/test_any_match_patterns.sh
         agents:
           queue: "{{matrix}}"
@@ -119,7 +134,7 @@ steps:
           - github_commit_status:
               context: "pr_changed_files Tests: Any Match"
 
-      - label: ":github: pr_changed_files Tests - All Match"
+      - label: ":github: pr_changed_files Tests - All Match ({{matrix}})"
         command: tests/pr_changed_files/test_all_match_patterns.sh
         agents:
           queue: "{{matrix}}"
@@ -132,7 +147,7 @@ steps:
           - github_commit_status:
               context: "pr_changed_files Tests: All Match"
 
-      - label: ":github: pr_changed_files Tests - Edge Cases"
+      - label: ":github: pr_changed_files Tests - Edge Cases ({{matrix}})"
         command: tests/pr_changed_files/test_edge_cases.sh
         agents:
           queue: "{{matrix}}"
@@ -144,6 +159,19 @@ steps:
         notify:
           - github_commit_status:
               context: "pr_changed_files Tests: Edge Cases"
+
+      - label: ":github: pr_changed_files Tests - Git History ({{matrix}})"
+        command: tests/pr_changed_files/test_git_history.sh
+        agents:
+          queue: "{{matrix}}"
+        matrix:
+          - android
+          - default
+          - mac
+          - tumblr-metal
+        notify:
+          - github_commit_status:
+              context: "pr_changed_files Tests: Git History"
 
   - group: ":closed_lock_with_key: install_a8c-secrets_binary Integration Tests"
     steps:

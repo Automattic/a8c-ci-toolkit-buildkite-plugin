@@ -67,6 +67,38 @@ Three things make that work:
 
 Only the commands whose dependencies the image provides will work, of course — `checkout_release_branch` needs `bash` and `git` inside the container, for instance.
 
+## Checking changed files
+
+[`pr_changed_files`](bin/pr_changed_files) checks a Buildkite PR against its merge base.
+[`commit_changed_files`](bin/commit_changed_files) checks `HEAD` against its first parent,
+or an explicit `--commit` / `--base`. See their script headers for options and matching rules.
+
+For trunk builds, the default does **not** cover earlier commits from a multi-commit push
+or rebase merge, or from a previous build that was skipped, canceled or failed. The next
+build could skip jobs for changes that remain untested or failing. Supply a `--base`
+covering those changes, or run jobs without skipping.
+
+Both commands return 0 when the condition holds (any files changed, or the requested
+patterns matched), 1 when it doesn't, and 255 on errors. `--stdout` prints `true`/`false`
+and exits 0 for either result; errors still exit 255 with no stdout. Skip only on the
+expected result, so errors leave the job running:
+
+```bash
+# Skip only when every changed path is known to be irrelevant to this job.
+if commit_changed_files --all-match 'docs/*' 'README.md'; then
+  exit 0
+fi
+
+# With --any-match, only status 1 means no relevant changes. `if ! ...` also
+# catches errors, so it isn't safe for deciding whether to skip.
+result=0
+pr_changed_files --any-match 'src/*' || result=$?
+if [[ "$result" -eq 1 ]]; then
+  exit 0
+fi
+# Continue with the job on a match or an error.
+```
+
 ## Developing
 
 To run the linter and tests:

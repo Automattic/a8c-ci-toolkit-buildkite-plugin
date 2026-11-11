@@ -38,11 +38,12 @@ _None._
 
 ### New Features
 
-_None._
+- Add `commit_changed_files` to check a commit against its first parent or an explicit base, with the same matching options as `pr_changed_files`. [#243]
 
 ### Bug Fixes
 
-_None._
+- `pr_changed_files` checks both paths of renames and works when the clone does not track `origin/<base>`. [#243]
+- `pr_changed_files` now exits 255 for diff/history failures, including unavailable or ambiguous merge bases. **With `--stdout`, these failures print nothing to stdout instead of `false` (and report the error on stderr).** A plain assignment under `set -e` can now stop the caller, while `export VAR=$(...)` hides the status and leaves an empty value. Handle errors before deciding whether to skip a job. [#243]
 
 ### Internal Changes
 
