@@ -18,7 +18,7 @@ _None._
 
 ### New Features
 
-_None._
+- `upload_artifact` and `download_artifact` use the Synology NAS over WebDAV when `BUILDKITE_NAS_ARTIFACTS_URL`, `BUILDKITE_NAS_ARTIFACTS_USER` and `BUILDKITE_NAS_ARTIFACTS_PASSWORD` are set, as on our macOS agents in MacMiniVault. They use S3 only if the NAS fails, and add a job annotation when that happens. This avoids billed S3 egress for large artifacts passed between jobs on the same LAN.
 
 ### Bug Fixes
 
