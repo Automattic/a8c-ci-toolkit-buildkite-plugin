@@ -7,6 +7,10 @@ set -eu
 #
 # $file_path is the path to a file on disk. It'll automatically be combined with the current build ID to differentiate between
 # the same file in different jobs so that it can be correctly re-downloaded within the same job.
+#
+# On CI agents that set `BUILDKITE_NAS_ARTIFACTS_URL`, `BUILDKITE_NAS_ARTIFACTS_USER` and `BUILDKITE_NAS_ARTIFACTS_PASSWORD`
+# (our macOS fleet in MacMiniVault), the file is uploaded to the Synology NAS over WebDAV, to avoid billed S3 egress when
+# `download_artifact` fetches it from the same LAN. It is uploaded to S3 only if the NAS upload fails.
 
 if [ -z "${1-}" ]; then
 	echo "You must pass the file you want to be stored"
@@ -30,12 +34,40 @@ fi
 BASENAME=$(basename "$ARTIFACT_PATH")
 KEY="$BUILDKITE_BUILD_ID/$BASENAME"
 
-# If the bucket has transfer acceleration enabled, use it!
-ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$BUCKET" | jq '.Status' -r || true)
+NAS_URL=${BUILDKITE_NAS_ARTIFACTS_URL:-}
+NAS_USER=${BUILDKITE_NAS_ARTIFACTS_USER:-}
+NAS_PASSWORD=${BUILDKITE_NAS_ARTIFACTS_PASSWORD:-}
 
-if [ "$ACCELERATION_STATUS" = "Enabled" ]; then
-	echo "Uploading with transfer acceleration"
-	aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$KEY" --endpoint-url https://s3-accelerate.amazonaws.com
-else
-	aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$KEY"
-fi
+SHOULD_TRY_NAS=false
+[[ -n "$NAS_URL" && -n "$NAS_USER" && -n "$NAS_PASSWORD" ]] && SHOULD_TRY_NAS=true
+
+upload_to_nas() {
+	[[ "$SHOULD_TRY_NAS" == true ]] || return 1
+	echo "Uploading to NAS (Synology)"
+	curl -fsS --connect-timeout 5 -u "$NAS_USER:$NAS_PASSWORD" -T "$ARTIFACT_PATH" "$NAS_URL/$BUILDKITE_BUILD_ID-$BASENAME"
+}
+
+upload_to_s3() {
+	# If the bucket has transfer acceleration enabled, use it!
+	local acceleration_status
+	acceleration_status=$(aws s3api get-bucket-accelerate-configuration --bucket "$BUCKET" | jq '.Status' -r || true)
+
+	if [[ "$acceleration_status" == "Enabled" ]]; then
+		echo "Uploading to S3 with transfer acceleration"
+		aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$KEY" --endpoint-url https://s3-accelerate.amazonaws.com
+	else
+		echo "Uploading to S3"
+		aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$KEY"
+	fi || return 1
+
+	if [[ "$SHOULD_TRY_NAS" == true ]]; then
+		annotate "NAS upload failed, uploaded to S3 instead: \`$BASENAME\`"
+	fi
+}
+
+annotate() {
+	command -v buildkite-agent > /dev/null 2>&1 || return 0
+	printf -- "- %s\n" "$1" | buildkite-agent annotate --context nas-artifacts --scope job --style warning --append || echo "⚠️ nas-artifacts annotation failed"
+}
+
+upload_to_nas || upload_to_s3
