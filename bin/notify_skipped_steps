@@ -1,38 +1,29 @@
 #!/usr/bin/env python3
 
-## Summary
+# Makes Buildkite report GitHub commit statuses even for steps skipped by `skip:` or `if_changed:`, which otherwise never send their `notify:`.
+# Also posts an annotation listing the skipped steps and why they were skipped.
 #
-# This pipeline processing script allows you to make Builkdite `notify` the GitHub Status Checks _even_ on steps that were skipped via either `skip:` or `if_changed:` (as otherwise Buildkite doesn't `notify` on skipped steps).
-# The script also adds an annotation reporting which steps were skipped but still notified GitHub.
-
-## Usage: `notify_skipped_steps [pipeline file]`
+# Usage:
+#   notify_skipped_steps [pipeline file]
 #
-# The pipeline file is `$1` if provided, otherwise `$PIPELINE` if set, otherwise `pipeline.yml`. It is looked up as given, then in `.buildkite/`.
-# - Run it from the upload step, before or after the real upload.
-# - Be sure to add the `even-if-skipped: true` attribute to the `notify` nodes of each step you want to opt-in to the behavior. Examples:
-# ```
-#  - label: Lint Swift Files
-#    command: .buildkite/commands/run-swiftlint.sh
-#    if_changed: [**/*.swift]
-#    notify:
-#     - github_commit_status: { context: "SwiftLint" }
-#       even-if-skipped: true
-# ```
-# Or to cover more complex skip logic cases that a simpler `if_changed` can't cover,
-# set `export SKIP_UI_TESTS=$(pr_changed_files --output …)` in `shared-pipeline-vars`, then use:
-# ```
-#  - label: UI Tests
-#    command: .buildkite/commands/run-ui-tests.sh
-#    skip: $SKIP_UI_TESTS
-#    notify:
-#     - github_commit_status: { context: "UI Tests" }
-#       even-if-skipped: true
-# ```
-
-## How it works
+#   The file is `$1` if given, else `$PIPELINE`, else `pipeline.yml`; it is looked up as given, then in `.buildkite/`.
+#   Run it in the step that runs `buildkite-agent pipeline upload` (it needs Python 3 and a running job; it reads a file, not stdin).
 #
-# The way it works is that, for each step with a `notify` entry `{github_commit_status: …, even-if-skipped: true}` that Buildkite skips (`if_changed`, or a non-empty `skip`), this script will attach a `github_commit_status` for the same context to the running step (the one that uploads the pipeline) with `buildkite-agent step update`. The statuses are reported when that step finishes.
-# Works from a dry run of the pipeline file, which is interpolated and has `if_changed` applied.
+# Opt in each step by adding `even-if-skipped: true` to its `notify` entry:
+#   - label: Lint Swift Files
+#     command: .buildkite/commands/run-swiftlint.sh
+#     if_changed: ["**/*.swift"]
+#     notify:
+#       - github_commit_status: { context: "SwiftLint" }
+#         even-if-skipped: true
+#
+# For skip logic `if_changed` can't express, compute it in `shared-pipeline-vars`, e.g.
+#   export SKIP_UI_TESTS=$(pr_changed_files --stdout --all-match 'docs/*' '*.md')
+# and use `skip: $SKIP_UI_TESTS` (`false` or empty means the step runs).
+#
+# How it works: it dry-runs the upload (`buildkite-agent pipeline upload --dry-run`), so interpolation and `if_changed` are already applied.
+# For each skipped step with such a `notify` entry, it attaches a `github_commit_status` with the same context to the running step via `buildkite-agent step update`; the statuses are sent when that step finishes.
+# Exits 0 without doing anything if no step uses `even-if-skipped`; exits 1 on a missing file, a failed dry run or a marked step without a `context`.
 
 import json
 import os
