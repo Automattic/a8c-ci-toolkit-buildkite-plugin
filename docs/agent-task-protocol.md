@@ -66,3 +66,5 @@ to 16 KiB, with the model key redacted. The raw model response stays in the VM.
 Patch capture has up to 15 seconds after the task deadline; the host must allow
 time to collect results and clean up. Apply a patch with `git apply` at the
 requested commit. Ordinary failures and questions also preserve partial edits.
+If patch capture fails, the investigation keeps its findings and questions and
+notes the missing patch in its summary.

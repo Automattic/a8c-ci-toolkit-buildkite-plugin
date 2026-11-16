@@ -47,6 +47,17 @@ RSpec.describe AgentWorker do
     expect((fixture.output / 'changes.patch').binread).to include('added.txt')
   end
 
+  it 'keeps investigation findings when the temporary patch exceeds its limit' do
+    stub_const('AgentWorker::MAX_PATCH_BYTES', 64)
+    fixture.write_agent(failing_check: true, summary: 'Reproduced the issue.'.ljust(8000, 'x'))
+    expect(fixture.worker.run).to eq(0)
+    expect(fixture.result).to include('status' => 'completed', 'validation' => include('status' => 'failed'))
+    expect(fixture.result['summary']).to start_with('Reproduced the issue.')
+    expect(fixture.result['summary']).to end_with('The temporary patch could not be saved.')
+    expect(fixture.result['summary'].length).to be <= 8000
+    expect(fixture.output / 'changes.patch').not_to exist
+  end
+
   it 'bounds and redacts stderr without exposing the raw model response', :aggregate_failures do
     secret = 'test-dedicated-key'
     final_error = "\nFinal error: #{secret}"

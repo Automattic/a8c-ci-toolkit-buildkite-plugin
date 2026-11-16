@@ -40,6 +40,9 @@ When it finishes, look in `results/`:
 - `evidence/` contains useful logs and screenshots, when applicable.
 - `changes.patch` preserves temporary edits, including new files and local commits.
 
+If the temporary patch cannot be saved, the report keeps the findings and says
+that the patch is missing.
+
 Questions end the task. Supply the missing context in a new request. The host
 collects these files before destroying the VM and checks the job status too:
 cancellation or a hard failure may leave no report.

@@ -346,8 +346,9 @@ module AgentWorker
         if @has_checkout
           begin
             save_patch
-          rescue TaskError, SystemCallError => e
-            fail_result(e)
+          rescue TaskError, SystemCallError
+            note = "\n\nThe temporary patch could not be saved."
+            result['summary'] = "#{result['summary'][0, 8000 - note.length]}#{note}"
             FileUtils.rm_f(File.join(output, 'changes.patch'))
           end
         end
