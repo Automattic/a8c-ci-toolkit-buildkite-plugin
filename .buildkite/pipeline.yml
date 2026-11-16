@@ -28,3 +28,13 @@ steps:
       PATH: 'C:\Program Files\Git\bin;C:\Windows\System32;C:\Windows;C:\Windows\System32\WindowsPowerShell\v1.0'
     agents: { queue: windows }
     notify: [{ github_commit_status: { context: "exp D env-PATH" } }]
+
+  - label: "NEG: bash exits 3 (must FAIL)"
+    command: bash -eu -c "exit 3"
+    agents: { queue: windows }
+    notify: [{ github_commit_status: { context: "exp NEG exit-3" } }]
+
+  - label: "NEG2: test script fails midway (must FAIL)"
+    command: bash -eu -c "./tests/validate_get_libc_version_format >/dev/null; false"
+    agents: { queue: windows }
+    notify: [{ github_commit_status: { context: "exp NEG2 false" } }]
