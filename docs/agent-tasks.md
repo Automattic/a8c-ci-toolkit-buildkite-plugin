@@ -56,5 +56,16 @@ Put platform details, such as simulator selection, in that adapter. The agent
 chooses the checks that help answer the question; there is no mandatory final
 green build, and the runner never pushes or opens a PR.
 
+## Preparing a change
+
+Use `mode: "change"` when the request is to prepare a fix. The adapter also needs
+`verify.sh`, which runs after the agent finishes. A change is complete only if
+that check passes. The report can include a public title, description and testing
+summary for a separate publisher; keep conversation details out of those fields.
+
+Publishing remains the host’s responsibility. It must validate the patch and
+report before using any write credentials. This command only prepares the files.
+Investigations still need no final green check and their edits stay private.
+
 The runner tests use temporary Git repositories and a fake model executable.
 Run `make test lint` to exercise the flow without a model service or app tools.

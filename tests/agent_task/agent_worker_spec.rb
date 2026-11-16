@@ -23,6 +23,26 @@ RSpec.describe AgentWorker do
     expect((fixture.output / 'evidence/agent-errors.log').read).to include('did not write any stderr diagnostics')
   end
 
+  it 'uses the copied base adapter after the checkout verifier is edited' do
+    fixture.mode = 'change'
+    (fixture.adapter / 'verify.sh').write("exit 9\n")
+    fixture.commit
+    fixture.write_agent(edit_verifier: true)
+    expect(fixture.worker.run).to eq(1)
+    expect(fixture.result).to include('status' => 'failed', 'validation' => include('status' => 'failed'))
+    expect(fixture.output / 'changes.patch').to be_file
+  end
+
+  it 'rejects malformed public descriptions' do
+    [{}, { 'title' => 'Title', 'description' => 'Body', 'testing' => '' },
+     { 'title' => "line\nbreak", 'description' => 'Body', 'testing' => 'Tests' }].each do |metadata|
+      expect do
+        described_class.validate_agent_result('status' => 'completed', 'summary' => 'Done', 'questions' => [],
+                                              'validation' => { 'status' => 'not_run', 'summary' => 'Not run' }, 'pull_request' => metadata)
+      end.to raise_error(AgentWorker::TaskError)
+    end
+  end
+
   it 'returns questions without verification and preserves a partial patch' do
     (fixture.adapter / 'verify.sh').write("exit 9\n")
     fixture.commit
@@ -160,7 +180,7 @@ RSpec.describe AgentWorker do
 
   it 'rejects arbitrary repositories, branches, commands and malformed fields' do
     { 'repository' => 'other/repo', 'commit' => 'trunk', 'command' => 'touch surprise', 'task_id' => '../escape',
-      'mode' => 'change', 'version' => true, 'timeout_seconds' => true, 'prompt' => '', 'context' => 'x' * 16_001 }.each do |field, value|
+      'mode' => 'unknown', 'version' => true, 'timeout_seconds' => true, 'prompt' => '', 'context' => 'x' * 16_001 }.each do |field, value|
       expect { described_class.validate_task(fixture.task.merge(field => value), repository: Fixtures::REPOSITORY) }.to raise_error(AgentWorker::TaskError)
     end
   end

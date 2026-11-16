@@ -8,7 +8,7 @@ require 'optparse'
 require 'tempfile'
 require 'time'
 
-# Runs one bounded investigation inside a disposable, unprivileged worker VM.
+# Runs one bounded task inside a disposable, unprivileged worker VM.
 module AgentWorker
   REPOSITORY_NAME = %r{\A[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9][A-Za-z0-9_.-]*\z}
   MAX_TASK_BYTES = 40_000
@@ -17,6 +17,7 @@ module AgentWorker
   MAX_PATCH_BYTES = 16 * 1024 * 1024
   MAX_DIAGNOSTIC_BYTES = 16 * 1024
   SAFE_PATH = '/opt/homebrew/opt/ruby@3.4/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin'
+  PR_FIELDS = { 'title' => 120, 'description' => 2000, 'testing' => 2000 }.freeze
   AGENT_SCHEMA = {
     type: 'object', properties: {
       status: { type: 'string', enum: %w[completed failed needs_input] },
@@ -27,8 +28,12 @@ module AgentWorker
           status: { type: 'string', enum: %w[passed failed not_run] },
           summary: { type: 'string', minLength: 1, maxLength: 4000 }
         }, required: %w[status summary], additionalProperties: false
+      },
+      pull_request: {
+        type: %w[object null], properties: PR_FIELDS.transform_values { |limit| { type: 'string', minLength: 1, maxLength: limit } },
+        required: PR_FIELDS.keys, additionalProperties: false
       }
-    }, required: %w[status summary questions validation], additionalProperties: false
+    }, required: %w[status summary questions validation pull_request], additionalProperties: false
   }.freeze
 
   class TaskError < StandardError; end
@@ -56,7 +61,7 @@ module AgentWorker
     raise TaskError, 'Task must contain exactly the version 1 fields.' unless exact_fields?(task, fields)
     raise TaskError, 'Unsupported task version.' unless task['version'].is_a?(Integer) && task['version'] == 1
 
-    raise TaskError, 'Only investigation tasks are supported.' unless task['mode'] == 'investigate'
+    raise TaskError, 'Unknown task mode.' unless %w[investigate change].include?(task['mode'])
 
     id = task['task_id']
     raise TaskError, 'Invalid task ID.' unless valid_text?(id, 64) && /\A(?:[0-9]+|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})\z/.match?(id)
@@ -87,7 +92,7 @@ module AgentWorker
   end
 
   def validate_agent_result(result)
-    raise TaskError, 'Agent did not return the required result fields.' unless exact_fields?(result, %w[status summary questions validation])
+    raise TaskError, 'Agent did not return the required result fields.' unless exact_fields?(result, %w[status summary questions validation], ['pull_request'])
     raise TaskError, 'Agent returned an invalid status.' unless %w[completed failed needs_input].include?(result['status'])
     raise TaskError, 'Agent returned an invalid summary.' unless valid_text?(result['summary'], 8000)
 
@@ -95,6 +100,7 @@ module AgentWorker
     raise TaskError, 'Agent returned invalid questions.' unless questions.is_a?(Array) && questions.length <= 10 && questions.all? { |question| valid_text?(question, 2000) }
     raise TaskError, 'Only a needs_input result may contain questions, and must contain at least one.' if (result['status'] == 'needs_input') == questions.empty?
 
+    result = result.merge('pull_request' => validate_pr_text(result['pull_request'])) unless result['pull_request'].nil?
     checks = result['validation']
     raise TaskError, 'Agent returned invalid check results.' unless exact_fields?(checks, %w[status summary]) && %w[passed failed not_run].include?(checks['status']) && valid_text?(checks['summary'], 4000)
 
@@ -103,6 +109,15 @@ module AgentWorker
 
   def strip_text(value)
     value.gsub(/\A[[:space:]\u001c-\u001f]+|[[:space:]\u001c-\u001f]+\z/, '')
+  end
+
+  def validate_pr_text(value)
+    unless exact_fields?(value, PR_FIELDS.keys) && PR_FIELDS.all? { |name, limit| valid_text?(value[name], limit) } &&
+           value['title'].codepoints.none? { |character| character < 32 }
+      raise TaskError, 'Invalid public pull request description.'
+    end
+
+    value.transform_values { |text| strip_text(text) }
   end
 
   def encode_result(result)
@@ -238,7 +253,8 @@ module AgentWorker
         raise TaskError, 'Could not check out the requested public repository commit.' unless command(cmd, 'checkout').zero?
       end
       @has_checkout = true
-      %w[prepare.sh].each do |script|
+      scripts = task['mode'] == 'change' ? %w[prepare.sh verify.sh] : %w[prepare.sh]
+      scripts.each do |script|
         path = File.join(@checkout, '.buildkite', 'agent', script)
         raise TaskError, 'This commit does not have the required app adapter.' unless File.file?(path) && !File.symlink?(path)
       end
@@ -247,13 +263,15 @@ module AgentWorker
     end
 
     def agent_prompt
+      return change_prompt if task['mode'] == 'change'
+
       remaining = [0, (@runner.deadline - AgentWorker.monotonic).to_i].max
       deadline = (Time.now + remaining).utc.iso8601
       'You are investigating one issue in a disposable VM. ' \
         "About #{remaining} seconds remain until #{deadline}; leave time to write your report. " \
         'Read AGENTS.md, CLAUDE.md if present, and .buildkite/agent/README.md before working. ' \
         'You may edit this disposable checkout to add a failing test or isolate the cause. ' \
-        'Do not push, create PRs, change external services, or use production accounts. ' \
+        'Do not push, create PRs, change external services, or use production accounts. Return null for pull_request. ' \
         'Run the checks that help answer the question; a full build is not always necessary. ' \
         'A reproduced failure can be a completed investigation. Report whether you reproduced the issue, ' \
         'what you tried, the evidence, and what remains uncertain. ' \
@@ -264,6 +282,31 @@ module AgentWorker
         'A follow-up starts a new task; do not wait for an interactive answer. ' \
         'Do not change task/result files or verification scripts to make checks pass. ' \
         "Return a concise structured result.\n\n" \
+        "Task:\n#{task['prompt']}\n\nProvided context:\n#{task['context']}"
+    end
+
+    def change_prompt
+      remaining = [0, (@runner.deadline - AgentWorker.monotonic).to_i].max
+      deadline = (Time.now + remaining).utc.iso8601
+      'You are completing one bounded coding task in a disposable VM. ' \
+        "About #{remaining} seconds remain until #{deadline} for your work and final app verification. " \
+        'Leave time for the worker to run that verification after you return; check elapsed time as you work. ' \
+        'Read AGENTS.md, CLAUDE.md if present, and .buildkite/agent/README.md before working. ' \
+        'Make changes in this checkout. Do not push commits, publish PRs, or use production accounts. ' \
+        'A separate trusted publisher may turn your patch into a public draft PR after this VM stops. ' \
+        'Keep the changes suitable for a public repository; never copy private context or credentials into files. ' \
+        'For completed changes, return pull_request with a short title, a description of what changed and why, ' \
+        'and testing instructions naming the checks you actually ran and any limitations. ' \
+        'These fields will be public: describe only the code and app behavior, without internal links, ' \
+        'task IDs, private discussions, logs or credentials. Keep the ordinary summary private. ' \
+        'Use null for pull_request when there is no completed change. Report the checks you ran in validation. ' \
+        "Run relevant tests and the app's .buildkite/agent/verify.sh before reporting completion. " \
+        'Save useful evidence under AGENT_OUTPUT_DIR/evidence. ' \
+        'Identify missing context before editing. If context, credentials or a decision are required, ' \
+        'stop with needs_input and specific questions. A follow-up starts a new task, not this session. ' \
+        'Do not guess private context or wait for an interactive answer. ' \
+        'Do not change the task/result files or verification scripts to make checks pass. ' \
+        "Return a concise structured result that distinguishes work done from limitations.\n\n" \
         "Task:\n#{task['prompt']}\n\nProvided context:\n#{task['context']}"
     end
 
@@ -339,6 +382,7 @@ module AgentWorker
         raise TaskError, 'App preparation failed; see evidence/prepare.log.' unless command(['/bin/bash', File.join(@adapter, 'prepare.sh')], 'prepare').zero?
 
         result.merge!(run_agent)
+        verify if task['mode'] == 'change' && result['status'] == 'completed'
       rescue TaskError, SystemCallError => e
         fail_result(e)
       ensure
@@ -354,6 +398,17 @@ module AgentWorker
         AgentWorker.open_output(File.join(output, 'result.json')) { |stream| stream.write(AgentWorker.encode_result(result)) }
       end
       result['status'] == 'failed' ? 1 : 0
+    end
+
+    def verify
+      result['validation'] = { 'status' => 'failed', 'summary' => 'App verification did not finish.' }
+      code = command(['/bin/bash', File.join(@adapter, 'verify.sh')], 'verify')
+      status = code.zero? ? 'passed' : 'failed'
+      result['validation'] = { 'status' => status, 'summary' => "App verification #{status}; see evidence/verify.log for the checks that ran." }
+      return if code.zero?
+
+      result['status'] = 'failed'
+      result['summary'] = "App verification failed. #{result['summary'][0, 7975]}"
     end
 
     def fail_result(error)

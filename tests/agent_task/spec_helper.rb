@@ -28,10 +28,11 @@ module Fixtures
   # An app adapter and model executable with controllable outcomes.
   class Worker
     attr_reader :root, :repo, :adapter, :agent, :output, :sha
-    attr_accessor :repository
+    attr_accessor :repository, :mode
 
     def initialize
       @repository = REPOSITORY
+      @mode = 'investigate'
       @root = Pathname(Dir.mktmpdir)
       @repo = root / 'source'
       repo.mkdir
@@ -64,7 +65,7 @@ module Fixtures
     end
 
     def task
-      { 'version' => 1, 'task_id' => '123', 'mode' => 'investigate', 'repository' => repository, 'commit' => sha,
+      { 'version' => 1, 'task_id' => '123', 'mode' => mode, 'repository' => repository, 'commit' => sha,
         'prompt' => 'Investigate a bug', 'context' => 'Useful context', 'timeout_seconds' => 60 }
     end
 
@@ -75,6 +76,10 @@ module Fixtures
                  'validation' => { 'status' => failing_check ? 'failed' : 'not_run',
                                    'summary' => failing_check ? 'ruby reproduce.rb failed as expected; see evidence/reproduce.log.' : 'No checks needed.' } }
 
+      result['pull_request'] = if mode == 'change' && status == 'completed'
+                                 { 'title' => 'Fix the editor', 'description' => 'The editor now keeps the button visible.',
+                                   'testing' => 'Checked the editor in the simulator.' }
+                               end
       response = malformed_json || JSON.generate('structured_output' => result, 'is_error' => false)
       agent.write(<<~SCRIPT)
         #!#{RbConfig.ruby} --disable-gems

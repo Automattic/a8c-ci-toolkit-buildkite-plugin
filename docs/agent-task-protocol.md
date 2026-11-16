@@ -22,12 +22,12 @@ to 40,000 bytes. Include useful context for the model, without credentials.
 | --- | --- |
 | `version` | Integer `1` |
 | `task_id` | Decimal string or lowercase UUID, up to 64 characters |
-| `mode` | `investigate` |
+| `mode` | `investigate` or `change` |
 | `repository` | GitHub `owner/name`, matching the host's `--repository` argument |
 | `commit` | Full lowercase 40-character SHA |
 | `prompt` | Nonblank text, up to 16,000 characters |
 | `context` | Text up to 16,000 characters; may be empty |
-| `timeout_seconds` | Integer from 60 to 3,600, covering checkout, preparation and investigation |
+| `timeout_seconds` | Integer from 60 to 3,600, covering checkout, preparation, agent work and any final verification |
 
 Text must be valid UTF-8 without NULs. The runner uses GitHub's public HTTPS
 clone URL for the approved repository and does not accept task-supplied model
@@ -66,3 +66,11 @@ to 16 KiB, with the model key redacted. The raw model response stays in the VM.
 Patch capture has up to 15 seconds after the task deadline; the host must allow
 time to collect results and clean up. Apply a patch with `git apply` at the
 requested commit. Ordinary failures and questions also preserve partial edits.
+
+For a change request, `completed` also requires the adapter’s final `verify.sh`
+to pass. The agent may include a `pull_request` object with `title` (up to 120
+characters), `description` (2,000) and `testing` (2,000). All three must be
+nonblank UTF-8 text. These fields are intended for public review, so they must
+not contain private context, links or credentials. The host decides whether
+publication is allowed and applies its own checks; the runner has no GitHub
+write access. Use `null` for investigations and unfinished changes.
