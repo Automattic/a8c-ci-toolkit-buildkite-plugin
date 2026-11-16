@@ -132,8 +132,10 @@ module AgentWorker
 
   def clean_environment(home, state, output)
     # No inherited Buildkite, GitHub, AWS, SSH agent or user model configuration.
+    # Repository commands use the task user's Rubies; the launcher uses its fixed interpreter.
+    rbenv_root = File.join(home, '.rbenv')
     {
-      'HOME' => home.to_s, 'PATH' => SAFE_PATH, 'LANG' => 'en_US.UTF-8',
+      'HOME' => home.to_s, 'PATH' => "#{rbenv_root}/shims:#{SAFE_PATH}", 'RBENV_ROOT' => rbenv_root, 'LANG' => 'en_US.UTF-8',
       'TMPDIR' => File.join(state, 'tmp'), 'CI' => '1', 'GIT_TERMINAL_PROMPT' => '0',
       'GIT_CONFIG_NOSYSTEM' => '1', 'GIT_CONFIG_GLOBAL' => File::NULL,
       'AGENT_OUTPUT_DIR' => output.to_s, 'AGENT_STATE_DIR' => state.to_s,

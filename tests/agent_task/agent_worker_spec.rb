@@ -135,6 +135,29 @@ RSpec.describe AgentWorker do
     end
   end
 
+  it 'uses the task user’s Ruby shims for noninteractive repository commands' do
+    home = fixture.root / 'home'
+    shims = home / '.rbenv/shims'
+    shims.mkpath
+    (fixture.repo / '.ruby-version').write("3.4.9\n")
+    %w[ruby bundle].each do |name|
+      shim = shims / name
+      shim.write(<<~SH)
+        #!/bin/bash
+        set -eu
+        test "$RBENV_ROOT" = "$HOME/.rbenv"
+        printf '%s %s %s\\n' '#{name}' "$(cat .ruby-version)" "$*"
+      SH
+      shim.chmod(0o700)
+    end
+    log = fixture.root / 'ruby.log'
+    environment = described_class.clean_environment(home, fixture.root, fixture.output)
+    runner = AgentWorker::Runner.new(AgentWorker.monotonic + 5)
+    status = runner.run(['/bin/bash', '-c', 'ruby --version && bundle exec fastlane --version'], fixture.repo, environment, log)
+    expect(status).to eq(0)
+    expect(log.read.lines(chomp: true)).to eq(['ruby 3.4.9 --version', 'bundle 3.4.9 exec fastlane --version'])
+  end
+
   it 'rejects arbitrary repositories, branches, commands and malformed fields' do
     { 'repository' => 'other/repo', 'commit' => 'trunk', 'command' => 'touch surprise', 'task_id' => '../escape',
       'mode' => 'change', 'version' => true, 'timeout_seconds' => true, 'prompt' => '', 'context' => 'x' * 16_001 }.each do |field, value|

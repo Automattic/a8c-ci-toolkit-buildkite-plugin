@@ -14,6 +14,10 @@ The VM needs Git, Homebrew `ruby@3.4`, a reviewed Claude Code binary at
 `/usr/local/bin/claude`, and the tools required by the app. Install a pinned
 copy of this command and its library, owned by the VM administrator.
 
+The command itself uses Homebrew Ruby. App commands use the task user's rbenv
+shims when installed, so `.ruby-version` works without loading shell startup
+files. Provision the required app Rubies under that user's `~/.rbenv`.
+
 ```sh
 run_agent_task --repository example/mobile-app \
   --task task.json --output results --api-key-file model-key
