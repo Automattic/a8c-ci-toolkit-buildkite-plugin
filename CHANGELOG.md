@@ -18,7 +18,7 @@ _None._
 
 ### New Features
 
-- `upload_artifact` and `download_artifact` use the S3 server on the Synology NAS first when `BUILDKITE_NAS_ARTIFACTS_S3_ENDPOINT`, `BUILDKITE_NAS_ARTIFACTS_S3_BUCKET`, `BUILDKITE_NAS_ARTIFACTS_S3_ACCESS_KEY_ID` and `BUILDKITE_NAS_ARTIFACTS_S3_SECRET_ACCESS_KEY` are set, as on our macOS agents in MacMiniVault, and AWS S3 only if that fails. This avoids billed S3 egress for large artifacts passed between jobs on the same LAN.
+- `upload_artifact` and `download_artifact` use the S3 server on the Synology NAS first when `BUILDKITE_NAS_ARTIFACTS_S3_ENDPOINT`, `BUILDKITE_NAS_ARTIFACTS_S3_ACCESS_KEY_ID` and `BUILDKITE_NAS_ARTIFACTS_S3_SECRET_ACCESS_KEY` are set, as on our macOS agents in MacMiniVault, and AWS S3 only if that fails. This avoids billed S3 egress for large artifacts passed between jobs on the same LAN.
 
 ### Bug Fixes
 
