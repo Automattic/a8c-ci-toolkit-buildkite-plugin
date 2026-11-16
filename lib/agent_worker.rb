@@ -391,7 +391,12 @@ module AgentWorker
           begin
             save_patch
           rescue TaskError, SystemCallError => e
-            fail_result(e)
+            if task['mode'] == 'change'
+              fail_result(e)
+            else
+              note = "\n\nThe temporary patch could not be saved."
+              result['summary'] = "#{result['summary'][0, 8000 - note.length]}#{note}"
+            end
             FileUtils.rm_f(File.join(output, 'changes.patch'))
           end
         end

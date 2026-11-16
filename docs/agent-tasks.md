@@ -40,6 +40,9 @@ When it finishes, look in `results/`:
 - `evidence/` contains useful logs and screenshots, when applicable.
 - `changes.patch` preserves temporary edits, including new files and local commits.
 
+If an investigation's temporary patch cannot be saved, the report keeps the
+findings and says that the patch is missing. Change requests fail instead.
+
 Questions end the task. Supply the missing context in a new request. The host
 collects these files before destroying the VM and checks the job status too:
 cancellation or a hard failure may leave no report.
@@ -62,6 +65,9 @@ Use `mode: "change"` when the request is to prepare a fix. The adapter also need
 `verify.sh`, which runs after the agent finishes. A change is complete only if
 that check passes. The report can include a public title, description and testing
 summary for a separate publisher; keep conversation details out of those fields.
+
+Verification runs in the same environment as the agent. It helps catch mistakes,
+but its result still needs human review before giving the change normal CI access.
 
 Publishing remains the host’s responsibility. It must validate the patch and
 report before using any write credentials. This command only prepares the files.
