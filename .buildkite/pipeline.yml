@@ -1,40 +1,24 @@
-# Throwaway experiment: which command forms run tests/validate_get_libc_version_format on the windows queue?
+# Throwaway experiment: which bash.exe does `bash` resolve to on the windows queue, vs. Git's?
 steps:
-  - label: "control: existing backslash form"
+  - label: "DIAG: which bash"
     command: |
-      & "C:\Program Files\Git\bin\bash.exe" .\tests\validate_get_libc_version_format
+      Write-Output "DIAG where.exe bash:"
+      where.exe bash
+      Write-Output "DIAG Get-Command bash -All:"
+      Get-Command bash -All | ForEach-Object { $$_.Source }
+      Write-Output "DIAG PATH entries:"
+      $$env:PATH -split ';'
+      Write-Output "DIAG git --version:"
+      git --version
+      Write-Output "DIAG PATH bash --version:"
+      bash --version | Select-Object -First 1
+      Write-Output "DIAG Git bash --version:"
+      & "C:\Program Files\Git\bin\bash.exe" --version | Select-Object -First 1
+      Write-Output "DIAG PATH bash self-report:"
+      bash -c 'echo BASH=$$BASH; echo BASH_VERSION=$$BASH_VERSION; echo OSTYPE=$$OSTYPE; echo MSYSTEM=$$MSYSTEM; uname -a; command -v powershell; command -v bash'
+      Write-Output "DIAG Git bash self-report:"
+      & "C:\Program Files\Git\bin\bash.exe" -c 'echo BASH=$$BASH; echo BASH_VERSION=$$BASH_VERSION; echo OSTYPE=$$OSTYPE; echo MSYSTEM=$$MSYSTEM; uname -a; command -v powershell; command -v bash'
+      Write-Output "DIAG get_libc_version via each bash:"
+      bash bin/get_libc_version
+      & "C:\Program Files\Git\bin\bash.exe" bin/get_libc_version
     agents: { queue: windows }
-    notify: [{ github_commit_status: { context: "exp control backslash" } }]
-
-  - label: "A: direct ./tests/..."
-    command: ./tests/validate_get_libc_version_format
-    agents: { queue: windows }
-    notify: [{ github_commit_status: { context: "exp A direct" } }]
-
-  - label: "B: bash on PATH"
-    command: bash -eu ./tests/validate_get_libc_version_format
-    agents: { queue: windows }
-    notify: [{ github_commit_status: { context: "exp B bash-on-PATH" } }]
-
-  - label: "C: full bash.exe path, forward slashes"
-    command: |
-      & "C:\Program Files\Git\bin\bash.exe" -eu ./tests/validate_get_libc_version_format
-    agents: { queue: windows }
-    notify: [{ github_commit_status: { context: "exp C forward-slashes" } }]
-
-  - label: "D: step env PATH with Git bin first"
-    command: bash -eu ./tests/validate_get_libc_version_format
-    env:
-      PATH: 'C:\Program Files\Git\bin;C:\Windows\System32;C:\Windows;C:\Windows\System32\WindowsPowerShell\v1.0'
-    agents: { queue: windows }
-    notify: [{ github_commit_status: { context: "exp D env-PATH" } }]
-
-  - label: "NEG: bash exits 3 (must FAIL)"
-    command: bash -eu -c "exit 3"
-    agents: { queue: windows }
-    notify: [{ github_commit_status: { context: "exp NEG exit-3" } }]
-
-  - label: "NEG2: test script fails midway (must FAIL)"
-    command: bash -eu -c "./tests/validate_get_libc_version_format >/dev/null; false"
-    agents: { queue: windows }
-    notify: [{ github_commit_status: { context: "exp NEG2 false" } }]
