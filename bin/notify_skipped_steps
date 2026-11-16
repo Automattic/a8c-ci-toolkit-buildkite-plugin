@@ -19,7 +19,7 @@
 #
 # For skip logic `if_changed` can't express easily, compute it in `shared-pipeline-vars`, e.g.
 #   export SKIP_UI_TESTS=$(.buildkite/commands/should-skip-job.sh ui-tests)
-# and use `skip: $SKIP_UI_TESTS`. The script prints the reason to skip, or `false` (or nothing) to run the step: if it fails or is unsure, it must not skip.
+# and use `skip: $SKIP_UI_TESTS`. Such a script should print the reason to skip, or `false` (or nothing) to run the step.
 #
 # How it works: it dry-runs the upload (`buildkite-agent pipeline upload --dry-run`), so interpolation and `if_changed` are already applied, to determine which steps would be skipped. Then, for each such skipped step that has a `notify` entry with `even-if-skipped: true` set, it attaches a `github_commit_status` with the same context to the running step via `buildkite-agent step update`; the statuses are sent when the job for the real pipeline upload step finishes.
 # Exits 0 without doing anything if no step uses `even-if-skipped`; exits 1 on a missing file, a failed dry run or a marked step without a `context`.
