@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- `install_gems` fails early and lists the Ruby versions installed on the agent when `rbenv` doesn't have the one `.ruby-version` asks for. [#245]
 
 ### Bug Fixes
 
