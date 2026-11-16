@@ -11,3 +11,24 @@ Metrics/AbcSize:
 
 Metrics/MethodLength:
   Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - tests/agent_task/**/*
+
+# Keep the bounded process runner and task lifecycle together.
+Metrics/ClassLength:
+  Exclude:
+    - lib/agent_worker.rb
+Metrics/ModuleLength:
+  Exclude:
+    - lib/agent_worker.rb
+    - tests/agent_task/spec_helper.rb
+Metrics/CyclomaticComplexity:
+  Exclude:
+    - lib/agent_worker.rb
+Metrics/PerceivedComplexity:
+  Exclude:
+    - lib/agent_worker.rb
+Metrics/ParameterLists:
+  CountKeywordArgs: false

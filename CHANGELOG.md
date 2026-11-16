@@ -39,6 +39,7 @@ _None._
 ### New Features
 
 - `install_gems` fails early and lists the Ruby versions installed on the agent when `rbenv` doesn't have the one `.ruby-version` asks for. [#245]
+- Add `run_agent_task` for bounded investigations in disposable Mac VMs, with a report, evidence and a patch for review.
 
 ### Bug Fixes
 

@@ -19,7 +19,7 @@ shellcheck:
 rubocop:
 	@echo ~~~ 🕵️ Rubocop
 	$(docker_run) ruby:$(RUBY_VERSION) /bin/bash -c \
-	  "bundle install && bundle exec rubocop -A tests/test_that_all_files_are_executable.rb"
+	  "bundle install && bundle exec rubocop tests/test_that_all_files_are_executable.rb tests/agent_task lib/agent_worker.rb"
 
 buildkite-plugin-test:
 	@echo ~~~ 🔬 Plugin Tester
@@ -28,4 +28,4 @@ buildkite-plugin-test:
 rspec:
 	@echo ~~~ 🔬 Rspec
 	$(docker_run) ruby:$(RUBY_VERSION) /bin/bash -c \
-	  "gem install --silent rspec -v 3.13.0 && rspec tests/test_that_all_files_are_executable.rb"
+	  "gem install --silent rspec -v 3.13.0 && rspec tests/test_that_all_files_are_executable.rb tests/agent_task"

@@ -1,0 +1,15 @@
+#!/bin/bash -p
+set -euo pipefail
+
+# Run one agent task in a disposable Mac VM with Homebrew ruby@3.4 and Claude Code.
+# The trusted host selects --repository; task JSON cannot choose a clone URL.
+# Usage: run_agent_task --repository OWNER/REPO --task task.json --output results --api-key-file model-key
+# See docs/agent-tasks.md for the task format, result files and isolation requirements.
+# Exits 0 for completed work or questions, 1 for failure; --help prints the options.
+# Privileged Bash mode blocks BASH_ENV before Ruby startup settings can be cleared.
+
+# Neutralize interpreter startup configuration before Ruby reads the environment.
+unset RUBYOPT RUBYLIB RUBYPATH RUBYSHELL GEM_HOME GEM_PATH GEMRC RUBYGEMS_GEMDEPS
+unset BUNDLE_GEMFILE BUNDLE_PATH BUNDLE_BIN BUNDLE_BIN_PATH BUNDLE_APP_CONFIG
+unset BUNDLE_USER_HOME BUNDLE_USER_CONFIG BUNDLE_USER_CACHE BUNDLE_USER_PLUGIN
+exec /opt/homebrew/opt/ruby@3.4/bin/ruby --disable-gems "$(cd -- "${BASH_SOURCE[0]%/*}/.." && pwd -P)/lib/agent_worker.rb" "$@"
