@@ -87,6 +87,12 @@ assert_update_equals '[{"github_commit_status": {"context": "A"}}, {"github_comm
 run_case "A pipe in a reason doesn't break the annotation table" '{"steps": [{"label": "Build", "skip": "a|b", "notify": [{"github_commit_status": {"context": "Build"}, "even-if-skipped": true}]}]}'
 assert_annotation_has '| Build | a\|b |' "pipe is escaped"
 
+run_case "A step named only by an array command or a number doesn't break the annotation" '{"steps": [{"command": ["echo a", "echo b"], "skip": "r", "notify": [{"github_commit_status": {"context": "Cmd"}, "even-if-skipped": true}]}, {"key": 7, "skip": "r", "notify": [{"github_commit_status": {"context": "Key"}, "even-if-skipped": true}]}]}'
+assert_status 0 "exits 0"
+assert_update_equals '[{"github_commit_status": {"context": "Cmd"}}, {"github_commit_status": {"context": "Key"}}]' "both contexts attached"
+# shellcheck disable=SC2016 # The backticks are literal Markdown
+assert_annotation_has '| 7 | r | `Key` |' "annotation lists the numeric key"
+
 run_case "A marker without a context is an error" '{"steps": [{"label": "Build", "skip": "r", "notify": [{"github_commit_status": {}, "even-if-skipped": true}]}]}'
 assert_status 1 "exits 1"
 assert_no_update "no step update"
