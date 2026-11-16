@@ -163,6 +163,20 @@ steps:
           - github_commit_status:
               context: "pr_changed_files Tests: Edge Cases"
 
+  - group: ":speech_balloon: notify_skipped_steps Tests"
+    if_changed:
+      - bin/notify_skipped_steps
+      - tests/notify_skipped_steps/**
+      - .buildkite/pipeline-tests.yml
+    steps:
+      - label: ":speech_balloon: notify_skipped_steps Tests"
+        command: tests/notify_skipped_steps/test_notify_skipped_steps.sh
+        agents:
+          queue: upload
+        notify:
+          - github_commit_status:
+              context: "notify_skipped_steps Tests"
+
   - group: ":closed_lock_with_key: install_a8c-secrets_binary Integration Tests"
     if_changed:
       - bin/{install_a8c-secrets_binary,hash_file}
