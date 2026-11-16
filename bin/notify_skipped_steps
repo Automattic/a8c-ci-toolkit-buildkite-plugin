@@ -19,7 +19,7 @@
 #
 # For skip logic `if_changed` can't express easily, compute it in `shared-pipeline-vars`, e.g.
 #   export SKIP_UI_TESTS=$(.buildkite/commands/should-skip-job.sh ui-tests)
-# and use `skip: $SKIP_UI_TESTS` (`false` or empty means the step runs).
+# and use `skip: $SKIP_UI_TESTS`. The script prints the reason to skip, or `false` (or nothing) to run the step: if it fails or is unsure, it must not skip.
 #
 # How it works: it dry-runs the upload (`buildkite-agent pipeline upload --dry-run`), so interpolation and `if_changed` are already applied, to determine which steps would be skipped. Then, for each such skipped step that has a `notify` entry with `even-if-skipped: true` set, it attaches a `github_commit_status` with the same context to the running step via `buildkite-agent step update`; the statuses are sent when the job for the real pipeline upload step finishes.
 # Exits 0 without doing anything if no step uses `even-if-skipped`; exits 1 on a missing file, a failed dry run or a marked step without a `context`.
@@ -45,18 +45,15 @@ sys.stderr.write(dry_run.stderr)
 if dry_run.returncode != 0:
     sys.exit("buildkite-agent pipeline upload --dry-run failed")
 
-notify = []
-skipped = []  # (label, reason, contexts)
-
-
 def is_skipped(step):
     skip = step.get('skip')
     return skip not in (None, False, '') and str(skip).lower() != 'false'
 
 
-def walk(steps):
+def skipped_steps(steps):
+    """Yields (label, reason, contexts) for each skipped step that opted in with `even-if-skipped`, group members before their group."""
     for step in steps or []:
-        walk(step.get('steps'))
+        yield from skipped_steps(step.get('steps'))
         if not is_skipped(step):
             continue
         contexts = []
@@ -66,17 +63,18 @@ def walk(steps):
                 if not context:
                     sys.exit("even-if-skipped needs a github_commit_status `context`")
                 contexts.append(context)
-                notify.append({'github_commit_status': {'context': context}})
         if contexts:
             reason = 'no reason given' if step['skip'] is True or step['skip'] == 'true' else str(step['skip'])
-            skipped.append((step.get('label') or step.get('key') or step.get('command') or '(unnamed step)', reason, contexts))
+            yield (step.get('label') or step.get('key') or step.get('command') or '(unnamed step)', reason, contexts)
 
 
-walk(json.loads(dry_run.stdout).get('steps'))
-print("notify_skipped_steps: statuses for skipped steps: %s" % ([c for _, _, contexts in skipped for c in contexts] or "none"), flush=True)
+skipped = list(skipped_steps(json.loads(dry_run.stdout).get('steps')))
+contexts = [c for _, _, cs in skipped for c in cs]
+print("notify_skipped_steps: statuses for skipped steps: %s" % (contexts or "none"), flush=True)
 
-if not notify:
+if not contexts:
     sys.exit(0)
+notify = [{'github_commit_status': {'context': c}} for c in contexts]
 
 # Without `--step`, this updates the running step: its entries fire when it finishes, whatever happens to the rest of the build
 subprocess.run(['buildkite-agent', 'step', 'update', 'notify', json.dumps(notify), '--append'], check=True)
