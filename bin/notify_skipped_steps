@@ -65,7 +65,7 @@ def skipped_steps(steps):
                 contexts.append(context)
         if contexts:
             reason = 'no reason given' if step['skip'] is True or step['skip'] == 'true' else str(step['skip'])
-            yield (step.get('label') or step.get('key') or step.get('command') or '(unnamed step)', reason, contexts)
+            yield (str(step.get('label') or step.get('key') or step.get('command') or '(unnamed step)'), reason, contexts)
 
 
 skipped = list(skipped_steps(json.loads(dry_run.stdout).get('steps')))
