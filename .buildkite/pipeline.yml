@@ -1,49 +1,30 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/buildkite/pipeline-schema/main/schema.json
----
-
-# For convenience with the many install_swiftpm_dependencies steps, we declare agents and env for macOS in the root, then specialize the fewer remaining steps
-agents:
-  queue: mac
-env:
-  IMAGE_ID: $IMAGE_ID
-
+# Throwaway experiment: which command forms run tests/validate_get_libc_version_format on the windows queue?
 steps:
-  - label: ":sleuth_or_spy: Lint"
-    command: make lint
-    notify:
-      - github_commit_status:
-          context: Lint
-    agents:
-      queue: default
+  - label: "control: existing backslash form"
+    command: |
+      & "C:\Program Files\Git\bin\bash.exe" .\tests\validate_get_libc_version_format
+    agents: { queue: windows }
+    notify: [{ github_commit_status: { context: "exp control backslash" } }]
 
-  - label: ":microscope: Test"
-    command: make test
-    notify:
-      - github_commit_status:
-          context: Test
-    agents:
-      queue: default
+  - label: "A: direct ./tests/..."
+    command: ./tests/validate_get_libc_version_format
+    agents: { queue: windows }
+    notify: [{ github_commit_status: { context: "exp A direct" } }]
 
-  - label: ":danger: Danger - PR Check"
-    command: danger
-    key: danger
-    if: build.pull_request.id != null
-    retry:
-      manual:
-        permit_on_passed: true
-    notify:
-      - github_commit_status:
-          context: Danger - PR Check
-    agents:
-      queue: linter
+  - label: "B: bash on PATH"
+    command: bash -eu ./tests/validate_get_libc_version_format
+    agents: { queue: windows }
+    notify: [{ github_commit_status: { context: "exp B bash-on-PATH" } }]
 
+  - label: "C: full bash.exe path, forward slashes"
+    command: |
+      & "C:\Program Files\Git\bin\bash.exe" -eu ./tests/validate_get_libc_version_format
+    agents: { queue: windows }
+    notify: [{ github_commit_status: { context: "exp C forward-slashes" } }]
 
-  - label: ":windows: :test_tube: Run Windows Tests"
-    command: buildkite-agent pipeline upload .buildkite/pipeline-windows-tests.yml
-    agents:
-      queue: upload
-
-  - label: ":bash: :test_tube: Run Bash Commands Tests"
-    command: buildkite-agent pipeline upload .buildkite/pipeline-bash-tests.yml
-    agents:
-      queue: upload
+  - label: "D: step env PATH with Git bin first"
+    command: bash -eu ./tests/validate_get_libc_version_format
+    env:
+      PATH: 'C:\Program Files\Git\bin;C:\Windows\System32;C:\Windows;C:\Windows\System32\WindowsPowerShell\v1.0'
+    agents: { queue: windows }
+    notify: [{ github_commit_status: { context: "exp D env-PATH" } }]
