@@ -17,8 +17,8 @@
 #       - github_commit_status: { context: "SwiftLint" }
 #         even-if-skipped: true
 #
-# For skip logic `if_changed` can't express, compute it in `shared-pipeline-vars`, e.g.
-#   export SKIP_UI_TESTS=$(pr_changed_files --stdout --all-match 'docs/*' '*.md')
+# For skip logic `if_changed` can't express easily, compute it in `shared-pipeline-vars`, e.g.
+#   export SKIP_UI_TESTS=$(.buildkite/commands/should-skip-job ui-tests)
 # and use `skip: $SKIP_UI_TESTS` (`false` or empty means the step runs).
 #
 # How it works: it dry-runs the upload (`buildkite-agent pipeline upload --dry-run`), so interpolation and `if_changed` are already applied.
