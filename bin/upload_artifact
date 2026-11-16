@@ -8,9 +8,9 @@ set -eu
 # $file_path is the path to a file on disk. It'll automatically be combined with the current build ID to differentiate between
 # the same file in different jobs so that it can be correctly re-downloaded within the same job.
 #
-# On CI agents that set `BUILDKITE_NAS_ARTIFACTS_URL`, `BUILDKITE_NAS_ARTIFACTS_USER` and `BUILDKITE_NAS_ARTIFACTS_PASSWORD`
-# (our macOS fleet in MacMiniVault), the file is uploaded to the Synology NAS over WebDAV, to avoid billed S3 egress when
-# `download_artifact` fetches it from the same LAN. It is uploaded to S3 only if the NAS upload fails.
+# On CI agents that set the `BUILDKITE_NAS_ARTIFACTS_S3_*` variables (our macOS fleet in MacMiniVault), the file is uploaded
+# to the S3 server on the Synology NAS, to avoid billed S3 egress when `download_artifact` fetches it from the same LAN.
+# It is uploaded to S3 only if the NAS upload fails.
 
 if [ -z "${1-}" ]; then
 	echo "You must pass the file you want to be stored"
@@ -34,17 +34,25 @@ fi
 BASENAME=$(basename "$ARTIFACT_PATH")
 KEY="$BUILDKITE_BUILD_ID/$BASENAME"
 
-NAS_URL=${BUILDKITE_NAS_ARTIFACTS_URL:-}
-NAS_USER=${BUILDKITE_NAS_ARTIFACTS_USER:-}
-NAS_PASSWORD=${BUILDKITE_NAS_ARTIFACTS_PASSWORD:-}
+NAS_ENDPOINT=${BUILDKITE_NAS_ARTIFACTS_S3_ENDPOINT:-}
+NAS_BUCKET=${BUILDKITE_NAS_ARTIFACTS_S3_BUCKET:-}
+NAS_ACCESS_KEY_ID=${BUILDKITE_NAS_ARTIFACTS_S3_ACCESS_KEY_ID:-}
+NAS_SECRET_ACCESS_KEY=${BUILDKITE_NAS_ARTIFACTS_S3_SECRET_ACCESS_KEY:-}
 
 SHOULD_TRY_NAS=false
-[[ -n "$NAS_URL" && -n "$NAS_USER" && -n "$NAS_PASSWORD" ]] && SHOULD_TRY_NAS=true
+[[ -n "$NAS_ENDPOINT" && -n "$NAS_BUCKET" && -n "$NAS_ACCESS_KEY_ID" && -n "$NAS_SECRET_ACCESS_KEY" ]] && SHOULD_TRY_NAS=true
+
+# The NAS credentials replace the agent's AWS credentials for this one call, so the AWS ones never reach the NAS.
+aws_nas() {
+	env -u AWS_PROFILE -u AWS_SESSION_TOKEN \
+		AWS_ACCESS_KEY_ID="$NAS_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$NAS_SECRET_ACCESS_KEY" AWS_MAX_ATTEMPTS=1 \
+		aws s3 "$@" --endpoint-url "$NAS_ENDPOINT" --region us-east-1 --cli-connect-timeout 5
+}
 
 upload_to_nas() {
 	[[ "$SHOULD_TRY_NAS" == true ]] || return 1
 	echo "Uploading to NAS (Synology)"
-	curl -fsS --connect-timeout 5 -u "$NAS_USER:$NAS_PASSWORD" -T "$ARTIFACT_PATH" "$NAS_URL/$BUILDKITE_BUILD_ID-$BASENAME"
+	aws_nas cp "$ARTIFACT_PATH" "s3://$NAS_BUCKET/$BUILDKITE_BUILD_ID-$BASENAME"
 }
 
 upload_to_s3() {
