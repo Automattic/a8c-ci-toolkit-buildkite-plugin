@@ -38,12 +38,7 @@ steps:
       queue: linter
 
 
-  - label: ":windows: :test_tube: Run Windows Tests"
-    command: buildkite-agent pipeline upload .buildkite/pipeline-windows-tests.yml
-    agents:
-      queue: upload
-
-  - label: ":bash: :test_tube: Run Bash Commands Tests"
-    command: buildkite-agent pipeline upload .buildkite/pipeline-bash-tests.yml
+  - label: ":test_tube: Run Helpers Tests"
+    command: buildkite-agent pipeline upload .buildkite/pipeline-tests.yml
     agents:
       queue: upload

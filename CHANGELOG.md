@@ -46,7 +46,7 @@ _None._
 
 ### Internal Changes
 
-_None._
+- Merge the Bash and Windows test pipelines into a single `.buildkite/pipeline-tests.yml`, uploaded by one step. [#253]
 
 ## 7.1.1
 
