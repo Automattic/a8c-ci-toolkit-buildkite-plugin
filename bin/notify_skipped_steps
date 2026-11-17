@@ -50,11 +50,15 @@ def is_skipped(step):
     return skip not in (None, False, '') and str(skip).lower() != 'false'
 
 
-def skipped_steps(steps):
-    """Yields (label, reason, contexts) for each skipped step that opted in with `even-if-skipped`, group members before their group."""
+def skipped_steps(steps, inherited=None):
+    """Yields (label, reason, contexts) for each skipped step that opted in with `even-if-skipped`, group members before their group.
+    The agent sets `skip` on a skipped group only, so `inherited` is the `skip` of the nearest skipped group above."""
     for step in steps or []:
-        yield from skipped_steps(step.get('steps'))
-        if not is_skipped(step):
+        if not isinstance(step, dict):  # e.g. a bare `wait`
+            continue
+        skip = step['skip'] if is_skipped(step) else inherited
+        yield from skipped_steps(step.get('steps'), skip)
+        if skip is None:
             continue
         contexts = []
         for entry in step.get('notify') or []:
@@ -64,8 +68,8 @@ def skipped_steps(steps):
                     sys.exit("even-if-skipped needs a github_commit_status `context`")
                 contexts.append(context)
         if contexts:
-            reason = 'no reason given' if step['skip'] is True or step['skip'] == 'true' else str(step['skip'])
-            yield (str(step.get('label') or step.get('key') or step.get('command') or '(unnamed step)'), reason, contexts)
+            reason = 'no reason given' if skip is True or skip == 'true' else str(skip)
+            yield (str(step.get('label') or step.get('group') or step.get('key') or step.get('command') or '(unnamed step)'), reason, contexts)
 
 
 skipped = list(skipped_steps(json.loads(dry_run.stdout).get('steps')))

@@ -93,6 +93,32 @@ assert_update_equals '[{"github_commit_status": {"context": "Cmd"}}, {"github_co
 # shellcheck disable=SC2016 # The backticks are literal Markdown
 assert_annotation_has '| 7 | r | `Key` |' "annotation lists the numeric key"
 
+# The agent puts `skip` on a skipped group only, not on the steps inside it
+CHILD_A='{"label": "child", "command": "x", "notify": [{"github_commit_status": {"context": "Child"}, "even-if-skipped": true}]}'
+CHILD_OWN='{"label": "own", "skip": "own reason", "command": "x", "notify": [{"github_commit_status": {"context": "Own"}, "even-if-skipped": true}]}'
+run_case "The steps of a skipped group are skipped too, and a step's own reason wins" "{\"steps\": [{\"group\": \"G\", \"skip\": \"group skipped\", \"steps\": [$CHILD_A, $CHILD_OWN]}]}"
+assert_update_equals '[{"github_commit_status": {"context": "Child"}}, {"github_commit_status": {"context": "Own"}}]' "both contexts attached"
+# shellcheck disable=SC2016 # The backticks are literal Markdown
+assert_annotation_has '| child | group skipped | `Child` |' "inherits the group's reason"
+# shellcheck disable=SC2016
+assert_annotation_has '| own | own reason | `Own` |' "keeps its own reason"
+
+run_case "A group nested in a skipped group is skipped too" "{\"steps\": [{\"group\": \"Outer\", \"skip\": \"outer skipped\", \"steps\": [{\"group\": \"Inner\", \"steps\": [$CHILD_A]}]}]}"
+# shellcheck disable=SC2016
+assert_annotation_has '| child | outer skipped | `Child` |' "inherited through two levels"
+
+run_case "A skipped group can have a marker of its own, listed by its title" '{"steps": [{"group": "My group", "skip": "r", "notify": [{"github_commit_status": {"context": "GroupCtx"}, "even-if-skipped": true}], "steps": [{"label": "c", "command": "x"}]}]}'
+assert_update_equals '[{"github_commit_status": {"context": "GroupCtx"}}]' "the group's context is attached"
+# shellcheck disable=SC2016
+assert_annotation_has '| My group | r | `GroupCtx` |' "annotation uses the group title"
+
+run_case "A group that is not skipped doesn't skip its steps" "{\"steps\": [{\"group\": \"G\", \"steps\": [$CHILD_A]}]}"
+assert_no_update "no step update"
+
+run_case "Bare steps like \`wait\` are ignored" "{\"steps\": [\"wait\", {\"block\": \"Approve?\"}, $MAC_BUILD, \"wait\"]}"
+assert_status 0 "exits 0"
+assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "the skipped step is still attached"
+
 run_case "A marker without a context is an error" '{"steps": [{"label": "Build", "skip": "r", "notify": [{"github_commit_status": {}, "even-if-skipped": true}]}]}'
 assert_status 1 "exits 1"
 assert_no_update "no step update"
