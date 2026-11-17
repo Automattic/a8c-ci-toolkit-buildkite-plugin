@@ -8,10 +8,19 @@ env:
   IMAGE_ID: $IMAGE_ID
 
 steps:
+  # Each group runs only if its helper, the helpers it calls, its tests or this file changed (`if_changed` is applied when this file is uploaded).
+  # Every group has a `mac` job, so each also lists `shared-pipeline-vars`, which sets the Xcode image: a new image gets validated by all of them.
+  # Only the build-level check is required on trunk, so a skipped step doesn't leave a pending status.
   - group: ":c: get_libc_version Tests"
+    if_changed:
+      - bin/get_libc_version
+      - tests/validate_get_libc_version_format
+      - .buildkite/pipeline-tests.yml
+      - .buildkite/shared-pipeline-vars
     steps:
       - label: ":c: Test get_libc_version on {{matrix}}"
-        command: ./tests/validate_get_libc_version_format
+        # Explicit `bash` as Windows can't run the script through its shebang
+        command: bash -eu ./tests/validate_get_libc_version_format
         agents:
           queue: "{{matrix}}"
         matrix:
@@ -19,11 +28,15 @@ steps:
           - default
           - mac
           - tumblr-metal
-          # Could not find a way to run on Windows with the same call as the others.
-          # See syntax in the dedicated step in pipeline-windows-tests.yml.
-          # - windows
+          - windows
 
   - group: ":swift: install_swiftpm_dependencies Tests"
+    if_changed:
+      - bin/*swiftpm*
+      - bin/{restore_cache,save_cache,hash_file,hash_directory,add_host_to_ssh_known_hosts}
+      - tests/install_swiftpm_dependencies/**
+      - .buildkite/pipeline-tests.yml
+      - .buildkite/shared-pipeline-vars
     steps:
       - label: ":swift: Standalone Swift Package - Autodetect"
         command: tests/install_swiftpm_dependencies/test_scripts/test_package_automatic.sh
@@ -92,6 +105,11 @@ steps:
               context: "install_swiftpm_dependencies Tests: Xcode Workspace and Project - Explicit"
 
   - group: ":github: pr_changed_files Tests"
+    if_changed:
+      - bin/pr_changed_files
+      - tests/pr_changed_files/**
+      - .buildkite/pipeline-tests.yml
+      - .buildkite/shared-pipeline-vars
     steps:
       - label: ":github: pr_changed_files Tests - Basic Changes"
         command: tests/pr_changed_files/test_basic_changes.sh
@@ -146,6 +164,11 @@ steps:
               context: "pr_changed_files Tests: Edge Cases"
 
   - group: ":closed_lock_with_key: install_a8c-secrets_binary Integration Tests"
+    if_changed:
+      - bin/{install_a8c-secrets_binary,hash_file}
+      - tests/install_a8c-secrets_binary/**
+      - .buildkite/pipeline-tests.yml
+      - .buildkite/shared-pipeline-vars
     steps:
       - label: ":linux: Install and run a8c-secrets"
         command: tests/install_a8c-secrets_binary/test_install.sh

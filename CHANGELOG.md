@@ -38,7 +38,6 @@ _None._
 
 ### New Features
 
-- `install_gems` fails early and lists the Ruby versions installed on the agent when `rbenv` doesn't have the one `.ruby-version` asks for. [#245]
 - Add change preparation and final verification to `run_agent_task`. [#250](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/pull/250)
 - Add `run_agent_task` for bounded investigations in disposable Mac VMs, with a report, evidence and a patch for review. [#249](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/pull/249)
 
@@ -49,6 +48,18 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 7.2.0
+
+### New Features
+
+- `upload_artifact` and `download_artifact` use the S3 server on the Synology NAS first when `BUILDKITE_NAS_ARTIFACTS_S3_ENDPOINT`, `BUILDKITE_NAS_ARTIFACTS_S3_ACCESS_KEY_ID` and `BUILDKITE_NAS_ARTIFACTS_S3_SECRET_ACCESS_KEY` are set, as on our macOS agents in MacMiniVault, and AWS S3 only if that fails. This avoids billed S3 egress for large artifacts passed between jobs on the same LAN. [#247]
+- `install_gems` fails early and lists the Ruby versions installed on the agent when `rbenv` doesn't have the one `.ruby-version` asks for. [#245]
+
+### Internal Changes
+
+- Merge the Bash and Windows test pipelines into a single `.buildkite/pipeline-tests.yml`, uploaded by one step. [#253]
+- This repo's CI only runs a helper's tests when the helper, the helpers it calls or its tests changed, using `if_changed` on each test group. [#252]
 
 ## 7.1.1
 
