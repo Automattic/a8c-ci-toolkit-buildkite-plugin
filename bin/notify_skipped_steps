@@ -7,12 +7,9 @@
 #   notify_skipped_steps [pipeline file]
 #
 #   Like `buildkite-agent pipeline upload`, it reads the file as given (no lookup in `.buildkite/`) or, without an argument, STDIN.
-#   It prints the pipeline it read, unchanged, on STDOUT, and everything else on STDERR, so it can be called before the upload:
-#     notify_skipped_steps .buildkite/pipeline.yml
-#     buildkite-agent pipeline upload .buildkite/pipeline.yml
-#   or in front of it, which avoids repeating the path (use `set -o pipefail`, so that a failure here fails the step instead of uploading an empty pipeline):
+#   It prints the pipeline on STDOUT without the `even-if-skipped` attributes (Buildkite's pipeline schema doesn't allow them), and everything else on STDERR, so pipe it to the upload (with `set -o pipefail`, so that a failure here fails the step instead of uploading an empty pipeline):
 #     notify_skipped_steps .buildkite/pipeline.yml | buildkite-agent pipeline upload
-#   Run it in the step that runs the upload (it needs Python 3 and a running job).
+#   Run it in the step that runs the upload (it needs Python 3 and a running job, and PyYAML if a step uses `even-if-skipped`).
 #
 # Opt in each step by adding `even-if-skipped: true` to its `notify` entry:
 #   - label: Lint Swift Files
@@ -27,11 +24,14 @@
 # and use `skip: $SKIP_UI_TESTS`. Such a script should print the reason to skip, or `false` (or nothing) to run the step.
 #
 # How it works: it dry-runs the upload (`buildkite-agent pipeline upload --dry-run`), so interpolation and `if_changed` are already applied, to determine which steps would be skipped. Then, for each such skipped step that has a `notify` entry with `even-if-skipped: true` set, it attaches a `github_commit_status` with the same context to the running step via `buildkite-agent step update`; the statuses are sent when the job for the real pipeline upload step finishes.
-# Exits 0, printing the pipeline, if all went well or no step uses `even-if-skipped`; exits 1, printing nothing, on a missing file or input, a failed dry run or a marked step without a `context`.
+# A pipeline without `even-if-skipped` is printed as it was read. Otherwise it is re-emitted by PyYAML, which loses the comments and formatting and reads YAML 1.1: `no`, `on`, `yes`, `off` and `1:30` are not strings for it, so write such values quoted (`ENABLED: "no"`). The script dry-runs the filtered pipeline too and fails, naming the first difference, if the agent doesn't read the original one minus the attributes.
+# Exits 0, printing the pipeline, if all went well or no step uses `even-if-skipped`; exits 1, printing nothing, on a missing file or input, a missing PyYAML, a failed dry run, a filtering that changed the pipeline or a marked step without a `context`.
 
 import json
 import subprocess
 import sys
+
+MARKER = 'even-if-skipped'
 
 args = sys.argv[1:]
 if args:
@@ -47,14 +47,65 @@ else:
 if not source.strip():
     sys.exit("notify_skipped_steps: the pipeline is empty")
 
-if 'even-if-skipped' not in source:
+if MARKER not in source:
     sys.stdout.write(source)
     sys.exit(0)
 
-dry_run = subprocess.run(['buildkite-agent', 'pipeline', 'upload', '--dry-run', '--format', 'json'], input=source, capture_output=True, text=True)
-sys.stderr.write(dry_run.stderr)
-if dry_run.returncode != 0:
-    sys.exit("buildkite-agent pipeline upload --dry-run failed")
+try:
+    import yaml
+except ImportError:
+    sys.exit("notify_skipped_steps: PyYAML is needed to remove %s from the pipeline (python3-yaml, or pip install pyyaml)" % MARKER)
+
+
+def dry_run(text):
+    """The pipeline as the agent would upload it: interpolated, with `if_changed` applied."""
+    result = subprocess.run(['buildkite-agent', 'pipeline', 'upload', '--dry-run', '--format', 'json'], input=text, capture_output=True, text=True)
+    sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        sys.exit("buildkite-agent pipeline upload --dry-run failed")
+    return json.loads(result.stdout)
+
+
+def without_marker(node):
+    """Removes the marker from the `notify` entries, wherever they are."""
+    if isinstance(node, dict):
+        return {k: [{ek: ev for ek, ev in e.items() if ek != MARKER} if isinstance(e, dict) else e for e in v] if k == 'notify' and isinstance(v, list) else without_marker(v) for k, v in node.items()}
+    return [without_marker(v) for v in node] if isinstance(node, list) else node
+
+
+def first_difference(a, b, path=''):
+    """Where two parsed pipelines first differ, as (path like `steps[0].env.V`, a's value, b's value), or None."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        for key in list(a) + [k for k in b if k not in a]:
+            found = first_difference(a.get(key), b.get(key), '%s.%s' % (path, key) if path else str(key))
+            if found:
+                return found
+    elif isinstance(a, list) and isinstance(b, list):
+        for index in range(max(len(a), len(b))):
+            found = first_difference(a[index] if index < len(a) else None, b[index] if index < len(b) else None, '%s[%d]' % (path, index))
+            if found:
+                return found
+    elif a != b:
+        return (path, a, b)
+
+
+class QuotedDumper(yaml.SafeDumper):
+    """Quotes every string, as PyYAML leaves some bare that the agent reads as numbers (`1e3`)."""
+
+
+QuotedDumper.add_representer(str, lambda dumper, text: dumper.represent_scalar('tag:yaml.org,2002:str', text, style='"'))
+
+try:
+    filtered = yaml.dump(without_marker(yaml.safe_load(source)), Dumper=QuotedDumper, sort_keys=False, allow_unicode=True, width=2**30)
+except yaml.YAMLError as error:
+    sys.exit("notify_skipped_steps: cannot parse the pipeline: %s" % error)
+
+original = dry_run(source)
+difference = first_difference(without_marker(original), dry_run(filtered))
+if difference:
+    path, before, after = difference
+    sys.exit("notify_skipped_steps: filtering %s changed the pipeline at %s: the agent reads %r from the original and %r from the filtered one, so it is not uploaded. PyYAML reads YAML 1.1 (`no`, `on`, `yes`, `off` and `1:30` aren't strings): write such a value quoted, e.g. ENABLED: \"no\"" % (MARKER, path, before, after))
+
 
 def is_skipped(step):
     skip = step.get('skip')
@@ -84,7 +135,7 @@ def skipped_steps(steps, inherited=None):
             yield (step_name, reason, contexts)
 
 
-skipped = list(skipped_steps(json.loads(dry_run.stdout).get('steps')))
+skipped = list(skipped_steps(original.get('steps')))
 contexts = [c for _, _, cs in skipped for c in cs]
 print("notify_skipped_steps: statuses for skipped steps: %s" % (contexts or "none"), file=sys.stderr, flush=True)
 
@@ -104,4 +155,4 @@ if contexts:
         print("notify_skipped_steps: could not post the annotation", file=sys.stderr)
 
 # Printed last, so that a failure above leaves nothing to upload
-sys.stdout.write(source)
+sys.stdout.write(filtered)

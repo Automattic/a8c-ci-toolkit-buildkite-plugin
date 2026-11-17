@@ -2,11 +2,16 @@
 
 set -euo pipefail
 
-# `buildkite-agent` is stubbed: `pipeline upload --dry-run` replays the JSON the test provides, and `step update` and `annotate` are recorded.
+# `buildkite-agent` is stubbed: `pipeline upload --dry-run` replays the JSON the test provides (the original pipeline's, or the filtered one's when its input has no marker left), and `step update` and `annotate` are recorded.
 # What the real agent does with those calls is Buildkite's behaviour, so the test only pins what the script decides to send and print.
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCRIPT="$REPO_ROOT/bin/notify_skipped_steps"
+
+if ! python3 -c 'import yaml' 2>/dev/null; then
+  echo "These tests need a python3 with PyYAML, e.g. python3 -m venv /tmp/venv && /tmp/venv/bin/pip install pyyaml, with /tmp/venv/bin first in PATH" >&2
+  exit 1
+fi
 
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
@@ -15,7 +20,11 @@ mkdir -p "$WORK_DIR/stub"
 cat > "$WORK_DIR/stub/buildkite-agent" <<'STUB'
 #!/usr/bin/env bash
 case "$1 ${2:-}" in
-  "pipeline upload") echo "dry-run" >> "$STUB_LOG"; cat > /dev/null; [[ -z "${STUB_DRY_RUN_FAILS:-}" ]] || { echo "stub: dry run failed" >&2; exit 1; }; cat "$STUB_DRY_RUN_JSON" ;;
+  "pipeline upload")
+    echo "dry-run" >> "$STUB_LOG"
+    input="$(cat)"
+    [[ -z "${STUB_DRY_RUN_FAILS:-}" ]] || { echo "stub: dry run failed" >&2; exit 1; }
+    if [[ "$input" == *even-if-skipped* ]]; then cat "$STUB_DRY_RUN_JSON"; else cat "$STUB_FILTERED_JSON"; fi ;;
   "step update") echo "$*" >> "$STUB_LOG"; echo "$4" > "$STUB_DIR/step-update.json"; echo "stub noise on stdout" ;;
   "annotate "*|"annotate") echo "$*" >> "$STUB_LOG"; cat > "$STUB_DIR/annotation.md"; echo "stub noise on stdout" ;;
   *) echo "unexpected buildkite-agent call: $*" >&2; exit 1 ;;
@@ -23,7 +32,7 @@ esac
 STUB
 chmod +x "$WORK_DIR/stub/buildkite-agent"
 export PATH="$WORK_DIR/stub:$PATH"
-export STUB_DIR="$WORK_DIR" STUB_LOG="$WORK_DIR/calls.log" STUB_DRY_RUN_JSON="$WORK_DIR/dry-run.json"
+export STUB_DIR="$WORK_DIR" STUB_LOG="$WORK_DIR/calls.log" STUB_DRY_RUN_JSON="$WORK_DIR/dry-run.json" STUB_FILTERED_JSON="$WORK_DIR/filtered.json"
 unset PIPELINE STUB_DRY_RUN_FAILS
 
 failures=0
@@ -33,8 +42,18 @@ pass() { echo "ok: $1"; }
 # The pipeline file's content only needs the marker, since the dry run is stubbed.
 PIPELINE_WITH_MARKER=$'steps:\n  - label: x\n    notify:\n      - github_commit_status: {context: x}\n        even-if-skipped: true\n'
 
+# Usage: strip_marker_json <JSON>. Prints it without the marker, which is what the agent sees in the filtered pipeline.
+strip_marker_json() {
+  python3 -c 'import json, sys
+def strip(node):
+    if isinstance(node, dict):
+        return {k: strip(v) for k, v in node.items() if k != "even-if-skipped"}
+    return [strip(v) for v in node] if isinstance(node, list) else node
+print(json.dumps(strip(json.loads(sys.argv[1]))))' "$1"
+}
+
 # Usage: run_case <description> <dry-run JSON> [script args...]. Writes `pipeline.yml` ($PIPELINE_YML or the marker one) and sets $status.
-# The args default to `pipeline.yml`; with $FROM_STDIN set the script reads that file ($STDIN_FILE or `pipeline.yml`) from STDIN instead.
+# The args default to `pipeline.yml`; with $FROM_STDIN set the script reads that file ($STDIN_FILE or `pipeline.yml`) from STDIN instead. $FILTERED_JSON overrides what the stub says of the filtered pipeline.
 run_case() {
   local description="$1" json="$2"
   shift 2
@@ -43,6 +62,7 @@ run_case() {
   rm -f "$STUB_LOG" "$WORK_DIR/step-update.json" "$WORK_DIR/annotation.md"
   touch "$STUB_LOG"
   echo "$json" > "$STUB_DRY_RUN_JSON"
+  echo "${FILTERED_JSON:-$(strip_marker_json "$json")}" > "$STUB_FILTERED_JSON"
   printf '%s' "${PIPELINE_YML:-$PIPELINE_WITH_MARKER}" > "$WORK_DIR/pipeline.yml"
   status=0
   if [[ -n "${FROM_STDIN:-}" ]]; then
@@ -74,6 +94,14 @@ assert_stdout_empty() {
 }
 assert_stderr_has() {
   if grep -qF -- "$1" "$WORK_DIR/stderr.log"; then pass "$2"; else fail "$2 (stderr: $(cat "$WORK_DIR/stderr.log"))"; fi
+}
+assert_stdout_has() {
+  if grep -qF -- "$1" "$WORK_DIR/stdout.txt"; then pass "$2"; else fail "$2 (stdout: $(cat "$WORK_DIR/stdout.txt"))"; fi
+}
+# Usage: assert_stdout_is_pipeline <JSON> <description>. STDOUT must be exactly one YAML document equal to that JSON.
+assert_stdout_is_pipeline() {
+  if python3 -c 'import json, sys, yaml
+sys.exit(0 if yaml.safe_load(open(sys.argv[1])) == json.loads(sys.argv[2]) else 1)' "$WORK_DIR/stdout.txt" "$1"; then pass "$2"; else fail "$2 (stdout: $(cat "$WORK_DIR/stdout.txt"))"; fi
 }
 
 MAC_BUILD='{"label": ":mac: Build", "skip": "No relevant files changed", "notify": [{"github_commit_status": {"context": "Mac Build"}, "even-if-skipped": true}]}'
@@ -151,15 +179,47 @@ STUB_DRY_RUN_FAILS=1 run_case "A failed dry run is an error" "{\"steps\": [$MAC_
 assert_status 1 "exits 1"
 assert_stdout_empty "nothing is printed to upload"
 
-# The pass-through: the pipeline is printed on STDOUT exactly as it was read, so that the script can sit in front of `buildkite-agent pipeline upload`
-PIPELINE_YML=$'# a comment\nsteps:\n  - label: ":mac: Build"\n    skip: No relevant files changed\n    env: { ENABLED: on }\n    notify:\n      - github_commit_status: { context: "Mac Build" }\n        even-if-skipped: true\n' run_case "The pipeline is printed on STDOUT as it was read, and nothing else is" "{\"steps\": [$MAC_BUILD]}"
+# The filter: the pipeline is printed on STDOUT without the marker, everything else goes to STDERR
+PIPELINE_YML=$'# a comment\nsteps:\n  - label: ":mac: Build"\n    command: make build\n    skip: No relevant files changed\n    notify:\n      - github_commit_status: { context: "Mac Build" }\n        even-if-skipped: true\n      - slack: "#ci"\n' run_case "The pipeline is printed on STDOUT without the marker, and nothing else is" "{\"steps\": [$MAC_BUILD]}"
 assert_status 0 "exits 0"
-assert_stdout_is_input "STDOUT is the input, byte for byte (the stubbed agent's own output isn't mixed in)"
+assert_stdout_is_pipeline '{"steps": [{"label": ":mac: Build", "command": "make build", "skip": "No relevant files changed", "notify": [{"github_commit_status": {"context": "Mac Build"}}, {"slack": "#ci"}]}]}' "STDOUT is the pipeline minus the marker, the other entries stay (and the stubbed agent's own output isn't mixed in)"
 assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "the status is still attached"
 assert_stderr_has "notify_skipped_steps: statuses for skipped steps" "the log goes to STDERR"
+if [[ "$(grep -c '^dry-run$' "$STUB_LOG")" -eq 2 ]]; then pass "the agent dry-runs the original, then the filtered pipeline"; else fail "expected 2 dry runs: $(cat "$STUB_LOG")"; fi
 
-run_case "A pipeline whose steps are not skipped is printed as it was read too" '{"steps": [{"label": "Build", "skip": false, "notify": [{"github_commit_status": {"context": "Build"}, "even-if-skipped": true}]}]}'
-assert_stdout_is_input "STDOUT is the input"
+run_case "A pipeline whose steps are not skipped is printed without the marker too" '{"steps": [{"label": "Build", "skip": false, "notify": [{"github_commit_status": {"context": "Build"}, "even-if-skipped": true}]}]}'
+assert_no_update "no step update"
+assert_stdout_is_pipeline '{"steps": [{"label": "x", "notify": [{"github_commit_status": {"context": "x"}}]}]}' "the pipeline is printed without the marker"
+
+PIPELINE_YML=$'steps:\n  - &ctx\n    label: a\n    notify:\n      - github_commit_status: { context: "A" }\n        even-if-skipped: true\n  - *ctx\n' run_case "Anchors and aliases are printed expanded, without the marker" '{"steps": [{"label": "a", "notify": [{"github_commit_status": {"context": "A"}, "even-if-skipped": true}]}, {"label": "a", "notify": [{"github_commit_status": {"context": "A"}, "even-if-skipped": true}]}]}'
+assert_status 0 "exits 0"
+assert_stdout_is_pipeline '{"steps": [{"label": "a", "notify": [{"github_commit_status": {"context": "A"}}]}, {"label": "a", "notify": [{"github_commit_status": {"context": "A"}}]}]}' "both copies lost the marker"
+
+PIPELINE_YML=$'steps:\n  - label: a\n    env: { V: "1e3" }\n    notify:\n      - github_commit_status: { context: "A" }\n        even-if-skipped: true\n' run_case "Strings are printed quoted, so that the agent reads them as strings (PyYAML would leave \"1e3\" bare, which the agent reads as a number)" '{"steps": [{"label": "a", "env": {"V": "1e3"}, "notify": [{"github_commit_status": {"context": "A"}, "even-if-skipped": true}]}]}'
+assert_status 0 "exits 0"
+assert_stdout_has '"1e3"' "the value is quoted"
+
+PIPELINE_YML=$'# keep me\nsteps:\n  - label: x   # and me\n    env: { ENABLED: on }\n' run_case "A pipeline without the marker is printed as it was read, without calling the agent" '{"steps": []}'
+assert_status 0 "exits 0"
+assert_stdout_is_input "STDOUT is the input, byte for byte"
+if [[ ! -s "$STUB_LOG" ]]; then pass "no buildkite-agent call"; else fail "buildkite-agent was called: $(cat "$STUB_LOG")"; fi
+
+# `no`, `on` and `yes` are strings for the agent and booleans for PyYAML (YAML 1.1): the filtered pipeline would change, which the script catches by comparing what the agent reads
+ORIGINAL_ENV='{"steps": [{"label": "a", "env": {"V": "no"}, "notify": [{"github_commit_status": {"context": "A"}, "even-if-skipped": true}]}]}'
+PIPELINE_YML=$'steps:\n  - label: a\n    env: { V: no }\n    notify:\n      - github_commit_status: { context: "A" }\n        even-if-skipped: true\n' FILTERED_JSON='{"steps": [{"label": "a", "env": {"V": "false"}, "notify": [{"github_commit_status": {"context": "A"}}]}]}' run_case "A filtered pipeline the agent reads differently is refused, naming the value and suggesting to quote it" "$ORIGINAL_ENV"
+assert_status 1 "exits 1"
+assert_stdout_empty "nothing is printed to upload"
+assert_no_update "no step update"
+assert_stderr_has "steps[0].env.V" "the error names where the pipelines differ"
+assert_stderr_has "'no'" "the error shows what the agent reads in the original"
+assert_stderr_has "'false'" "the error shows what it reads in the filtered pipeline"
+assert_stderr_has "quote" "the error suggests to quote the value"
+
+mkdir -p "$WORK_DIR/no-yaml" && echo 'raise ImportError("no PyYAML here")' > "$WORK_DIR/no-yaml/yaml.py"
+PYTHONPATH="$WORK_DIR/no-yaml" run_case "Without PyYAML a pipeline that has the marker is an error, with a hint" "{\"steps\": [$MAC_BUILD]}"
+assert_status 1 "exits 1"
+assert_stdout_empty "nothing is printed to upload"
+assert_stderr_has "PyYAML" "the error names PyYAML"
 
 PIPELINE_YML=$'steps:\n  - label: x\n' run_case "A pipeline without the marker doesn't even run the dry run, and is printed as it was read" '{"steps": []}'
 assert_status 0 "exits 0"
@@ -169,7 +229,6 @@ if [[ ! -s "$STUB_LOG" ]]; then pass "no buildkite-agent call"; else fail "build
 # The input is the same as `buildkite-agent pipeline upload`'s: the file as given, else STDIN
 run_case "The pipeline file is used as given" "{\"steps\": [$MAC_BUILD]}" ./pipeline.yml
 assert_status 0 "a relative path"
-assert_stdout_is_input "printed as it was read"
 mkdir -p "$WORK_DIR/.buildkite" && cp "$WORK_DIR/pipeline.yml" "$WORK_DIR/.buildkite/other.yml"
 run_case "A bare file name isn't looked up in .buildkite/" "{\"steps\": [$MAC_BUILD]}" other.yml
 assert_status 1 "exits 1"
@@ -178,7 +237,7 @@ assert_stdout_empty "nothing is printed to upload"
 FROM_STDIN=1 run_case "Without an argument the pipeline is read from STDIN" "{\"steps\": [$MAC_BUILD]}"
 assert_status 0 "exits 0"
 assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "the status is attached"
-assert_stdout_is_input "printed as it was read"
+assert_stdout_is_pipeline '{"steps": [{"label": "x", "notify": [{"github_commit_status": {"context": "x"}}]}]}' "the filtered pipeline is printed"
 
 FROM_STDIN=1 STDIN_FILE=/dev/null run_case "Empty STDIN is an error, not an empty pipeline to upload" '{"steps": []}'
 assert_status 1 "exits 1"
