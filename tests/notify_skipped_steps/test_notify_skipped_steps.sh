@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # `buildkite-agent` is stubbed: `pipeline upload --dry-run` replays the JSON the test provides, and `step update` and `annotate` are recorded.
-# What the real agent does with those calls is Buildkite's behaviour, so the test only pins what the script decides to send.
+# What the real agent does with those calls is Buildkite's behaviour, so the test only pins what the script decides to send and print.
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCRIPT="$REPO_ROOT/bin/notify_skipped_steps"
@@ -11,19 +11,20 @@ SCRIPT="$REPO_ROOT/bin/notify_skipped_steps"
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 mkdir -p "$WORK_DIR/stub"
+# The stub also writes to STDOUT on `step update` and `annotate`, which the script must keep out of the pipeline it prints
 cat > "$WORK_DIR/stub/buildkite-agent" <<'STUB'
 #!/usr/bin/env bash
 case "$1 ${2:-}" in
-  "pipeline upload") echo "dry-run" >> "$STUB_LOG"; cat > /dev/null; cat "$STUB_DRY_RUN_JSON" ;;
-  "step update") echo "$*" >> "$STUB_LOG"; echo "$4" > "$STUB_DIR/step-update.json" ;;
-  "annotate "*|"annotate") echo "$*" >> "$STUB_LOG"; cat > "$STUB_DIR/annotation.md" ;;
+  "pipeline upload") echo "dry-run" >> "$STUB_LOG"; cat > /dev/null; [[ -z "${STUB_DRY_RUN_FAILS:-}" ]] || { echo "stub: dry run failed" >&2; exit 1; }; cat "$STUB_DRY_RUN_JSON" ;;
+  "step update") echo "$*" >> "$STUB_LOG"; echo "$4" > "$STUB_DIR/step-update.json"; echo "stub noise on stdout" ;;
+  "annotate "*|"annotate") echo "$*" >> "$STUB_LOG"; cat > "$STUB_DIR/annotation.md"; echo "stub noise on stdout" ;;
   *) echo "unexpected buildkite-agent call: $*" >&2; exit 1 ;;
 esac
 STUB
 chmod +x "$WORK_DIR/stub/buildkite-agent"
 export PATH="$WORK_DIR/stub:$PATH"
 export STUB_DIR="$WORK_DIR" STUB_LOG="$WORK_DIR/calls.log" STUB_DRY_RUN_JSON="$WORK_DIR/dry-run.json"
-unset PIPELINE
+unset PIPELINE STUB_DRY_RUN_FAILS
 
 failures=0
 fail() { echo "FAIL: $1"; failures=$((failures + 1)); }
@@ -33,16 +34,22 @@ pass() { echo "ok: $1"; }
 PIPELINE_WITH_MARKER=$'steps:\n  - label: x\n    notify:\n      - github_commit_status: {context: x}\n        even-if-skipped: true\n'
 
 # Usage: run_case <description> <dry-run JSON> [script args...]. Writes `pipeline.yml` ($PIPELINE_YML or the marker one) and sets $status.
+# The args default to `pipeline.yml`; with $FROM_STDIN set the script reads that file ($STDIN_FILE or `pipeline.yml`) from STDIN instead.
 run_case() {
   local description="$1" json="$2"
   shift 2
+  [[ $# -gt 0 || -n "${FROM_STDIN:-}" ]] || set -- pipeline.yml
   echo "--- :test_tube: $description"
   rm -f "$STUB_LOG" "$WORK_DIR/step-update.json" "$WORK_DIR/annotation.md"
   touch "$STUB_LOG"
   echo "$json" > "$STUB_DRY_RUN_JSON"
-  echo "${PIPELINE_YML:-$PIPELINE_WITH_MARKER}" > "$WORK_DIR/pipeline.yml"
+  printf '%s' "${PIPELINE_YML:-$PIPELINE_WITH_MARKER}" > "$WORK_DIR/pipeline.yml"
   status=0
-  (cd "$WORK_DIR" && "$SCRIPT" "$@") > "$WORK_DIR/output.log" 2>&1 || status=$?
+  if [[ -n "${FROM_STDIN:-}" ]]; then
+    (cd "$WORK_DIR" && "$SCRIPT" < "${STDIN_FILE:-pipeline.yml}") > "$WORK_DIR/stdout.txt" 2> "$WORK_DIR/stderr.log" || status=$?
+  else
+    (cd "$WORK_DIR" && "$SCRIPT" "$@") > "$WORK_DIR/stdout.txt" 2> "$WORK_DIR/stderr.log" || status=$?
+  fi
 }
 
 assert_status() {
@@ -58,6 +65,15 @@ assert_update_equals() {
 }
 assert_annotation_has() {
   if grep -qF -- "$1" "$WORK_DIR/annotation.md" 2>/dev/null; then pass "$2"; else fail "$2 (annotation: $(cat "$WORK_DIR/annotation.md" 2>/dev/null || true))"; fi
+}
+assert_stdout_is_input() {
+  if cmp -s "$WORK_DIR/pipeline.yml" "$WORK_DIR/stdout.txt"; then pass "$1"; else fail "$1 (stdout: $(cat "$WORK_DIR/stdout.txt"))"; fi
+}
+assert_stdout_empty() {
+  if [[ ! -s "$WORK_DIR/stdout.txt" ]]; then pass "$1"; else fail "$1 (stdout: $(cat "$WORK_DIR/stdout.txt"))"; fi
+}
+assert_stderr_has() {
+  if grep -qF -- "$1" "$WORK_DIR/stderr.log"; then pass "$2"; else fail "$2 (stderr: $(cat "$WORK_DIR/stderr.log"))"; fi
 }
 
 MAC_BUILD='{"label": ":mac: Build", "skip": "No relevant files changed", "notify": [{"github_commit_status": {"context": "Mac Build"}, "even-if-skipped": true}]}'
@@ -129,24 +145,48 @@ assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "the
 run_case "A marker without a context is an error" '{"steps": [{"label": "Build", "skip": "r", "notify": [{"github_commit_status": {}, "even-if-skipped": true}]}]}'
 assert_status 1 "exits 1"
 assert_no_update "no step update"
+assert_stdout_empty "nothing is printed to upload"
 
-PIPELINE_YML=$'steps:\n  - label: x\n' run_case "A pipeline without the marker doesn't even run the dry run" '{"steps": []}'
+STUB_DRY_RUN_FAILS=1 run_case "A failed dry run is an error" "{\"steps\": [$MAC_BUILD]}"
+assert_status 1 "exits 1"
+assert_stdout_empty "nothing is printed to upload"
+
+# The pass-through: the pipeline is printed on STDOUT exactly as it was read, so that the script can sit in front of `buildkite-agent pipeline upload`
+PIPELINE_YML=$'# a comment\nsteps:\n  - label: ":mac: Build"\n    skip: No relevant files changed\n    env: { ENABLED: on }\n    notify:\n      - github_commit_status: { context: "Mac Build" }\n        even-if-skipped: true\n' run_case "The pipeline is printed on STDOUT as it was read, and nothing else is" "{\"steps\": [$MAC_BUILD]}"
 assert_status 0 "exits 0"
+assert_stdout_is_input "STDOUT is the input, byte for byte (the stubbed agent's own output isn't mixed in)"
+assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "the status is still attached"
+assert_stderr_has "notify_skipped_steps: statuses for skipped steps" "the log goes to STDERR"
+
+run_case "A pipeline whose steps are not skipped is printed as it was read too" '{"steps": [{"label": "Build", "skip": false, "notify": [{"github_commit_status": {"context": "Build"}, "even-if-skipped": true}]}]}'
+assert_stdout_is_input "STDOUT is the input"
+
+PIPELINE_YML=$'steps:\n  - label: x\n' run_case "A pipeline without the marker doesn't even run the dry run, and is printed as it was read" '{"steps": []}'
+assert_status 0 "exits 0"
+assert_stdout_is_input "STDOUT is the input"
 if [[ ! -s "$STUB_LOG" ]]; then pass "no buildkite-agent call"; else fail "buildkite-agent was called: $(cat "$STUB_LOG")"; fi
 
-run_case "The pipeline file is found as an argument, in .buildkite/, or through \$PIPELINE" "{\"steps\": [$MAC_BUILD]}" pipeline.yml
-assert_status 0 "argument"
-mkdir -p "$WORK_DIR/.buildkite" && mv "$WORK_DIR/pipeline.yml" "$WORK_DIR/.buildkite/other.yml"
-status=0; rm -f "$WORK_DIR/step-update.json"
-(cd "$WORK_DIR" && "$SCRIPT" other.yml) > "$WORK_DIR/output.log" 2>&1 || status=$?
-assert_status 0 "looked up in .buildkite/"
-status=0; rm -f "$WORK_DIR/step-update.json"
-(cd "$WORK_DIR" && PIPELINE=other.yml "$SCRIPT") > "$WORK_DIR/output.log" 2>&1 || status=$?
-assert_status 0 "\$PIPELINE"
-assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "still attached"
+# The input is the same as `buildkite-agent pipeline upload`'s: the file as given, else STDIN
+run_case "The pipeline file is used as given" "{\"steps\": [$MAC_BUILD]}" ./pipeline.yml
+assert_status 0 "a relative path"
+assert_stdout_is_input "printed as it was read"
+mkdir -p "$WORK_DIR/.buildkite" && cp "$WORK_DIR/pipeline.yml" "$WORK_DIR/.buildkite/other.yml"
+run_case "A bare file name isn't looked up in .buildkite/" "{\"steps\": [$MAC_BUILD]}" other.yml
+assert_status 1 "exits 1"
+assert_stdout_empty "nothing is printed to upload"
+
+FROM_STDIN=1 run_case "Without an argument the pipeline is read from STDIN" "{\"steps\": [$MAC_BUILD]}"
+assert_status 0 "exits 0"
+assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "the status is attached"
+assert_stdout_is_input "printed as it was read"
+
+FROM_STDIN=1 STDIN_FILE=/dev/null run_case "Empty STDIN is an error, not an empty pipeline to upload" '{"steps": []}'
+assert_status 1 "exits 1"
+assert_stdout_empty "nothing is printed to upload"
 
 run_case "A missing pipeline file is an error" '{"steps": []}' does-not-exist.yml
 assert_status 1 "exits 1"
+assert_stdout_empty "nothing is printed to upload"
 
 if [[ "$failures" -ne 0 ]]; then
   echo "$failures check(s) failed"
