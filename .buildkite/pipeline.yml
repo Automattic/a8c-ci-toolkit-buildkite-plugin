@@ -1,7 +1,9 @@
-# Throwaway experiment (do not merge): round 7, which `if:` expressions does the server accept on a notify entry and when do they fire?
+# Throwaway experiment (do not merge): round 9, end to end. The real bin/notify_skipped_steps from #257 runs, then uploads a pipeline whose skipped step opts in with an `if:`.
 agents:
   queue: upload
 
 steps:
-  - label: ":microscope: runner: probes expressions then uploads the evaluation steps"
-    command: python3 .buildkite/exp-ifs.py
+  - label: ":microscope: runner: notify_skipped_steps then upload"
+    command: |
+      bin/notify_skipped_steps .buildkite/exp-e2e-pipeline.yml
+      buildkite-agent pipeline upload .buildkite/exp-e2e-pipeline.yml

@@ -1,0 +1,22 @@
+# Throwaway experiment (do not merge): round 9. Skipped steps opted in with `if: step.state == "ignored" || step.state == "finished"`.
+agents:
+  queue: upload
+
+steps:
+  - label: "E2E skipped step"
+    command: "true"
+    skip: "experiment: skipped on purpose"
+    notify:
+      - github_commit_status:
+          context: EXP e2e status
+        if: step.state == "ignored" || step.state == "finished"
+      - github_check:
+          name: EXP e2e check
+        if: step.state == "ignored" || step.state == "finished"
+      - slack:
+          channels: ["#mobile-apps-tests-notif"]
+          message: "🧪 Round 9 (end to end): this Slack message was opted in with an if on step.state and sent by notify_skipped_steps for a skipped step. Throwaway experiment, please ignore"
+        if: step.state == "ignored" || step.state == "finished"
+      - github_commit_status:
+          context: EXP e2e not opted in
+        if: step.state == "finished"
