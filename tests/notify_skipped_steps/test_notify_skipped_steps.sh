@@ -30,10 +30,10 @@ failures=0
 fail() { echo "FAIL: $1"; failures=$((failures + 1)); }
 pass() { echo "ok: $1"; }
 
-# The pipeline file's content only needs the marker, since the dry run is stubbed.
-PIPELINE_WITH_MARKER=$'steps:\n  - label: x\n    notify:\n      - github_commit_status: {context: x}\n        even-if-skipped: true\n'
+# The pipeline file's content only needs the top-level key, since the dry run is stubbed.
+PIPELINE_WITH_KEY=$'notify_skipped_github_statuses: [x]\nsteps:\n  - key: x\n    notify:\n      - github_commit_status: {context: x}\n'
 
-# Usage: run_case <description> <dry-run JSON> [script args...]. Writes `pipeline.yml` ($PIPELINE_YML or the marker one) and sets $status.
+# Usage: run_case <description> <dry-run JSON> [script args...]. Writes `pipeline.yml` ($PIPELINE_YML or the one with the key) and sets $status.
 # The args default to `pipeline.yml`; with $FROM_STDIN set the script reads that file ($STDIN_FILE or `pipeline.yml`) from STDIN instead.
 run_case() {
   local description="$1" json="$2"
@@ -43,7 +43,7 @@ run_case() {
   rm -f "$STUB_LOG" "$WORK_DIR/step-update.json" "$WORK_DIR/annotation.md"
   touch "$STUB_LOG"
   echo "$json" > "$STUB_DRY_RUN_JSON"
-  printf '%s' "${PIPELINE_YML:-$PIPELINE_WITH_MARKER}" > "$WORK_DIR/pipeline.yml"
+  printf '%s' "${PIPELINE_YML:-$PIPELINE_WITH_KEY}" > "$WORK_DIR/pipeline.yml"
   status=0
   if [[ -n "${FROM_STDIN:-}" ]]; then
     (cd "$WORK_DIR" && "$SCRIPT" < "${STDIN_FILE:-pipeline.yml}") > "$WORK_DIR/stdout.txt" 2> "$WORK_DIR/stderr.log" || status=$?
@@ -76,108 +76,129 @@ assert_stderr_has() {
   if grep -qF -- "$1" "$WORK_DIR/stderr.log"; then pass "$2"; else fail "$2 (stderr: $(cat "$WORK_DIR/stderr.log"))"; fi
 }
 
-MAC_BUILD='{"label": ":mac: Build", "skip": "No relevant files changed", "notify": [{"github_commit_status": {"context": "Mac Build"}, "even-if-skipped": true}]}'
+# Usage: pipeline_json '<keys JSON array>' <step JSON>... Prints the dry-run JSON of a pipeline listing those keys.
+pipeline_json() {
+  local keys="$1" steps
+  shift
+  steps="$(IFS=,; echo "$*")"
+  echo "{\"notify_skipped_github_statuses\": $keys, \"steps\": [$steps]}"
+}
 
-run_case "A skipped step with the marker gets its status attached to the running step" "{\"steps\": [$MAC_BUILD]}"
+MAC_BUILD='{"key": "mac", "label": ":mac: Build", "skip": "No relevant files changed", "notify": [{"github_commit_status": {"context": "Mac Build"}}]}'
+
+run_case "A skipped step whose key is listed gets its status attached to the running step" "$(pipeline_json '["mac"]' "$MAC_BUILD")"
 assert_status 0 "exits 0"
-assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "step update carries the context only, without the marker"
+assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "step update carries the context"
 # shellcheck disable=SC2016 # The backticks are literal Markdown
 assert_annotation_has '| :mac: Build | No relevant files changed | `Mac Build` |' "annotation lists the step, the reason and the context"
 
-run_case "A step that is not skipped is left alone" '{"steps": [{"label": "Build", "skip": false, "notify": [{"github_commit_status": {"context": "Build"}, "even-if-skipped": true}]}]}'
+run_case "A step that is not skipped is left alone" "$(pipeline_json '["build"]' '{"key": "build", "label": "Build", "skip": false, "notify": [{"github_commit_status": {"context": "Build"}}]}')"
 assert_status 0 "exits 0"
 assert_no_update "no step update"
 
-run_case "The string \"false\" and the empty string run the step too" '{"steps": [{"label": "A", "skip": "false", "notify": [{"github_commit_status": {"context": "A"}, "even-if-skipped": true}]}, {"label": "B", "skip": "", "notify": [{"github_commit_status": {"context": "B"}, "even-if-skipped": true}]}]}'
+run_case "The string \"false\" and the empty string run the step too" "$(pipeline_json '["a", "b"]' '{"key": "a", "label": "A", "skip": "false", "notify": [{"github_commit_status": {"context": "A"}}]}' '{"key": "b", "label": "B", "skip": "", "notify": [{"github_commit_status": {"context": "B"}}]}')"
 assert_no_update "no step update"
 
-run_case "A skipped step without the marker is ignored" '{"steps": [{"label": "Build", "skip": "docs only", "notify": [{"github_commit_status": {"context": "Build"}}]}]}'
+run_case "A skipped step whose key is not listed is ignored" "$(pipeline_json '["other"]' '{"key": "build", "label": "Build", "skip": "docs only", "notify": [{"github_commit_status": {"context": "Build"}}]}' '{"key": "other", "label": "Other", "command": "x", "notify": [{"github_commit_status": {"context": "Other"}}]}')"
 assert_no_update "no step update"
 
-run_case "skip: true is reported without a reason" '{"steps": [{"label": "Build", "skip": true, "notify": [{"github_commit_status": {"context": "Build"}, "even-if-skipped": true}]}]}'
+run_case "skip: true is reported without a reason" "$(pipeline_json '["build"]' '{"key": "build", "label": "Build", "skip": true, "notify": [{"github_commit_status": {"context": "Build"}}]}')"
 assert_annotation_has '| Build | no reason given |' "annotation says no reason was given"
 
-run_case "Steps nested in groups are found, and several contexts are all attached" '{"steps": [{"group": "G", "steps": [{"label": "A", "skip": "r", "notify": [{"github_commit_status": {"context": "A"}, "even-if-skipped": true}]}, {"label": "B", "skip": "r", "notify": [{"github_commit_status": {"context": "B1"}, "even-if-skipped": true}, {"slack": "#x"}, {"github_commit_status": {"context": "B2"}, "even-if-skipped": true}]}]}]}'
-assert_update_equals '[{"github_commit_status": {"context": "A"}}, {"github_commit_status": {"context": "B1"}}, {"github_commit_status": {"context": "B2"}}]' "all contexts attached, other notify entries ignored"
+run_case "Steps nested in groups are found, all their statuses are attached, other notify entries are not" "$(pipeline_json '["a", "b"]' '{"group": "G", "steps": [{"key": "a", "label": "A", "skip": "r", "notify": [{"github_commit_status": {"context": "A"}}]}, {"key": "b", "label": "B", "skip": "r", "notify": [{"github_commit_status": {"context": "B1"}}, {"slack": "#x"}, {"github_commit_status": {"context": "B2"}}]}]}')"
+assert_update_equals '[{"github_commit_status": {"context": "A"}}, {"github_commit_status": {"context": "B1"}}, {"github_commit_status": {"context": "B2"}}]' "all contexts attached"
 
-run_case "A pipe in a reason doesn't break the annotation table" '{"steps": [{"label": "Build", "skip": "a|b", "notify": [{"github_commit_status": {"context": "Build"}, "even-if-skipped": true}]}]}'
+run_case "A pipe in a reason doesn't break the annotation table" "$(pipeline_json '["build"]' '{"key": "build", "label": "Build", "skip": "a|b", "notify": [{"github_commit_status": {"context": "Build"}}]}')"
 assert_annotation_has '| Build | a\|b |' "pipe is escaped"
 
-run_case "A pipe or a newline in a status context doesn't break the annotation table" '{"steps": [{"label": "Pipe", "skip": "r", "notify": [{"github_commit_status": {"context": "iOS | Unit Tests"}, "even-if-skipped": true}]}, {"label": "Lines", "skip": "r", "notify": [{"github_commit_status": {"context": "two\nlines"}, "even-if-skipped": true}]}]}'
+run_case "A pipe or a newline in a status context doesn't break the annotation table" "$(pipeline_json '["pipe", "lines"]' '{"key": "pipe", "label": "Pipe", "skip": "r", "notify": [{"github_commit_status": {"context": "iOS | Unit Tests"}}]}' '{"key": "lines", "label": "Lines", "skip": "r", "notify": [{"github_commit_status": {"context": "two\nlines"}}]}')"
 # shellcheck disable=SC2016 # The backticks are literal Markdown
 assert_annotation_has '| Pipe | r | `iOS \| Unit Tests` |' "pipe in a context is escaped"
 # shellcheck disable=SC2016
 assert_annotation_has '| Lines | r | `two lines` |' "newline in a context becomes a space"
 assert_update_equals '[{"github_commit_status": {"context": "iOS | Unit Tests"}}, {"github_commit_status": {"context": "two\nlines"}}]' "the contexts sent to GitHub are untouched"
 
-run_case "A step named only by an array command or a number doesn't break the annotation" '{"steps": [{"command": ["echo a", "echo b"], "skip": "r", "notify": [{"github_commit_status": {"context": "Cmd"}, "even-if-skipped": true}]}, {"key": 7, "skip": "r", "notify": [{"github_commit_status": {"context": "Key"}, "even-if-skipped": true}]}]}'
+run_case "A step named only by an array command or a numeric key doesn't break the annotation" "$(pipeline_json '["cmd", 7]' '{"key": "cmd", "command": ["echo a", "echo b"], "skip": "r", "notify": [{"github_commit_status": {"context": "Cmd"}}]}' '{"key": 7, "skip": "r", "notify": [{"github_commit_status": {"context": "Key"}}]}')"
 assert_status 0 "exits 0"
-assert_update_equals '[{"github_commit_status": {"context": "Cmd"}}, {"github_commit_status": {"context": "Key"}}]' "both contexts attached"
+assert_update_equals '[{"github_commit_status": {"context": "Cmd"}}, {"github_commit_status": {"context": "Key"}}]' "both contexts attached, a numeric key matches too"
 # shellcheck disable=SC2016 # The backticks are literal Markdown
 assert_annotation_has '| 7 | r | `Key` |' "annotation lists the numeric key"
 
 # The agent puts `skip` on a skipped group only, not on the steps inside it
-CHILD_A='{"label": "child", "command": "x", "notify": [{"github_commit_status": {"context": "Child"}, "even-if-skipped": true}]}'
-CHILD_OWN='{"label": "own", "skip": "own reason", "command": "x", "notify": [{"github_commit_status": {"context": "Own"}, "even-if-skipped": true}]}'
-run_case "The steps of a skipped group are skipped too, and a step's own reason wins" "{\"steps\": [{\"group\": \"G\", \"skip\": \"group skipped\", \"steps\": [$CHILD_A, $CHILD_OWN]}]}"
+CHILD_A='{"key": "child", "label": "child", "command": "x", "notify": [{"github_commit_status": {"context": "Child"}}]}'
+CHILD_OWN='{"key": "own", "label": "own", "skip": "own reason", "command": "x", "notify": [{"github_commit_status": {"context": "Own"}}]}'
+run_case "The steps of a skipped group are skipped too, and a step's own reason wins" "$(pipeline_json '["child", "own"]' "{\"group\": \"G\", \"skip\": \"group skipped\", \"steps\": [$CHILD_A, $CHILD_OWN]}")"
 assert_update_equals '[{"github_commit_status": {"context": "Child"}}, {"github_commit_status": {"context": "Own"}}]' "both contexts attached"
 # shellcheck disable=SC2016 # The backticks are literal Markdown
 assert_annotation_has '| child | group skipped | `Child` |' "inherits the group's reason"
 # shellcheck disable=SC2016
 assert_annotation_has '| own | own reason | `Own` |' "keeps its own reason"
 
-run_case "A group nested in a skipped group is skipped too" "{\"steps\": [{\"group\": \"Outer\", \"skip\": \"outer skipped\", \"steps\": [{\"group\": \"Inner\", \"steps\": [$CHILD_A]}]}]}"
+run_case "A group nested in a skipped group is skipped too" "$(pipeline_json '["child"]' "{\"group\": \"Outer\", \"skip\": \"outer skipped\", \"steps\": [{\"group\": \"Inner\", \"steps\": [$CHILD_A]}]}")"
 # shellcheck disable=SC2016
 assert_annotation_has '| child | outer skipped | `Child` |' "inherited through two levels"
 
-run_case "A skipped group can have a marker of its own, listed by its title" '{"steps": [{"group": "My group", "skip": "r", "notify": [{"github_commit_status": {"context": "GroupCtx"}, "even-if-skipped": true}], "steps": [{"label": "c", "command": "x"}]}]}'
+run_case "A skipped group can be listed by its own key, with its own statuses, and is named by its title" "$(pipeline_json '["my_group"]' '{"key": "my_group", "group": "My group", "skip": "r", "notify": [{"github_commit_status": {"context": "GroupCtx"}}], "steps": [{"label": "c", "command": "x"}]}')"
 assert_update_equals '[{"github_commit_status": {"context": "GroupCtx"}}]' "the group's context is attached"
 # shellcheck disable=SC2016
 assert_annotation_has '| My group | r | `GroupCtx` |' "annotation uses the group title"
 
-run_case "A group that is not skipped doesn't skip its steps" "{\"steps\": [{\"group\": \"G\", \"steps\": [$CHILD_A]}]}"
+run_case "A group that is not skipped doesn't skip its steps" "$(pipeline_json '["child"]' "{\"group\": \"G\", \"steps\": [$CHILD_A]}")"
 assert_no_update "no step update"
 
-run_case "Bare steps like \`wait\` are ignored" "{\"steps\": [\"wait\", {\"block\": \"Approve?\"}, $MAC_BUILD, \"wait\"]}"
+run_case "Bare steps like \`wait\` are ignored" "$(pipeline_json '["mac"]' '"wait"' '{"block": "Approve?"}' "$MAC_BUILD" '"wait"')"
 assert_status 0 "exits 0"
 assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "the skipped step is still attached"
 
-run_case "A marker without a context is an error" '{"steps": [{"label": "Build", "skip": "r", "notify": [{"github_commit_status": {}, "even-if-skipped": true}]}]}'
+run_case "A listed step without a context is an error" "$(pipeline_json '["build"]' '{"key": "build", "label": "Build", "skip": "r", "notify": [{"github_commit_status": {}}]}')"
 assert_status 1 "exits 1"
 assert_no_update "no step update"
 assert_stdout_empty "nothing is printed to upload"
 
-STUB_DRY_RUN_FAILS=1 run_case "A failed dry run is an error" "{\"steps\": [$MAC_BUILD]}"
+run_case "A listed key that matches no step is an error, as it is probably a typo" "$(pipeline_json '["mac", "nope"]' "$MAC_BUILD")"
+assert_status 1 "exits 1"
+assert_no_update "no step update"
+assert_stderr_has "nope" "the error names the key"
+
+run_case "A listed step without a github_commit_status is an error, even if it isn't skipped" "$(pipeline_json '["build"]' '{"key": "build", "label": "Build", "command": "x", "notify": [{"slack": "#ci"}]}')"
+assert_status 1 "exits 1"
+assert_no_update "no step update"
+assert_stderr_has "build" "the error names the key"
+
+run_case "The list must be a list" '{"notify_skipped_github_statuses": "mac", "steps": []}'
+assert_status 1 "exits 1"
+assert_no_update "no step update"
+
+STUB_DRY_RUN_FAILS=1 run_case "A failed dry run is an error" "$(pipeline_json '["mac"]' "$MAC_BUILD")"
 assert_status 1 "exits 1"
 assert_stdout_empty "nothing is printed to upload"
 
 # The pass-through: the pipeline is printed on STDOUT exactly as it was read, so that the script can sit in front of `buildkite-agent pipeline upload`
-PIPELINE_YML=$'# a comment\nsteps:\n  - label: ":mac: Build"\n    skip: No relevant files changed\n    env: { ENABLED: on }\n    notify:\n      - github_commit_status: { context: "Mac Build" }\n        even-if-skipped: true\n' run_case "The pipeline is printed on STDOUT as it was read, and nothing else is" "{\"steps\": [$MAC_BUILD]}"
+PIPELINE_YML=$'# a comment\nnotify_skipped_github_statuses: [mac]\nsteps:\n  - key: mac\n    label: ":mac: Build"\n    skip: No relevant files changed\n    env: { ENABLED: on }\n    notify:\n      - github_commit_status: { context: "Mac Build" }\n' run_case "The pipeline is printed on STDOUT as it was read, and nothing else is" "$(pipeline_json '["mac"]' "$MAC_BUILD")"
 assert_status 0 "exits 0"
 assert_stdout_is_input "STDOUT is the input, byte for byte (the stubbed agent's own output isn't mixed in)"
 assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "the status is still attached"
 assert_stderr_has "notify_skipped_steps: statuses for skipped steps" "the log goes to STDERR"
 
-run_case "A pipeline whose steps are not skipped is printed as it was read too" '{"steps": [{"label": "Build", "skip": false, "notify": [{"github_commit_status": {"context": "Build"}, "even-if-skipped": true}]}]}'
+run_case "A pipeline whose listed steps are not skipped is printed as it was read too" "$(pipeline_json '["build"]' '{"key": "build", "label": "Build", "skip": false, "notify": [{"github_commit_status": {"context": "Build"}}]}')"
 assert_stdout_is_input "STDOUT is the input"
 
-PIPELINE_YML=$'steps:\n  - label: x\n' run_case "A pipeline without the marker doesn't even run the dry run, and is printed as it was read" '{"steps": []}'
+PIPELINE_YML=$'steps:\n  - label: x\n' run_case "A pipeline without the list doesn't even run the dry run, and is printed as it was read" '{"steps": []}'
 assert_status 0 "exits 0"
 assert_stdout_is_input "STDOUT is the input"
 if [[ ! -s "$STUB_LOG" ]]; then pass "no buildkite-agent call"; else fail "buildkite-agent was called: $(cat "$STUB_LOG")"; fi
 
 # The input is the same as `buildkite-agent pipeline upload`'s: the file as given, else STDIN
-run_case "The pipeline file is used as given" "{\"steps\": [$MAC_BUILD]}" ./pipeline.yml
+run_case "The pipeline file is used as given" "$(pipeline_json '["mac"]' "$MAC_BUILD")" ./pipeline.yml
 assert_status 0 "a relative path"
-assert_stdout_is_input "printed as it was read"
 mkdir -p "$WORK_DIR/.buildkite" && cp "$WORK_DIR/pipeline.yml" "$WORK_DIR/.buildkite/other.yml"
-run_case "A bare file name isn't looked up in .buildkite/" "{\"steps\": [$MAC_BUILD]}" other.yml
+run_case "A bare file name isn't looked up in .buildkite/" "$(pipeline_json '["mac"]' "$MAC_BUILD")" other.yml
 assert_status 1 "exits 1"
 assert_stdout_empty "nothing is printed to upload"
 
-FROM_STDIN=1 run_case "Without an argument the pipeline is read from STDIN" "{\"steps\": [$MAC_BUILD]}"
+FROM_STDIN=1 run_case "Without an argument the pipeline is read from STDIN" "$(pipeline_json '["x"]' '{"key": "x", "skip": "r", "notify": [{"github_commit_status": {"context": "x"}}]}')"
 assert_status 0 "exits 0"
-assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "the status is attached"
+assert_update_equals '[{"github_commit_status": {"context": "x"}}]' "the status is attached"
 assert_stdout_is_input "printed as it was read"
 
 FROM_STDIN=1 STDIN_FILE=/dev/null run_case "Empty STDIN is an error, not an empty pipeline to upload" '{"steps": []}'
