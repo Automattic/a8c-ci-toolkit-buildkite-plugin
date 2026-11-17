@@ -1,11 +1,11 @@
-# Throwaway experiment (do not merge): round 3, a delivery control. Does a plain Slack notify reach #mre-tests at all?
+# Throwaway experiment (do not merge): round 3, a delivery control. Does a plain Slack notify reach #mobile-apps-tests-notif at all?
 agents:
   queue: upload
 
 # C2: build-level, the form the org's other pipelines use
 notify:
   - slack:
-      channels: ["#mre-tests"]
+      channels: ["#mobile-apps-tests-notif"]
       message: "🧪 C2 (control, build-level notify declared in the YAML): throwaway notify_skipped_steps experiment, please ignore"
 
 steps:
@@ -14,7 +14,7 @@ steps:
     command: "true"
     notify:
       - slack:
-          channels: ["#mre-tests"]
+          channels: ["#mobile-apps-tests-notif"]
           message: "🧪 C1 (control, step-level notify declared in the YAML): throwaway notify_skipped_steps experiment, please ignore"
 
   - label: ":speech_balloon: runner: attaches slack entries to itself with step update"
