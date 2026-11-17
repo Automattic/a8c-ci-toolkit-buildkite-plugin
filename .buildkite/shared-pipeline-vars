@@ -1,10 +1,74 @@
-#!/bin/sh
+#!/bin/bash
 
-# This file is `source`'d before calling `buildkite-agent pipeline upload`, and can be used
-# to set up some variables that will be interpolated in the `.yml` pipeline before uploading it.
+# Throwaway experiment (do not merge): `source`d by the upload step before `buildkite-agent pipeline upload`.
+# Uploads one tiny pipeline per variant, to learn which `notify` entries the Buildkite server accepts next to `even-if-skipped: true`.
+# Every variant is a skipped step, so none of them runs or sends anything.
 
-# This repo is not an Xcode project, so we hardcode the version here rather than
-# using a `.xcode-version` file like our Apple projects do.
-XCODE_VERSION=26.6
+try_variant() { # name, with the notify entry on stdin
+  local name=$1 file out
+  file=$(mktemp)
+  { printf 'steps:\n  - label: "variant %s"\n    command: "true"\n    skip: "experiment"\n    notify:\n' "$name"; cat; } > "$file"
+  if out=$(buildkite-agent pipeline upload "$file" 2>&1); then
+    echo "EXP $name: ACCEPTED"
+  else
+    echo "EXP $name: REJECTED: $(printf '%s' "$out" | grep -o 'rejected.*' | head -1)"
+  fi
+}
 
-export IMAGE_ID="xcode-$XCODE_VERSION"
+try_variant "v01 slack string + marker" <<'Y'
+      - slack: "#mre-tests"
+        even-if-skipped: true
+Y
+try_variant "v02 slack object + marker" <<'Y'
+      - slack:
+          channels: ["#mre-tests"]
+          message: "x"
+        even-if-skipped: true
+Y
+try_variant "v03 slack object + if passed + marker" <<'Y'
+      - slack:
+          channels: ["#mre-tests"]
+          message: "x"
+        if: step.outcome == "passed"
+        even-if-skipped: true
+Y
+try_variant "v04 github_check + marker" <<'Y'
+      - github_check:
+          name: "exp"
+        even-if-skipped: true
+Y
+try_variant "v05 github_commit_status + marker (control: known to work)" <<'Y'
+      - github_commit_status:
+          context: "exp"
+        even-if-skipped: true
+Y
+try_variant "v06 basecamp_campfire + marker" <<'Y'
+      - basecamp_campfire: "https://example.invalid/campfire"
+        even-if-skipped: true
+Y
+try_variant "v07 slack string, NO marker (control)" <<'Y'
+      - slack: "#mre-tests"
+Y
+try_variant "v08 slack object + if passed, NO marker (control)" <<'Y'
+      - slack:
+          channels: ["#mre-tests"]
+          message: "x"
+        if: step.outcome == "passed"
+Y
+try_variant "v09 marker BEFORE slack string" <<'Y'
+      - even-if-skipped: true
+        slack: "#mre-tests"
+Y
+try_variant "v10 slack if build.state, NO marker (documented as unsupported at step level)" <<'Y'
+      - slack:
+          channels: ["#mre-tests"]
+          message: "x"
+        if: build.state == "failed"
+Y
+try_variant "v11 github_commit_status + if passed + marker" <<'Y'
+      - github_commit_status:
+          context: "exp"
+        if: step.outcome == "passed"
+        even-if-skipped: true
+Y
+true

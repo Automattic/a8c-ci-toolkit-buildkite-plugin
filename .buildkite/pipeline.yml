@@ -1,68 +1,7 @@
-# Throwaway experiment (do not merge): does Buildkite accept `even-if-skipped: true` next to non-GitHub notify types,
-# and what do the copied entries do once attached to the running step by bin/notify_skipped_steps?
+# Throwaway experiment (do not merge): the interesting part is in shared-pipeline-vars, which uploads one variant per notify entry.
 agents:
   queue: upload
 
 steps:
-  # Every step below is skipped on purpose, so Buildkite never sends its own notify: only the upload-time validation applies to them.
-  - label: "S1 slack string form"
-    command: "true"
-    skip: "experiment: skipped on purpose"
-    notify:
-      - slack: "#mre-tests"
-        even-if-skipped: true
-
-  - label: "S2 slack object form"
-    command: "true"
-    skip: "experiment: skipped on purpose"
-    notify:
-      - slack:
-          channels: ["#mre-tests"]
-          message: "🧪 S2 (object form + even-if-skipped): notify_skipped_steps experiment on a throwaway PR, please ignore"
-        even-if-skipped: true
-
-  - label: "S3 slack with an if that holds for the upload step"
-    command: "true"
-    skip: "experiment: skipped on purpose"
-    notify:
-      - slack:
-          channels: ["#mre-tests"]
-          message: "🧪 S3 (if step.outcome == passed): this one SHOULD arrive. Throwaway notify_skipped_steps experiment, please ignore"
-        if: step.outcome == "passed"
-        even-if-skipped: true
-
-  - label: "S4 slack with an if that does not hold"
-    command: "true"
-    skip: "experiment: skipped on purpose"
-    notify:
-      - slack:
-          channels: ["#mre-tests"]
-          message: "🧪 S4 (if step.outcome == hard_failed): this one should NOT arrive. Throwaway notify_skipped_steps experiment, please ignore"
-        if: step.outcome == "hard_failed"
-        even-if-skipped: true
-
-  - label: "S5 github_check"
-    command: "true"
-    skip: "experiment: skipped on purpose"
-    notify:
-      - github_check:
-          name: "exp: github_check from a skipped step"
-        even-if-skipped: true
-
-  - label: "S6 github_commit_status (control)"
-    command: "true"
-    skip: "experiment: skipped on purpose"
-    notify:
-      - github_commit_status:
-          context: "exp: github_commit_status from a skipped step"
-        even-if-skipped: true
-
-  - label: "S7 basecamp_campfire"
-    command: "true"
-    skip: "experiment: skipped on purpose"
-    notify:
-      - basecamp_campfire: "https://example.invalid/campfire"
-        even-if-skipped: true
-
-  - label: ":speech_balloon: runner: attaches the entries above to itself"
-    command: python3 bin/notify_skipped_steps .buildkite/pipeline.yml
+  - label: "end of the variants"
+    command: echo "variants uploaded, see the 'Pipeline Upload' log for the EXP lines"
