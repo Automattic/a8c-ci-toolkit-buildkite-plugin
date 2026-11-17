@@ -30,6 +30,20 @@ fi
 BASENAME=$(basename "$ARTIFACT_PATH")
 KEY="$BUILDKITE_BUILD_ID/$BASENAME"
 
+# On our macOS fleet, try the S3 server on the NAS first. If that fails, the code below uses AWS S3.
+if [[ -n "${BUILDKITE_NAS_ARTIFACTS_S3_ENDPOINT:-}" ]]; then
+	echo "Uploading to the NAS"
+	if env -u AWS_SESSION_TOKEN AWS_MAX_ATTEMPTS=1 \
+		AWS_ACCESS_KEY_ID="$BUILDKITE_NAS_ARTIFACTS_S3_ACCESS_KEY_ID" \
+		AWS_SECRET_ACCESS_KEY="$BUILDKITE_NAS_ARTIFACTS_S3_SECRET_ACCESS_KEY" \
+		aws s3 cp "$ARTIFACT_PATH" "s3://$BUCKET/$KEY" --endpoint-url "$BUILDKITE_NAS_ARTIFACTS_S3_ENDPOINT"; then
+		exit 0
+	fi
+	echo "Failed to upload '$KEY' to the NAS '$BUCKET' bucket. Falling back to AWS S3"
+fi
+
+echo "Uploading to AWS S3"
+
 # If the bucket has transfer acceleration enabled, use it!
 ACCELERATION_STATUS=$(aws s3api get-bucket-accelerate-configuration --bucket "$BUCKET" | jq '.Status' -r || true)
 
