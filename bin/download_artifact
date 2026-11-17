@@ -38,7 +38,7 @@ if [[ -n "${BUILDKITE_NAS_ARTIFACTS_S3_ENDPOINT:-}" ]]; then
 		aws s3 cp "s3://$BUCKET/$KEY" "$OUTPUT_PATH" --endpoint-url "$BUILDKITE_NAS_ARTIFACTS_S3_ENDPOINT"; then
 		exit 0
 	fi
-	echo "NAS failed"
+	echo "'$KEY' not found in the NAS '$BUCKET' bucket. Falling back to AWS S3"
 fi
 
 echo "Downloading from AWS S3"
