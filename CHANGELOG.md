@@ -18,7 +18,7 @@ _None._
 
 ### New Features
 
-- `upload_artifact` and `download_artifact` use the S3 server on the Synology NAS first when `BUILDKITE_NAS_ARTIFACTS_S3_ENDPOINT`, `BUILDKITE_NAS_ARTIFACTS_S3_ACCESS_KEY_ID` and `BUILDKITE_NAS_ARTIFACTS_S3_SECRET_ACCESS_KEY` are set, as on our macOS agents in MacMiniVault, and AWS S3 only if that fails. This avoids billed S3 egress for large artifacts passed between jobs on the same LAN.
+_None._
 
 ### Bug Fixes
 
@@ -38,11 +38,22 @@ _None._
 
 ### New Features
 
-- `install_gems` fails early and lists the Ruby versions installed on the agent when `rbenv` doesn't have the one `.ruby-version` asks for. [#245]
+_None._
 
 ### Bug Fixes
 
 _None._
+
+### Internal Changes
+
+_None._
+
+## 7.2.0
+
+### New Features
+
+- `upload_artifact` and `download_artifact` use the S3 server on the Synology NAS first when `BUILDKITE_NAS_ARTIFACTS_S3_ENDPOINT`, `BUILDKITE_NAS_ARTIFACTS_S3_ACCESS_KEY_ID` and `BUILDKITE_NAS_ARTIFACTS_S3_SECRET_ACCESS_KEY` are set, as on our macOS agents in MacMiniVault, and AWS S3 only if that fails. This avoids billed S3 egress for large artifacts passed between jobs on the same LAN. [#247]
+- `install_gems` fails early and lists the Ruby versions installed on the agent when `rbenv` doesn't have the one `.ruby-version` asks for. [#245]
 
 ### Internal Changes
 
