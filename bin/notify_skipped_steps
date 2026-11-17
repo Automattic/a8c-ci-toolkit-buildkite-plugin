@@ -69,7 +69,7 @@ def skipped_steps(steps, inherited=None):
                 contexts.append(context)
         if contexts:
             reason = 'no reason given' if skip is True or skip == 'true' else str(skip)
-            step_name = str(step.get('label') or step.get('group') or step.get('key') or step.get('command') or '(unnamed step)')
+            step_name = step.get('label') or step.get('group') or step.get('key') or step.get('command') or '(unnamed step)'
             yield (step_name, reason, contexts)
 
 
@@ -85,8 +85,8 @@ notify = [{'github_commit_status': {'context': c}} for c in contexts]
 subprocess.run(['buildkite-agent', 'step', 'update', 'notify', json.dumps(notify), '--append'], check=True)
 
 # The annotation comes second: the notifications matter more, and a failure to annotate is not fatal
-cell = lambda text: text.replace('|', '\\|').replace('\n', ' ')
-rows = ['| %s | %s | %s |' % (cell(label), cell(reason), ', '.join('`%s`' % c for c in contexts)) for label, reason, contexts in skipped]
+cell = lambda text: str(text).replace('|', '\\|').replace('\n', ' ')
+rows = ['| %s | %s | %s |' % (cell(label), cell(reason), ', '.join('`%s`' % cell(c) for c in contexts)) for label, reason, contexts in skipped]
 intro = 'Those steps will not run, but will still report their corresponding status to GitHub.'
 body = '\n'.join(['#### Skipped steps', '', intro, '', '| Step | Reason | Status reported to GitHub |', '|---|---|---|'] + rows)
 annotation = subprocess.run(['buildkite-agent', 'annotate', '--style', 'info', '--context', 'skipped-steps'], input=body, text=True)
