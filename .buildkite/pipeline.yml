@@ -1,44 +1,68 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/buildkite/pipeline-schema/main/schema.json
----
-
-# For convenience with the many install_swiftpm_dependencies steps, we declare agents and env for macOS in the root, then specialize the fewer remaining steps
+# Throwaway experiment (do not merge): does Buildkite accept `even-if-skipped: true` next to non-GitHub notify types,
+# and what do the copied entries do once attached to the running step by bin/notify_skipped_steps?
 agents:
-  queue: mac
-env:
-  IMAGE_ID: $IMAGE_ID
+  queue: upload
 
 steps:
-  - label: ":sleuth_or_spy: Lint"
-    command: make lint
+  # Every step below is skipped on purpose, so Buildkite never sends its own notify: only the upload-time validation applies to them.
+  - label: "S1 slack string form"
+    command: "true"
+    skip: "experiment: skipped on purpose"
+    notify:
+      - slack: "#mre-tests"
+        even-if-skipped: true
+
+  - label: "S2 slack object form"
+    command: "true"
+    skip: "experiment: skipped on purpose"
+    notify:
+      - slack:
+          channels: ["#mre-tests"]
+          message: "🧪 S2 (object form + even-if-skipped): notify_skipped_steps experiment on a throwaway PR, please ignore"
+        even-if-skipped: true
+
+  - label: "S3 slack with an if that holds for the upload step"
+    command: "true"
+    skip: "experiment: skipped on purpose"
+    notify:
+      - slack:
+          channels: ["#mre-tests"]
+          message: "🧪 S3 (if step.outcome == passed): this one SHOULD arrive. Throwaway notify_skipped_steps experiment, please ignore"
+        if: step.outcome == "passed"
+        even-if-skipped: true
+
+  - label: "S4 slack with an if that does not hold"
+    command: "true"
+    skip: "experiment: skipped on purpose"
+    notify:
+      - slack:
+          channels: ["#mre-tests"]
+          message: "🧪 S4 (if step.outcome == hard_failed): this one should NOT arrive. Throwaway notify_skipped_steps experiment, please ignore"
+        if: step.outcome == "hard_failed"
+        even-if-skipped: true
+
+  - label: "S5 github_check"
+    command: "true"
+    skip: "experiment: skipped on purpose"
+    notify:
+      - github_check:
+          name: "exp: github_check from a skipped step"
+        even-if-skipped: true
+
+  - label: "S6 github_commit_status (control)"
+    command: "true"
+    skip: "experiment: skipped on purpose"
     notify:
       - github_commit_status:
-          context: Lint
-    agents:
-      queue: default
+          context: "exp: github_commit_status from a skipped step"
+        even-if-skipped: true
 
-  - label: ":microscope: Test"
-    command: make test
+  - label: "S7 basecamp_campfire"
+    command: "true"
+    skip: "experiment: skipped on purpose"
     notify:
-      - github_commit_status:
-          context: Test
-    agents:
-      queue: default
+      - basecamp_campfire: "https://example.invalid/campfire"
+        even-if-skipped: true
 
-  - label: ":danger: Danger - PR Check"
-    command: danger
-    key: danger
-    if: build.pull_request.id != null
-    retry:
-      manual:
-        permit_on_passed: true
-    notify:
-      - github_commit_status:
-          context: Danger - PR Check
-    agents:
-      queue: linter
-
-
-  - label: ":test_tube: Run Helpers Tests"
-    command: buildkite-agent pipeline upload .buildkite/pipeline-tests.yml
-    agents:
-      queue: upload
+  - label: ":speech_balloon: runner: attaches the entries above to itself"
+    command: python3 bin/notify_skipped_steps .buildkite/pipeline.yml
