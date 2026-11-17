@@ -47,6 +47,7 @@ _None._
 ### Internal Changes
 
 - Merge the Bash and Windows test pipelines into a single `.buildkite/pipeline-tests.yml`, uploaded by one step. [#253]
+- This repo's CI only runs a helper's tests when the helper, the helpers it calls or its tests changed, using `if_changed` on each test group. [#252]
 
 ## 7.1.1
 
