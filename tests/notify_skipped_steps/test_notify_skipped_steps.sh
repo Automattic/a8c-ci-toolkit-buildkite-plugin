@@ -87,6 +87,13 @@ assert_update_equals '[{"github_commit_status": {"context": "A"}}, {"github_comm
 run_case "A pipe in a reason doesn't break the annotation table" '{"steps": [{"label": "Build", "skip": "a|b", "notify": [{"github_commit_status": {"context": "Build"}, "even-if-skipped": true}]}]}'
 assert_annotation_has '| Build | a\|b |' "pipe is escaped"
 
+run_case "A pipe or a newline in a status context doesn't break the annotation table" '{"steps": [{"label": "Pipe", "skip": "r", "notify": [{"github_commit_status": {"context": "iOS | Unit Tests"}, "even-if-skipped": true}]}, {"label": "Lines", "skip": "r", "notify": [{"github_commit_status": {"context": "two\nlines"}, "even-if-skipped": true}]}]}'
+# shellcheck disable=SC2016 # The backticks are literal Markdown
+assert_annotation_has '| Pipe | r | `iOS \| Unit Tests` |' "pipe in a context is escaped"
+# shellcheck disable=SC2016
+assert_annotation_has '| Lines | r | `two lines` |' "newline in a context becomes a space"
+assert_update_equals '[{"github_commit_status": {"context": "iOS | Unit Tests"}}, {"github_commit_status": {"context": "two\nlines"}}]' "the contexts sent to GitHub are untouched"
+
 run_case "A step named only by an array command or a number doesn't break the annotation" '{"steps": [{"command": ["echo a", "echo b"], "skip": "r", "notify": [{"github_commit_status": {"context": "Cmd"}, "even-if-skipped": true}]}, {"key": 7, "skip": "r", "notify": [{"github_commit_status": {"context": "Key"}, "even-if-skipped": true}]}]}'
 assert_status 0 "exits 0"
 assert_update_equals '[{"github_commit_status": {"context": "Cmd"}}, {"github_commit_status": {"context": "Key"}}]' "both contexts attached"
