@@ -1,7 +1,7 @@
-# Throwaway experiment (do not merge): round 5, what do the `upload` agents offer? (no notifications in this one)
+# Throwaway experiment (do not merge): round 7, which `if:` expressions does the server accept on a notify entry and when do they fire?
 agents:
   queue: upload
 
 steps:
-  - label: "upload agent capabilities"
-    command: bash .buildkite/exp-env.sh
+  - label: ":microscope: runner: probes expressions then uploads the evaluation steps"
+    command: python3 .buildkite/exp-ifs.py
