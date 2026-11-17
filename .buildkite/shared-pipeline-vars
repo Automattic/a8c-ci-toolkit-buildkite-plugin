@@ -1,69 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 
-# Throwaway experiment (do not merge), round 2: alternative places for a marker the Buildkite server might accept.
-# `source`d by the upload step before `buildkite-agent pipeline upload`. Every variant is a skipped step: nothing runs or is sent.
+# This file is `source`'d before calling `buildkite-agent pipeline upload`, and can be used
+# to set up some variables that will be interpolated in the `.yml` pipeline before uploading it.
 
-report() { # name, exit status, output
-  if [[ $2 -eq 0 ]]; then echo "EXP $1: ACCEPTED"; else echo "EXP $1: REJECTED: $(printf '%s' "$3" | grep -o 'rejected.*' | head -1)"; fi
-}
+# This repo is not an Xcode project, so we hardcode the version here rather than
+# using a `.xcode-version` file like our Apple projects do.
+XCODE_VERSION=26.6
 
-try_raw() { # name, whole pipeline file on stdin
-  local name=$1 file out status=0
-  file=$(mktemp); cat > "$file"
-  out=$(buildkite-agent pipeline upload "$file" 2>&1) || status=$?
-  report "$name" "$status" "$out"
-}
-
-try_step() { # name, step attributes (indented 4 spaces) on stdin
-  local name=$1
-  { printf 'steps:\n  - label: "variant %s"\n    command: "true"\n    skip: "experiment"\n' "$name"; cat; } | try_raw "$name"
-}
-
-try_step "v12 marker INSIDE the slack object map" <<'Y'
-    notify:
-      - slack:
-          channels: ["#mre-tests"]
-          message: "x"
-          even-if-skipped: true
-Y
-try_step "v13 marker at STEP level + plain slack" <<'Y'
-    even-if-skipped: true
-    notify:
-      - slack: "#mre-tests"
-Y
-try_step "v14 marker as a step-level env var + plain slack" <<'Y'
-    env:
-      NOTIFY_EVEN_IF_SKIPPED: "true"
-    notify:
-      - slack: "#mre-tests"
-Y
-try_step "v15 marker INSIDE the github_check map" <<'Y'
-    notify:
-      - github_check:
-          name: "exp"
-          even-if-skipped: true
-Y
-try_step "v16 basecamp_campfire with a plausible URL, NO marker (control)" <<'Y'
-    notify:
-      - basecamp_campfire: "https://3.basecamp.com/1234567/integrations/abcdefghij/buckets/1234567/chats/1234567/lines"
-Y
-try_step "v17 basecamp_campfire with a plausible URL + marker" <<'Y'
-    notify:
-      - basecamp_campfire: "https://3.basecamp.com/1234567/integrations/abcdefghij/buckets/1234567/chats/1234567/lines"
-        even-if-skipped: true
-Y
-try_raw "v18 marker at pipeline top level + plain slack step" <<'Y'
-even-if-skipped: true
-steps:
-  - label: "variant v18"
-    command: "true"
-    skip: "experiment"
-    notify:
-      - slack: "#mre-tests"
-Y
-try_step "v19 plain slack with a key that looks like a notify option (if + extra)" <<'Y'
-    notify:
-      - slack: "#mre-tests"
-        if: step.outcome == "passed"
-Y
-true
+export IMAGE_ID="xcode-$XCODE_VERSION"
