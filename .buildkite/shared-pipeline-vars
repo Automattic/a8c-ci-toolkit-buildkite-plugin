@@ -1,74 +1,69 @@
 #!/bin/bash
 
-# Throwaway experiment (do not merge): `source`d by the upload step before `buildkite-agent pipeline upload`.
-# Uploads one tiny pipeline per variant, to learn which `notify` entries the Buildkite server accepts next to `even-if-skipped: true`.
-# Every variant is a skipped step, so none of them runs or sends anything.
+# Throwaway experiment (do not merge), round 2: alternative places for a marker the Buildkite server might accept.
+# `source`d by the upload step before `buildkite-agent pipeline upload`. Every variant is a skipped step: nothing runs or is sent.
 
-try_variant() { # name, with the notify entry on stdin
-  local name=$1 file out
-  file=$(mktemp)
-  { printf 'steps:\n  - label: "variant %s"\n    command: "true"\n    skip: "experiment"\n    notify:\n' "$name"; cat; } > "$file"
-  if out=$(buildkite-agent pipeline upload "$file" 2>&1); then
-    echo "EXP $name: ACCEPTED"
-  else
-    echo "EXP $name: REJECTED: $(printf '%s' "$out" | grep -o 'rejected.*' | head -1)"
-  fi
+report() { # name, exit status, output
+  if [[ $2 -eq 0 ]]; then echo "EXP $1: ACCEPTED"; else echo "EXP $1: REJECTED: $(printf '%s' "$3" | grep -o 'rejected.*' | head -1)"; fi
 }
 
-try_variant "v01 slack string + marker" <<'Y'
+try_raw() { # name, whole pipeline file on stdin
+  local name=$1 file out status=0
+  file=$(mktemp); cat > "$file"
+  out=$(buildkite-agent pipeline upload "$file" 2>&1) || status=$?
+  report "$name" "$status" "$out"
+}
+
+try_step() { # name, step attributes (indented 4 spaces) on stdin
+  local name=$1
+  { printf 'steps:\n  - label: "variant %s"\n    command: "true"\n    skip: "experiment"\n' "$name"; cat; } | try_raw "$name"
+}
+
+try_step "v12 marker INSIDE the slack object map" <<'Y'
+    notify:
+      - slack:
+          channels: ["#mre-tests"]
+          message: "x"
+          even-if-skipped: true
+Y
+try_step "v13 marker at STEP level + plain slack" <<'Y'
+    even-if-skipped: true
+    notify:
       - slack: "#mre-tests"
-        even-if-skipped: true
 Y
-try_variant "v02 slack object + marker" <<'Y'
-      - slack:
-          channels: ["#mre-tests"]
-          message: "x"
-        even-if-skipped: true
+try_step "v14 marker as a step-level env var + plain slack" <<'Y'
+    env:
+      NOTIFY_EVEN_IF_SKIPPED: "true"
+    notify:
+      - slack: "#mre-tests"
 Y
-try_variant "v03 slack object + if passed + marker" <<'Y'
-      - slack:
-          channels: ["#mre-tests"]
-          message: "x"
-        if: step.outcome == "passed"
-        even-if-skipped: true
-Y
-try_variant "v04 github_check + marker" <<'Y'
+try_step "v15 marker INSIDE the github_check map" <<'Y'
+    notify:
       - github_check:
           name: "exp"
+          even-if-skipped: true
+Y
+try_step "v16 basecamp_campfire with a plausible URL, NO marker (control)" <<'Y'
+    notify:
+      - basecamp_campfire: "https://3.basecamp.com/1234567/integrations/abcdefghij/buckets/1234567/chats/1234567/lines"
+Y
+try_step "v17 basecamp_campfire with a plausible URL + marker" <<'Y'
+    notify:
+      - basecamp_campfire: "https://3.basecamp.com/1234567/integrations/abcdefghij/buckets/1234567/chats/1234567/lines"
         even-if-skipped: true
 Y
-try_variant "v05 github_commit_status + marker (control: known to work)" <<'Y'
-      - github_commit_status:
-          context: "exp"
-        even-if-skipped: true
-Y
-try_variant "v06 basecamp_campfire + marker" <<'Y'
-      - basecamp_campfire: "https://example.invalid/campfire"
-        even-if-skipped: true
-Y
-try_variant "v07 slack string, NO marker (control)" <<'Y'
+try_raw "v18 marker at pipeline top level + plain slack step" <<'Y'
+even-if-skipped: true
+steps:
+  - label: "variant v18"
+    command: "true"
+    skip: "experiment"
+    notify:
       - slack: "#mre-tests"
 Y
-try_variant "v08 slack object + if passed, NO marker (control)" <<'Y'
-      - slack:
-          channels: ["#mre-tests"]
-          message: "x"
+try_step "v19 plain slack with a key that looks like a notify option (if + extra)" <<'Y'
+    notify:
+      - slack: "#mre-tests"
         if: step.outcome == "passed"
-Y
-try_variant "v09 marker BEFORE slack string" <<'Y'
-      - even-if-skipped: true
-        slack: "#mre-tests"
-Y
-try_variant "v10 slack if build.state, NO marker (documented as unsupported at step level)" <<'Y'
-      - slack:
-          channels: ["#mre-tests"]
-          message: "x"
-        if: build.state == "failed"
-Y
-try_variant "v11 github_commit_status + if passed + marker" <<'Y'
-      - github_commit_status:
-          context: "exp"
-        if: step.outcome == "passed"
-        even-if-skipped: true
 Y
 true

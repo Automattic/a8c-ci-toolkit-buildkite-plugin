@@ -1,7 +1,8 @@
-# Throwaway experiment (do not merge): the interesting part is in shared-pipeline-vars, which uploads one variant per notify entry.
+# Throwaway experiment (do not merge): round 2. shared-pipeline-vars uploads the marker-placement variants;
+# the runner below attaches notify entries to itself with `step update`, the way bin/notify_skipped_steps does.
 agents:
   queue: upload
 
 steps:
-  - label: "end of the variants"
-    command: echo "variants uploaded, see the 'Pipeline Upload' log for the EXP lines"
+  - label: ":speech_balloon: runner: attaches notify entries to itself"
+    command: bash .buildkite/exp-attach.sh
