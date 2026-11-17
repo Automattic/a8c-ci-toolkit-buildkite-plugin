@@ -9,7 +9,7 @@
 #   The file is `$1` if given, else `$PIPELINE`, else `pipeline.yml`; it is looked up as given, then in `.buildkite/`.
 #   Run it in the step that runs `buildkite-agent pipeline upload` (it needs Python 3 and a running job; it reads a file, not stdin).
 #
-# Opt in each `notify` entry, of any type (`github_commit_status`, `slack`…), by adding `even-if-skipped: true` to it:
+# Opt in each `notify` entry by adding `even-if-skipped: true` to it. Buildkite only accepts that attribute next to `github_commit_status` and `basecamp_campfire` entries (it rejects it next to `slack` or `github_check`):
 #   - label: Lint Swift Files
 #     command: .buildkite/commands/run-swiftlint.sh
 #     if_changed: ["**/*.swift"]
