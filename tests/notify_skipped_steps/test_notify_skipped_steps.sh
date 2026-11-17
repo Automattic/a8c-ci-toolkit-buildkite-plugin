@@ -66,7 +66,7 @@ run_case "A skipped step with the marker gets its status attached to the running
 assert_status 0 "exits 0"
 assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "step update carries the context only, without the marker"
 # shellcheck disable=SC2016 # The backticks are literal Markdown
-assert_annotation_has '| :mac: Build | No relevant files changed | `Mac Build` |' "annotation lists the step, the reason and the context"
+assert_annotation_has '| :mac: Build | No relevant files changed | :github: `Mac Build` |' "annotation lists the step, the reason and the notification"
 
 run_case "A step that is not skipped is left alone" '{"steps": [{"label": "Build", "skip": false, "notify": [{"github_commit_status": {"context": "Build"}, "even-if-skipped": true}]}]}'
 assert_status 0 "exits 0"
@@ -89,16 +89,16 @@ assert_annotation_has '| Build | a\|b |' "pipe is escaped"
 
 run_case "A pipe or a newline in a status context doesn't break the annotation table" '{"steps": [{"label": "Pipe", "skip": "r", "notify": [{"github_commit_status": {"context": "iOS | Unit Tests"}, "even-if-skipped": true}]}, {"label": "Lines", "skip": "r", "notify": [{"github_commit_status": {"context": "two\nlines"}, "even-if-skipped": true}]}]}'
 # shellcheck disable=SC2016 # The backticks are literal Markdown
-assert_annotation_has '| Pipe | r | `iOS \| Unit Tests` |' "pipe in a context is escaped"
+assert_annotation_has '| Pipe | r | :github: `iOS \| Unit Tests` |' "pipe in a context is escaped"
 # shellcheck disable=SC2016
-assert_annotation_has '| Lines | r | `two lines` |' "newline in a context becomes a space"
+assert_annotation_has '| Lines | r | :github: `two lines` |' "newline in a context becomes a space"
 assert_update_equals '[{"github_commit_status": {"context": "iOS | Unit Tests"}}, {"github_commit_status": {"context": "two\nlines"}}]' "the contexts sent to GitHub are untouched"
 
 run_case "A step named only by an array command or a number doesn't break the annotation" '{"steps": [{"command": ["echo a", "echo b"], "skip": "r", "notify": [{"github_commit_status": {"context": "Cmd"}, "even-if-skipped": true}]}, {"key": 7, "skip": "r", "notify": [{"github_commit_status": {"context": "Key"}, "even-if-skipped": true}]}]}'
 assert_status 0 "exits 0"
 assert_update_equals '[{"github_commit_status": {"context": "Cmd"}}, {"github_commit_status": {"context": "Key"}}]' "both contexts attached"
 # shellcheck disable=SC2016 # The backticks are literal Markdown
-assert_annotation_has '| 7 | r | `Key` |' "annotation lists the numeric key"
+assert_annotation_has '| 7 | r | :github: `Key` |' "annotation lists the numeric key"
 
 # The agent puts `skip` on a skipped group only, not on the steps inside it
 CHILD_A='{"label": "child", "command": "x", "notify": [{"github_commit_status": {"context": "Child"}, "even-if-skipped": true}]}'
@@ -106,18 +106,18 @@ CHILD_OWN='{"label": "own", "skip": "own reason", "command": "x", "notify": [{"g
 run_case "The steps of a skipped group are skipped too, and a step's own reason wins" "{\"steps\": [{\"group\": \"G\", \"skip\": \"group skipped\", \"steps\": [$CHILD_A, $CHILD_OWN]}]}"
 assert_update_equals '[{"github_commit_status": {"context": "Child"}}, {"github_commit_status": {"context": "Own"}}]' "both contexts attached"
 # shellcheck disable=SC2016 # The backticks are literal Markdown
-assert_annotation_has '| child | group skipped | `Child` |' "inherits the group's reason"
+assert_annotation_has '| child | group skipped | :github: `Child` |' "inherits the group's reason"
 # shellcheck disable=SC2016
-assert_annotation_has '| own | own reason | `Own` |' "keeps its own reason"
+assert_annotation_has '| own | own reason | :github: `Own` |' "keeps its own reason"
 
 run_case "A group nested in a skipped group is skipped too" "{\"steps\": [{\"group\": \"Outer\", \"skip\": \"outer skipped\", \"steps\": [{\"group\": \"Inner\", \"steps\": [$CHILD_A]}]}]}"
 # shellcheck disable=SC2016
-assert_annotation_has '| child | outer skipped | `Child` |' "inherited through two levels"
+assert_annotation_has '| child | outer skipped | :github: `Child` |' "inherited through two levels"
 
 run_case "A skipped group can have a marker of its own, listed by its title" '{"steps": [{"group": "My group", "skip": "r", "notify": [{"github_commit_status": {"context": "GroupCtx"}, "even-if-skipped": true}], "steps": [{"label": "c", "command": "x"}]}]}'
 assert_update_equals '[{"github_commit_status": {"context": "GroupCtx"}}]' "the group's context is attached"
 # shellcheck disable=SC2016
-assert_annotation_has '| My group | r | `GroupCtx` |' "annotation uses the group title"
+assert_annotation_has '| My group | r | :github: `GroupCtx` |' "annotation uses the group title"
 
 run_case "A group that is not skipped doesn't skip its steps" "{\"steps\": [{\"group\": \"G\", \"steps\": [$CHILD_A]}]}"
 assert_no_update "no step update"
@@ -125,6 +125,12 @@ assert_no_update "no step update"
 run_case "Bare steps like \`wait\` are ignored" "{\"steps\": [\"wait\", {\"block\": \"Approve?\"}, $MAC_BUILD, \"wait\"]}"
 assert_status 0 "exits 0"
 assert_update_equals '[{"github_commit_status": {"context": "Mac Build"}}]' "the skipped step is still attached"
+
+run_case "Any notification type is copied as it is, minus the marker, and entries without it stay behind" '{"steps": [{"label": "Notify", "skip": "r", "notify": [{"slack": "#ci", "even-if-skipped": true}, {"slack": {"channels": ["#a", "#b"], "message": "hi"}, "if": "step.outcome == \"hard_failed\"", "even-if-skipped": true}, {"basecamp_campfire": "https://x", "even-if-skipped": true}, {"github_commit_status": {"context": "Ctx"}, "even-if-skipped": true}, {"slack": "#not-marked"}]}]}'
+assert_status 0 "exits 0"
+assert_update_equals '[{"slack": "#ci"}, {"slack": {"channels": ["#a", "#b"], "message": "hi"}, "if": "step.outcome == \"hard_failed\""}, {"basecamp_campfire": "https://x"}, {"github_commit_status": {"context": "Ctx"}}]' "entries are copied verbatim without the marker, the unmarked one is not"
+# shellcheck disable=SC2016 # The backticks are literal Markdown
+assert_annotation_has '| Notify | r | :slack: `#ci`, :slack: `#a, #b`, (basecamp_campfire), :github: `Ctx` |' "annotation describes each notification by its type"
 
 run_case "A marker without a context is an error" '{"steps": [{"label": "Build", "skip": "r", "notify": [{"github_commit_status": {}, "even-if-skipped": true}]}]}'
 assert_status 1 "exits 1"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Makes Buildkite report GitHub commit statuses even for steps skipped by `skip:` or `if_changed:`, which otherwise never send their `notify:`.
+# Makes Buildkite send the `notify:` entries (e.g. GitHub commit statuses) of steps skipped by `skip:` or `if_changed:`, which otherwise never send them.
 # Also posts an annotation listing the skipped steps and why they were skipped.
 #
 # Usage:
@@ -9,7 +9,7 @@
 #   The file is `$1` if given, else `$PIPELINE`, else `pipeline.yml`; it is looked up as given, then in `.buildkite/`.
 #   Run it in the step that runs `buildkite-agent pipeline upload` (it needs Python 3 and a running job; it reads a file, not stdin).
 #
-# Opt in each step by adding `even-if-skipped: true` to its `notify` entry:
+# Opt in each `notify` entry, of any type (`github_commit_status`, `slack`…), by adding `even-if-skipped: true` to it:
 #   - label: Lint Swift Files
 #     command: .buildkite/commands/run-swiftlint.sh
 #     if_changed: ["**/*.swift"]
@@ -21,8 +21,9 @@
 #   export SKIP_UI_TESTS=$(.buildkite/commands/should-skip-job.sh ui-tests)
 # and use `skip: $SKIP_UI_TESTS`. Such a script should print the reason to skip, or `false` (or nothing) to run the step.
 #
-# How it works: it dry-runs the upload (`buildkite-agent pipeline upload --dry-run`), so interpolation and `if_changed` are already applied, to determine which steps would be skipped. Then, for each such skipped step that has a `notify` entry with `even-if-skipped: true` set, it attaches a `github_commit_status` with the same context to the running step via `buildkite-agent step update`; the statuses are sent when the job for the real pipeline upload step finishes.
-# Exits 0 without doing anything if no step uses `even-if-skipped`; exits 1 on a missing file, a failed dry run or a marked step without a `context`.
+# How it works: it dry-runs the upload (`buildkite-agent pipeline upload --dry-run`), so interpolation and `if_changed` are already applied, to determine which steps would be skipped. Then, for each such skipped step, it copies its `notify` entries that have `even-if-skipped: true` set (minus that attribute) onto the running step via `buildkite-agent step update`; they are sent when the job for the real pipeline upload step finishes.
+# As they are sent by the upload step, a `github_commit_status` needs an explicit `context` (it would otherwise report the upload step), and an `if:` condition is evaluated for the upload step, not for the skipped one.
+# Exits 0 without doing anything if no step uses `even-if-skipped`; exits 1 on a missing file, a failed dry run or a marked `github_commit_status` without a `context`.
 
 import json
 import os
@@ -50,8 +51,23 @@ def is_skipped(step):
     return skip not in (None, False, '') and str(skip).lower() != 'false'
 
 
+cell = lambda text: str(text).replace('|', '\\|').replace('\n', ' ')
+
+
+def describe(block):
+    """How the annotation names a notification: `:github: context`, `:slack: channels`, or `(type)` for anything else."""
+    kind = next((k for k in block if k != 'if'), '?')
+    value = block.get(kind)
+    if kind == 'github_commit_status' and isinstance(value, dict):
+        return ':github: `%s`' % cell(value.get('context'))
+    channels = value.get('channels') if isinstance(value, dict) else value
+    if kind == 'slack' and channels:
+        return ':slack: `%s`' % cell(', '.join(map(str, channels)) if isinstance(channels, list) else channels)
+    return '(%s)' % cell(kind)
+
+
 def skipped_steps(steps, inherited=None):
-    """Yields (label, reason, contexts) for each skipped step that opted in with `even-if-skipped`, group members before their group.
+    """Yields (label, reason, notify_blocks) for each skipped step that opted in with `even-if-skipped`, group members before their group.
     The agent sets `skip` on a skipped group only, so `inherited` is the `skip` of the nearest skipped group above."""
     for step in steps or []:
         if not isinstance(step, dict):  # e.g. a bare `wait`
@@ -60,35 +76,35 @@ def skipped_steps(steps, inherited=None):
         yield from skipped_steps(step.get('steps'), skip)
         if skip is None:
             continue
-        contexts = []
+        notify_blocks = []
         for entry in step.get('notify') or []:
-            if isinstance(entry, dict) and entry.get('even-if-skipped') is True and isinstance(entry.get('github_commit_status'), dict):
-                context = entry['github_commit_status'].get('context')
-                if not context:
+            if isinstance(entry, dict) and entry.get('even-if-skipped') is True:
+                block = {k: v for k, v in entry.items() if k != 'even-if-skipped'}
+                github = block.get('github_commit_status')
+                if isinstance(github, dict) and not github.get('context'):
                     sys.exit("even-if-skipped needs a github_commit_status `context`")
-                contexts.append(context)
-        if contexts:
+                if block:
+                    notify_blocks.append(block)
+        if notify_blocks:
             reason = 'no reason given' if skip is True or skip == 'true' else str(skip)
             step_name = step.get('label') or step.get('group') or step.get('key') or step.get('command') or '(unnamed step)'
-            yield (step_name, reason, contexts)
+            yield (step_name, reason, notify_blocks)
 
 
 skipped = list(skipped_steps(json.loads(dry_run.stdout).get('steps')))
-contexts = [c for _, _, cs in skipped for c in cs]
-print("notify_skipped_steps: statuses for skipped steps: %s" % (contexts or "none"), flush=True)
+notify = [block for _, _, blocks in skipped for block in blocks]
+print("notify_skipped_steps: notifications for skipped steps: %s" % (', '.join(describe(b) for b in notify) or "none"), flush=True)
 
-if not contexts:
+if not notify:
     sys.exit(0)
-notify = [{'github_commit_status': {'context': c}} for c in contexts]
 
 # Without `--step`, this updates the running step: its entries fire when it finishes, whatever happens to the rest of the build
 subprocess.run(['buildkite-agent', 'step', 'update', 'notify', json.dumps(notify), '--append'], check=True)
 
 # The annotation comes second: the notifications matter more, and a failure to annotate is not fatal
-cell = lambda text: str(text).replace('|', '\\|').replace('\n', ' ')
-rows = ['| %s | %s | %s |' % (cell(label), cell(reason), ', '.join('`%s`' % cell(c) for c in contexts)) for label, reason, contexts in skipped]
-intro = 'Those steps will not run, but will still report their corresponding status to GitHub.'
-body = '\n'.join(['#### Skipped steps', '', intro, '', '| Step | Reason | Status reported to GitHub |', '|---|---|---|'] + rows)
+rows = ['| %s | %s | %s |' % (cell(label), cell(reason), ', '.join(describe(b) for b in blocks)) for label, reason, blocks in skipped]
+intro = 'Those steps will not run, but will still send their notifications.'
+body = '\n'.join(['#### Skipped steps', '', intro, '', '| Step | Reason | Notification |', '|---|---|---|'] + rows)
 annotation = subprocess.run(['buildkite-agent', 'annotate', '--style', 'info', '--context', 'skipped-steps'], input=body, text=True)
 if annotation.returncode != 0:
     print("notify_skipped_steps: could not post the annotation", file=sys.stderr)
