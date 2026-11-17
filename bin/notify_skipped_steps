@@ -9,26 +9,35 @@
 #   The file is `$1` if given, else `$PIPELINE`, else `pipeline.yml`; it is looked up as given, then in `.buildkite/`.
 #   Run it in the step that runs `buildkite-agent pipeline upload` (it needs Python 3 and a running job; it reads a file, not stdin).
 #
-# Opt in each `notify` entry by adding `even-if-skipped: true` to it. Buildkite only accepts that attribute next to `github_commit_status` and `basecamp_campfire` entries (it rejects it next to `slack` or `github_check`):
+# Opt in each `notify` entry, of any type, in one of two ways:
+#   - `even-if-skipped: true` next to it. Buildkite only accepts that attribute on `github_commit_status` and `basecamp_campfire` entries.
+#   - An `if:` that contains `step.state == "ignored"` (`ignored` is the state of a skipped step), which Buildkite accepts on any type. Buildkite never evaluates it for a skipped step, so it only marks the entry; add `|| step.state == "finished"` so that the entry still fires, for a pass and a failure alike, when its step does run.
+#
 #   - label: Lint Swift Files
 #     command: .buildkite/commands/run-swiftlint.sh
 #     if_changed: ["**/*.swift"]
 #     notify:
 #       - github_commit_status: { context: "SwiftLint" }
 #         even-if-skipped: true
+#       - slack: { channels: ["#ci"], message: "Lint finished" }
+#         if: step.state == "ignored" || step.state == "finished"
 #
 # For skip logic `if_changed` can't express easily, compute it in `shared-pipeline-vars`, e.g.
 #   export SKIP_UI_TESTS=$(.buildkite/commands/should-skip-job.sh ui-tests)
 # and use `skip: $SKIP_UI_TESTS`. Such a script should print the reason to skip, or `false` (or nothing) to run the step.
 #
-# How it works: it dry-runs the upload (`buildkite-agent pipeline upload --dry-run`), so interpolation and `if_changed` are already applied, to determine which steps would be skipped. Then, for each such skipped step, it copies its `notify` entries that have `even-if-skipped: true` set (minus that attribute) onto the running step via `buildkite-agent step update`; they are sent when the job for the real pipeline upload step finishes.
+# How it works: it dry-runs the upload (`buildkite-agent pipeline upload --dry-run`), so interpolation and `if_changed` are already applied, to determine which steps would be skipped. Then, for each such skipped step, it copies its opted-in `notify` entries (minus `even-if-skipped`) onto the running step via `buildkite-agent step update`; they are sent when the job for the real pipeline upload step finishes.
 # As they are sent by the upload step, a `github_commit_status` needs an explicit `context` (it would otherwise report the upload step), and an `if:` condition is evaluated for the upload step, not for the skipped one.
-# Exits 0 without doing anything if no step uses `even-if-skipped`; exits 1 on a missing file, a failed dry run or a marked `github_commit_status` without a `context`.
+# Exits 0 without doing anything if no entry opts in; exits 1 on a missing file, a failed dry run or an opted-in `github_commit_status` without a `context`.
 
 import json
 import os
+import re
 import subprocess
 import sys
+
+# `step.state == "ignored"` (either quote), wherever it sits in an `if:` condition
+IGNORED = re.compile(r'''step\.state\s*==\s*(["'])ignored\1''')
 
 name = (sys.argv[1:] or [''])[0] or os.environ.get('PIPELINE') or 'pipeline.yml'
 path = next((p for p in (name, os.path.join('.buildkite', name)) if os.path.isfile(p)), None)
@@ -38,7 +47,7 @@ if path is None:
 with open(path) as f:
     source = f.read()
 
-if 'even-if-skipped' not in source:
+if 'even-if-skipped' not in source and 'ignored' not in source:
     sys.exit(0)
 
 dry_run = subprocess.run(['buildkite-agent', 'pipeline', 'upload', '--dry-run', '--format', 'json'], input=source, capture_output=True, text=True)
@@ -66,8 +75,12 @@ def describe(block):
     return '(%s)' % cell(kind)
 
 
+def opted_in(entry):
+    return isinstance(entry, dict) and (entry.get('even-if-skipped') is True or bool(IGNORED.search(str(entry.get('if') or ''))))
+
+
 def skipped_steps(steps, inherited=None):
-    """Yields (label, reason, notify_blocks) for each skipped step that opted in with `even-if-skipped`, group members before their group.
+    """Yields (label, reason, notify_blocks) for each skipped step that opted in, group members before their group.
     The agent sets `skip` on a skipped group only, so `inherited` is the `skip` of the nearest skipped group above."""
     for step in steps or []:
         if not isinstance(step, dict):  # e.g. a bare `wait`
@@ -78,11 +91,11 @@ def skipped_steps(steps, inherited=None):
             continue
         notify_blocks = []
         for entry in step.get('notify') or []:
-            if isinstance(entry, dict) and entry.get('even-if-skipped') is True:
+            if opted_in(entry):
                 block = {k: v for k, v in entry.items() if k != 'even-if-skipped'}
                 github = block.get('github_commit_status')
                 if isinstance(github, dict) and not github.get('context'):
-                    sys.exit("even-if-skipped needs a github_commit_status `context`")
+                    sys.exit("an opted-in github_commit_status needs a `context`")
                 if block:
                     notify_blocks.append(block)
         if notify_blocks:

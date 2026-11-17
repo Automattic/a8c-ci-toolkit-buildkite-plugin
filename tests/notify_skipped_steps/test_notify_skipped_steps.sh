@@ -132,6 +132,40 @@ assert_update_equals '[{"slack": "#ci"}, {"slack": {"channels": ["#a", "#b"], "m
 # shellcheck disable=SC2016 # The backticks are literal Markdown
 assert_annotation_has '| Notify | r | :slack: `#ci`, :slack: `#a, #b`, (basecamp_campfire), :github: `Ctx` |' "annotation describes each notification by its type"
 
+IGNORED_OR_FINISHED='step.state == \"ignored\" || step.state == \"finished\"'
+IGNORED_PIPELINE=$'steps:\n  - label: x\n    notify:\n      - slack: "#x"\n        if: step.state == "ignored" || step.state == "finished"\n'
+
+PIPELINE_YML="$IGNORED_PIPELINE" run_case "An entry whose \`if\` tests for the \`ignored\` state opts in, for any type, and is copied with its \`if\`" "{\"steps\": [{\"label\": \"Notify\", \"skip\": \"r\", \"notify\": [{\"slack\": \"#ci\", \"if\": \"$IGNORED_OR_FINISHED\"}, {\"github_check\": {\"name\": \"Check\"}, \"if\": \"$IGNORED_OR_FINISHED\"}, {\"github_commit_status\": {\"context\": \"Ctx\"}, \"if\": \"$IGNORED_OR_FINISHED\"}, {\"slack\": \"#not-opted-in\"}]}]}"
+assert_status 0 "exits 0"
+assert_update_equals "[{\"slack\": \"#ci\", \"if\": \"$IGNORED_OR_FINISHED\"}, {\"github_check\": {\"name\": \"Check\"}, \"if\": \"$IGNORED_OR_FINISHED\"}, {\"github_commit_status\": {\"context\": \"Ctx\"}, \"if\": \"$IGNORED_OR_FINISHED\"}]" "the three entries are attached as they are, the plain one is not"
+
+# Usage: slack_with_if <condition> [notify]. Prints a dry-run JSON with one skipped step notifying Slack under that `if`, or with a 2nd argument just the notify entry as the script prints it.
+slack_with_if() {
+  python3 -c 'import json, sys
+entry = {"slack": "#ci", "if": sys.argv[1]}
+print(json.dumps(entry) if len(sys.argv) > 2 else json.dumps({"steps": [{"label": "x", "skip": "r", "notify": [entry]}]}))' "$@"
+}
+
+# What Buildkite accepts for `step.state` is only `==` and `!=` against a quoted string, joined with `&&`, `||`, `!` and parentheses
+for condition in "step.state == 'ignored'" 'step.state=="ignored"' 'step.state == "finished" || step.state == "ignored"' '(step.state == "ignored") || (step.state == "finished")' 'step.state == "ignored" && build.branch == "main"'; do
+  PIPELINE_YML="$IGNORED_PIPELINE" run_case "Opts in with: $condition" "$(slack_with_if "$condition")"
+  assert_update_equals "[$(slack_with_if "$condition" notify)]" "attached"
+done
+for condition in 'step.state == "finished"' 'step.state == "failing"' 'step.state != "running"' 'step.state == "ignoredx"' 'step.outcome == "passed"' 'build.state == "passed"'; do
+  PIPELINE_YML="$IGNORED_PIPELINE" run_case "Doesn't opt in with: $condition" "$(slack_with_if "$condition")"
+  assert_no_update "no step update"
+done
+
+PIPELINE_YML="$IGNORED_PIPELINE" run_case "An entry with both the marker and the \`if\` is attached once, without the marker" "{\"steps\": [{\"label\": \"x\", \"skip\": \"r\", \"notify\": [{\"github_commit_status\": {\"context\": \"Ctx\"}, \"even-if-skipped\": true, \"if\": \"$IGNORED_OR_FINISHED\"}]}]}"
+assert_update_equals "[{\"github_commit_status\": {\"context\": \"Ctx\"}, \"if\": \"$IGNORED_OR_FINISHED\"}]" "attached once, with its \`if\`"
+
+PIPELINE_YML="$IGNORED_PIPELINE" run_case "An opted-in step that is not skipped is left alone" "{\"steps\": [{\"label\": \"x\", \"notify\": [{\"slack\": \"#ci\", \"if\": \"$IGNORED_OR_FINISHED\"}]}]}"
+assert_no_update "no step update"
+
+PIPELINE_YML="$IGNORED_PIPELINE" run_case "A \`github_commit_status\` opted in by its \`if\` still needs a context" "{\"steps\": [{\"label\": \"x\", \"skip\": \"r\", \"notify\": [{\"github_commit_status\": {}, \"if\": \"$IGNORED_OR_FINISHED\"}]}]}"
+assert_status 1 "exits 1"
+assert_no_update "no step update"
+
 run_case "A marker without a context is an error" '{"steps": [{"label": "Build", "skip": "r", "notify": [{"github_commit_status": {}, "even-if-skipped": true}]}]}'
 assert_status 1 "exits 1"
 assert_no_update "no step update"

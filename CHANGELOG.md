@@ -39,7 +39,7 @@ _None._
 ### New Features
 
 - `install_gems` fails early and lists the Ruby versions installed on the agent when `rbenv` doesn't have the one `.ruby-version` asks for. [#245]
-- Add `notify_skipped_steps` command, so steps skipped with `skip:` or `if_changed:` still send the `notify:` entries marked `even-if-skipped: true`, such as their GitHub commit status. [#251]
+- Add `notify_skipped_steps` command, so steps skipped with `skip:` or `if_changed:` still send their `notify:` entries of any type opted in with `even-if-skipped: true` or an `if:` testing `step.state == "ignored"`, such as their GitHub commit status. [#251]
 
 ### Bug Fixes
 
