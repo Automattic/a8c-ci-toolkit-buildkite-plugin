@@ -1,21 +1,7 @@
-# Throwaway experiment (do not merge): round 3, a delivery control. Does a plain Slack notify reach #mobile-apps-tests-notif at all?
+# Throwaway experiment (do not merge): round 5, what do the `upload` agents offer? (no notifications in this one)
 agents:
   queue: upload
 
-# C2: build-level, the form the org's other pipelines use
-notify:
-  - slack:
-      channels: ["#mobile-apps-tests-notif"]
-      message: "🧪 C2 (control, build-level notify declared in the YAML): throwaway notify_skipped_steps experiment, please ignore"
-
 steps:
-  # C1: step-level, declared in the YAML like any normal pipeline would
-  - label: "C1 control: step-level slack declared in the YAML"
-    command: "true"
-    notify:
-      - slack:
-          channels: ["#mobile-apps-tests-notif"]
-          message: "🧪 C1 (control, step-level notify declared in the YAML): throwaway notify_skipped_steps experiment, please ignore"
-
-  - label: ":speech_balloon: runner: attaches slack entries to itself with step update"
-    command: bash .buildkite/exp-attach.sh
+  - label: "upload agent capabilities"
+    command: bash .buildkite/exp-env.sh
