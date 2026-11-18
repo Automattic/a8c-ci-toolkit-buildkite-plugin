@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-_None._
+- Add `notify_skipped_steps` command, so steps skipped with `skip:` or `if_changed:` still report their GitHub commit status. [#251]
 
 ### Bug Fixes
 

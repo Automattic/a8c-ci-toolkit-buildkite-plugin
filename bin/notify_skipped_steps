@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+
+# Makes Buildkite report GitHub commit statuses even for steps skipped by `skip:` or `if_changed:`, which otherwise never send their `notify:`.
+# Also posts an annotation listing the skipped steps and why they were skipped.
+#
+# Usage:
+#   notify_skipped_steps [pipeline file]
+#
+#   Like `buildkite-agent pipeline upload`, it reads the file as given (no lookup in `.buildkite/`) or, without an argument, STDIN.
+#   It prints the pipeline it read, unchanged, on STDOUT, and everything else on STDERR, so it can be called before the upload:
+#     notify_skipped_steps .buildkite/pipeline.yml
+#     buildkite-agent pipeline upload .buildkite/pipeline.yml
+#   or in front of it, which avoids repeating the path (use `set -o pipefail`, so that a failure here fails the step instead of uploading an empty pipeline):
+#     notify_skipped_steps .buildkite/pipeline.yml | buildkite-agent pipeline upload
+#   Run it in the step that runs the upload (it needs Python 3 and a running job).
+#
+# Opt in each step by adding `even-if-skipped: true` to its `notify` entry:
+#   - label: Lint Swift Files
+#     command: .buildkite/commands/run-swiftlint.sh
+#     if_changed: ["**/*.swift"]
+#     notify:
+#       - github_commit_status: { context: "SwiftLint" }
+#         even-if-skipped: true
+#
+# For skip logic `if_changed` can't express easily, compute it in `shared-pipeline-vars`, e.g.
+#   export SKIP_UI_TESTS=$(.buildkite/commands/should-skip-job.sh ui-tests)
+# and use `skip: $SKIP_UI_TESTS`. Such a script should print the reason to skip, or `false` (or nothing) to run the step.
+#
+# How it works: it dry-runs the upload (`buildkite-agent pipeline upload --dry-run`), so interpolation and `if_changed` are already applied, to determine which steps would be skipped. Then, for each such skipped step that has a `notify` entry with `even-if-skipped: true` set, it attaches a `github_commit_status` with the same context to the running step via `buildkite-agent step update`; the statuses are sent when the job for the real pipeline upload step finishes.
+# Exits 0, printing the pipeline, if all went well or no step uses `even-if-skipped`; exits 1, printing nothing, on a missing file or input, a failed dry run or a marked step without a `context`.
+
+import json
+import subprocess
+import sys
+
+args = sys.argv[1:]
+if args:
+    try:
+        with open(args[0]) as f:
+            source = f.read()
+    except OSError as error:
+        sys.exit("notify_skipped_steps: cannot read the pipeline file: %s" % error)
+elif not sys.stdin.isatty():
+    source = sys.stdin.read()
+else:
+    sys.exit("usage: notify_skipped_steps [pipeline file] (reads STDIN without a file)")
+if not source.strip():
+    sys.exit("notify_skipped_steps: the pipeline is empty")
+
+if 'even-if-skipped' not in source:
+    sys.stdout.write(source)
+    sys.exit(0)
+
+dry_run = subprocess.run(['buildkite-agent', 'pipeline', 'upload', '--dry-run', '--format', 'json'], input=source, capture_output=True, text=True)
+sys.stderr.write(dry_run.stderr)
+if dry_run.returncode != 0:
+    sys.exit("buildkite-agent pipeline upload --dry-run failed")
+
+def is_skipped(step):
+    skip = step.get('skip')
+    return skip not in (None, False, '') and str(skip).lower() != 'false'
+
+
+def skipped_steps(steps, inherited=None):
+    """Yields (label, reason, contexts) for each skipped step that opted in with `even-if-skipped`, group members before their group.
+    The agent sets `skip` on a skipped group only, so `inherited` is the `skip` of the nearest skipped group above."""
+    for step in steps or []:
+        if not isinstance(step, dict):  # e.g. a bare `wait`
+            continue
+        skip = step['skip'] if is_skipped(step) else inherited
+        yield from skipped_steps(step.get('steps'), skip)
+        if skip is None:
+            continue
+        contexts = []
+        for entry in step.get('notify') or []:
+            if isinstance(entry, dict) and entry.get('even-if-skipped') is True and isinstance(entry.get('github_commit_status'), dict):
+                context = entry['github_commit_status'].get('context')
+                if not context:
+                    sys.exit("even-if-skipped needs a github_commit_status `context`")
+                contexts.append(context)
+        if contexts:
+            reason = 'no reason given' if skip is True or skip == 'true' else str(skip)
+            step_name = step.get('label') or step.get('group') or step.get('key') or step.get('command') or '(unnamed step)'
+            yield (step_name, reason, contexts)
+
+
+skipped = list(skipped_steps(json.loads(dry_run.stdout).get('steps')))
+contexts = [c for _, _, cs in skipped for c in cs]
+print("notify_skipped_steps: statuses for skipped steps: %s" % (contexts or "none"), file=sys.stderr, flush=True)
+
+if contexts:
+    notify = [{'github_commit_status': {'context': c}} for c in contexts]
+
+    # Without `--step`, this updates the running step: its entries fire when it finishes, whatever happens to the rest of the build
+    subprocess.run(['buildkite-agent', 'step', 'update', 'notify', json.dumps(notify), '--append'], check=True, stdout=sys.stderr)
+
+    # The annotation comes second: the notifications matter more, and a failure to annotate is not fatal
+    cell = lambda text: str(text).replace('|', '\\|').replace('\n', ' ')
+    rows = ['| %s | %s | %s |' % (cell(label), cell(reason), ', '.join('`%s`' % cell(c) for c in contexts)) for label, reason, contexts in skipped]
+    intro = 'Those steps will not run, but will still report their corresponding status to GitHub.'
+    body = '\n'.join(['#### Skipped steps', '', intro, '', '| Step | Reason | Status reported to GitHub |', '|---|---|---|'] + rows)
+    annotation = subprocess.run(['buildkite-agent', 'annotate', '--style', 'info', '--context', 'skipped-steps'], input=body, text=True, stdout=sys.stderr)
+    if annotation.returncode != 0:
+        print("notify_skipped_steps: could not post the annotation", file=sys.stderr)
+
+# Printed last, so that a failure above leaves nothing to upload
+sys.stdout.write(source)
