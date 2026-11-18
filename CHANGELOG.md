@@ -22,7 +22,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- `upload_artifact` and `download_artifact` use the default AWS CLI retries for the NAS, so one failed request no longer makes them fall back to AWS S3. [#264]
 
 ### Internal Changes
 
