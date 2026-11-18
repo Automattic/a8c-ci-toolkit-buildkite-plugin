@@ -22,7 +22,7 @@ _None._
 
 ### Bug Fixes
 
-- `upload_artifact` and `download_artifact` use the default AWS CLI retries for the NAS, so one failed request no longer makes them fall back to AWS S3. [#264]
+_None._
 
 ### Internal Changes
 
@@ -38,7 +38,7 @@ _None._
 
 ### New Features
 
-- Add `notify_skipped_steps` command, so steps skipped with `skip:` or `if_changed:` still report their GitHub commit status. [#251]
+_None._
 
 ### Bug Fixes
 
@@ -47,6 +47,16 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 7.3.0
+
+### New Features
+
+- Add `notify_skipped_steps` command, so steps skipped with `skip:` or `if_changed:` still report their GitHub commit status. [#251]
+
+### Bug Fixes
+
+- `upload_artifact` and `download_artifact` use the default AWS CLI retries for the NAS, so one failed request no longer makes them fall back to AWS S3. [#264]
 
 ## 7.2.0
 
