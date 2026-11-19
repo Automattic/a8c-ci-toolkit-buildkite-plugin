@@ -38,6 +38,7 @@ _None._
 
 ### New Features
 
+- Add change preparation and final verification to `run_agent_task`. [#250](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/pull/250)
 - Add `run_agent_task` for bounded investigations in disposable Mac VMs, with a report, evidence and a patch for review. [#249](https://github.com/Automattic/a8c-ci-toolkit-buildkite-plugin/pull/249)
 
 ### Bug Fixes

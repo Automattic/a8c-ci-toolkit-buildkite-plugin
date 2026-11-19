@@ -40,8 +40,8 @@ When it finishes, look in `results/`:
 - `evidence/` contains useful logs and screenshots, when applicable.
 - `changes.patch` preserves temporary edits, including new files and local commits.
 
-If the temporary patch cannot be saved, the report keeps the findings and says
-that the patch is missing.
+If an investigation's temporary patch cannot be saved, the report keeps the
+findings and says that the patch is missing. Change requests fail instead.
 
 Questions end the task. Supply the missing context in a new request. The host
 collects these files before destroying the VM and checks the job status too:
@@ -58,6 +58,20 @@ logs. Both paths are outside the checkout.
 Put platform details, such as simulator selection, in that adapter. The agent
 chooses the checks that help answer the question; there is no mandatory final
 green build, and the runner never pushes or opens a PR.
+
+## Preparing a change
+
+Use `mode: "change"` when the request is to prepare a fix. The adapter also needs
+`verify.sh`, which runs after the agent finishes. A change is complete only if
+that check passes. The report can include a public title, description and testing
+summary for a separate publisher; keep conversation details out of those fields.
+
+Verification runs in the same environment as the agent. It helps catch mistakes,
+but its result still needs human review before giving the change normal CI access.
+
+Publishing remains the host’s responsibility. It must validate the patch and
+report before using any write credentials. This command only prepares the files.
+Investigations still need no final green check and their edits stay private.
 
 The runner tests use temporary Git repositories and a fake model executable.
 Run `make test lint` to exercise the flow without a model service or app tools.
