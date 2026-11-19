@@ -67,6 +67,13 @@ Three things make that work:
 
 Only the commands whose dependencies the image provides will work, of course — `checkout_release_branch` needs `bash` and `git` inside the container, for instance.
 
+## Running an agent task
+
+`run_agent_task` investigates a question in a disposable Mac VM and saves a
+report, logs and any temporary changes. The host provides the isolated
+environment and chooses which repository the task may use. See the
+[agent task guide](docs/agent-tasks.md) for a short example.
+
 ## Developing
 
 To run the linter and tests:
