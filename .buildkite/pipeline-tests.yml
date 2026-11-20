@@ -38,68 +38,69 @@ steps:
       - .buildkite/pipeline-tests.yml
       - .buildkite/shared-pipeline-vars
     steps:
+      # Temporary: drop RBENV_VERSION once .ruby-version is 3.4.13 (AINFRA-3841); the Linux agents lack it until AINFRA-3889/3890/3891.
       - label: ":swift: Standalone Swift Package - Autodetect"
-        command: tests/install_swiftpm_dependencies/test_scripts/test_package_automatic.sh
+        command: RBENV_VERSION=3.4.13 tests/install_swiftpm_dependencies/test_scripts/test_package_automatic.sh
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Standalone Swift Package - Autodetect"
 
       - label: ":swift: Standalone Swift Package - Explicit"
-        command: tests/install_swiftpm_dependencies/test_scripts/test_package_explicit.sh
+        command: RBENV_VERSION=3.4.13 tests/install_swiftpm_dependencies/test_scripts/test_package_explicit.sh
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Standalone Swift Package - Explicit"
 
       - label: ":swift: Standalone Swift Package - Restore and save without resolving"
-        command: tests/install_swiftpm_dependencies/test_scripts/test_package_restore_and_save.sh
+        command: RBENV_VERSION=3.4.13 tests/install_swiftpm_dependencies/test_scripts/test_package_restore_and_save.sh
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Standalone Swift Package - Restore and save"
 
       - label: ":xcode: Xcode Project - Autodetect"
-        command: tests/install_swiftpm_dependencies/test_scripts/test_project_automatic.sh
+        command: RBENV_VERSION=3.4.13 tests/install_swiftpm_dependencies/test_scripts/test_project_automatic.sh
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Xcode Project - Autodetect"
 
       - label: ":xcode: Xcode Project - Explicit"
-        command: tests/install_swiftpm_dependencies/test_scripts/test_project_explicit.sh
+        command: RBENV_VERSION=3.4.13 tests/install_swiftpm_dependencies/test_scripts/test_project_explicit.sh
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Xcode Project - Explicit"
 
       - label: ":xcode: Xcode Project - No Package.resolved"
-        command: tests/install_swiftpm_dependencies/test_scripts/test_project_no_package.sh
+        command: RBENV_VERSION=3.4.13 tests/install_swiftpm_dependencies/test_scripts/test_project_no_package.sh
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Xcode Project - No Package.resolved"
 
       - label: ":xcode: Xcode Workspace - Autodetect"
-        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_automatic.sh
+        command: RBENV_VERSION=3.4.13 tests/install_swiftpm_dependencies/test_scripts/test_workspace_automatic.sh
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Xcode Workspace - Autodetect"
 
       - label: ":xcode: Xcode Workspace - Explicit"
-        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_explicit.sh
+        command: RBENV_VERSION=3.4.13 tests/install_swiftpm_dependencies/test_scripts/test_workspace_explicit.sh
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Xcode Workspace - Explicit"
 
       - label: ":xcode: Xcode Workspace - Binary frameworks cache"
-        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_artifacts.sh
+        command: RBENV_VERSION=3.4.13 tests/install_swiftpm_dependencies/test_scripts/test_workspace_artifacts.sh
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Xcode Workspace - Binary frameworks cache"
 
       - label: ":xcode: Xcode Workspace and Project - Autodetect"
-        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_and_project_automatic.sh
+        command: RBENV_VERSION=3.4.13 tests/install_swiftpm_dependencies/test_scripts/test_workspace_and_project_automatic.sh
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Xcode Workspace and Project - Autodetect"
 
       - label: ":xcode: Xcode Workspace and Project - Explicit"
-        command: tests/install_swiftpm_dependencies/test_scripts/test_workspace_and_project_explicit.sh
+        command: RBENV_VERSION=3.4.13 tests/install_swiftpm_dependencies/test_scripts/test_workspace_and_project_explicit.sh
         notify:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Xcode Workspace and Project - Explicit"
@@ -133,7 +134,7 @@ steps:
       - .buildkite/shared-pipeline-vars
     steps:
       - label: ":github: pr_changed_files Tests - Basic Changes ({{matrix}})"
-        command: tests/pr_changed_files/test_basic_changes.sh
+        command: RBENV_VERSION=3.4.13 tests/pr_changed_files/test_basic_changes.sh
         agents:
           queue: "{{matrix}}"
         matrix:
@@ -146,7 +147,7 @@ steps:
               context: "pr_changed_files Tests: Basic Changes"
 
       - label: ":github: pr_changed_files Tests - Any Match ({{matrix}})"
-        command: tests/pr_changed_files/test_any_match_patterns.sh
+        command: RBENV_VERSION=3.4.13 tests/pr_changed_files/test_any_match_patterns.sh
         agents:
           queue: "{{matrix}}"
         matrix:
@@ -159,7 +160,7 @@ steps:
               context: "pr_changed_files Tests: Any Match"
 
       - label: ":github: pr_changed_files Tests - All Match ({{matrix}})"
-        command: tests/pr_changed_files/test_all_match_patterns.sh
+        command: RBENV_VERSION=3.4.13 tests/pr_changed_files/test_all_match_patterns.sh
         agents:
           queue: "{{matrix}}"
         matrix:
@@ -172,7 +173,7 @@ steps:
               context: "pr_changed_files Tests: All Match"
 
       - label: ":github: pr_changed_files Tests - Edge Cases ({{matrix}})"
-        command: tests/pr_changed_files/test_edge_cases.sh
+        command: RBENV_VERSION=3.4.13 tests/pr_changed_files/test_edge_cases.sh
         agents:
           queue: "{{matrix}}"
         matrix:
@@ -227,7 +228,7 @@ steps:
               context: "install_a8c-secrets_binary Tests: Linux"
 
       - label: ":apple: Install and run a8c-secrets"
-        command: tests/install_a8c-secrets_binary/test_install.sh
+        command: RBENV_VERSION=3.4.13 tests/install_a8c-secrets_binary/test_install.sh
         agents:
           queue: mac
         notify:
