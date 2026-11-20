@@ -34,15 +34,15 @@ _None._
 
 ### Breaking Changes
 
-_None._
+- `pr_changed_files` now exits 255 when it cannot compute the PR diff or merge base. With `--stdout`, these errors previously printed `false` and now leave stdout empty. See the [8.0.0 migration guide](./MIGRATION.md#from-700-to-800) for handling errors in callers. [#243]
 
 ### New Features
 
-_None._
+- Add `commit_changed_files` to check a commit against its first parent or an explicit base, with the same matching options as `pr_changed_files`. [#243]
 
 ### Bug Fixes
 
-_None._
+- `pr_changed_files` checks both paths of renames and works when the clone does not track `origin/<base>`. [#243]
 
 ### Internal Changes
 

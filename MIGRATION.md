@@ -1,5 +1,25 @@
 # Migration Instructions for Major Releases
 
+## From 7.0.0 to 8.0.0
+
+`pr_changed_files --stdout` prints `true` or `false` and exits 0 when it can check the diff.
+If Git cannot compute the diff or merge base, the helper now exits 255, leaves stdout empty and reports the error on stderr.
+With `set -e`, a plain assignment can stop the pipeline upload. `export VAR=$(...)` hides the exit status.
+
+Handle the error on the assignment, then export the result. Choose the fallback that keeps the test job running.
+
+```bash
+RUN_TESTS=$(pr_changed_files --stdout --any-match 'src/*') || RUN_TESTS=true
+export RUN_TESTS
+```
+
+```bash
+SKIP_TESTS=$(pr_changed_files --stdout --all-match 'docs/*') || SKIP_TESTS=false
+export SKIP_TESTS
+```
+
+If the result authorizes a publish, surface a detection error and require a confirmed match before publishing.
+
 ## From 6.0.0 to 7.0.0
 
 * The `git-conceal-unlock` helper has been removed.
