@@ -34,6 +34,24 @@ _None._
 
 ### Breaking Changes
 
+_None._
+
+### New Features
+
+_None._
+
+### Bug Fixes
+
+_None._
+
+### Internal Changes
+
+_None._
+
+## 8.0.0
+
+### Breaking Changes
+
 - `pr_changed_files` now exits 255 when it cannot compute the PR diff or merge base. With `--stdout`, these errors previously printed `false` and now leave stdout empty. See the [8.0.0 migration guide](./MIGRATION.md#from-700-to-800) for handling errors in callers. [#243]
 
 ### New Features
@@ -43,10 +61,6 @@ _None._
 ### Bug Fixes
 
 - `pr_changed_files` checks both paths of renames and works when the clone does not track `origin/<base>`. [#243]
-
-### Internal Changes
-
-_None._
 
 ## 7.3.0
 
