@@ -29,7 +29,7 @@ setup() {
 }
 
 @test "Runs on the Ruby named by the calling repo's .ruby-version" {
-	run env PATH="$STUBS:$PATH" "$BIN/annotate_test_failures" report.junit --slack builds
+	run env -u RBENV_VERSION PATH="$STUBS:$PATH" "$BIN/annotate_test_failures" report.junit --slack builds
 
 	[ "$status" -eq 0 ]
 	[ "${lines[0]}" = "RBENV_VERSION=9.9.9" ]
