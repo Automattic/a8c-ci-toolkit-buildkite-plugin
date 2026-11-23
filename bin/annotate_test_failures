@@ -29,7 +29,8 @@ set -euo pipefail
 #   The exit status of `lib/annotate_test_failures.rb`.
 #
 # Requirements:
-#   `ruby`; `rbenv` is optional.
+#   `ruby` with the `rexml` gem, which is bundled with Ruby 3.x but not loadable under `bundle exec` unless it is in the
+#   Gemfile, so run this outside `bundle exec`; `rbenv` is optional.
 
 if [[ -z "${RBENV_VERSION:-}" ]] && command -v rbenv > /dev/null; then
   RBENV_VERSION="$(rbenv version-name)"
