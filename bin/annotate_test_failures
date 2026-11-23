@@ -1,240 +1,38 @@
-#!/usr/bin/env ruby
-# frozen_string_literal: true
+#!/usr/bin/env bash
 
+set -euo pipefail
+
+# Script: annotate_test_failures
+#
+# Description:
+#   Annotates the Buildkite build with the failures in a JUnit report, and optionally posts them to Slack.
+#   The work happens in `lib/annotate_test_failures.rb`; this wrapper runs it on the calling repo's Ruby.
 #
 # Usage:
-#   annotate_test_failures [options] [junit-report-file-path]
+#   annotate_test_failures [junit-report-file-path] [--module MODULE] [--slack CHANNEL] [--slack-webhook URL]
 #
-require 'rexml/document'
-require 'shellwords'
-require 'net/http'
-require 'json'
-require 'optparse'
-
-###################
-# Parse arguments
-###################
-module_name = nil
-slack_channel = nil
-slack_webhook = ENV.fetch('SLACK_WEBHOOK', nil) # default value inferred from env var if not provided explicitly
-args = OptionParser.new do |opts|
-  opts.banner = <<~HELP
-    Usage: annotate_test_failures [junit-report-file-path] [--module MODULE] [--slack CHANNEL] [--slack-webhook URL]
-
-    Annotates the Buildkite build with a summary of failed and flaky tests based on a JUnit report file (defaults to using `build/results/report.junit`).
-    Optionally also posts the same info to a Slack channel.
-  HELP
-  opts.on('--module MODULE', 'The module the junit report is based on') do |v|
-    module_name = v
-  end
-  opts.on('--slack CHANNEL_NAME', 'The name of the Slack channel to post the failure summary to') do |v|
-    slack_channel = "##{v.delete_prefix('#')}"
-  end
-  opts.on('--slack-webhook URL',
-          'The Slack Webhook URL to use if --slack is used. Defaults to the value of the `SLACK_WEBHOOK` env var') do |v|
-    slack_webhook = v
-  end
-  opts.on_tail('-h', '--help', 'Show this help message') do
-    puts opts
-    exit
-  end
-end.parse!
-junit_path = args.first || File.join('build', 'results', 'report.junit')
-title = ENV.fetch('BUILDKITE_LABEL', 'Tests')
-
-unless File.exist?(junit_path)
-  puts "JUnit file not found: #{junit_path}."
-  # Don't fail if `.junit` file not found to avoid "hiding" the failure in the build that resulted in the that file not being created
-  exit 0
-end
-
-###################
-# Helper methods
-###################
-
-# Here's how report.junit XML files look like for failure vs success:
+# Options and arguments:
+#   See `lib/annotate_test_failures.rb`, which parses them.
 #
-# <testcase classname='WordPressTest.MediaServiceTests' name='testDeletingLocalMediaThatDoesntExistInCoreData'>
-#   <failure message='Asynchronous wait failed: Exceeded timeout of 0.1 seconds, with unfulfilled expectations: &quot;The delete call succeeds even if the media object isn&apos;t saved.&quot;.'>&lt;unknown&gt;:0</failure>
-# </testcase>
-# <testcase classname="tests.test_editing_drafts.TestEditingDrafts" name="test_adding_a_photo_to_text_draft">
-#   <error message="failed on setup with &quot;TypeError: list indices must be integers or slices, not str&quot;">Traceback (most recent call last): ...</error>
-# </testcase>
-# <testcase classname='WordPressTest.MediaServiceTests' name='testDeletingLocalMediaThatDoesntExistInCoreData' time='0.145'/>
+# Examples:
+#   annotate_test_failures build/results/report.junit
+#   annotate_test_failures build/results/report.junit --slack build-and-ship
 #
-class TestFailure
-  attr_reader :classname, :name, :message, :details
-  attr_accessor :count
-
-  def initialize(node)
-    @classname = node['classname']
-    @name = node['name']
-    failure_node = node.elements['failure'] || node.elements['error']
-    @message = failure_node['message'] || ''
-    @details = failure_node.text || ''
-    @count = 1
-  end
-
-  def to_s
-    times = @count > 1 ? " (#{@count} times)" : ''
-
-    # Do not render a code block for the failure details if there are none
-    formatted_details = if @details.strip.empty?
-                          ''
-                        else
-                          <<~DETAILS
-
-                            ```
-                            #{@details}
-                            ```
-                          DETAILS
-                        end
-
-    <<~ENTRY
-      <details><summary><tt>#{@name}</tt> in <tt>#{@classname}</tt>#{times}</summary>
-      <pre>#{@message}</pre>
-      #{formatted_details}
-      </details>
-    ENTRY
-  end
-
-  def key
-    "#{@classname}.#{@name}"
-  end
-
-  def ultimately_succeeds?(parent_node:)
-    child_testcase_nodes = parent_node.get_elements('testcase')
-    last_same_testcase_idx = child_testcase_nodes.rindex { |e| e['classname'] == @classname && e['name'] == @name }
-    last_same_testcase_node = child_testcase_nodes[last_same_testcase_idx]
-    # If last node found for that test doesn't have a <failure> or <error> child, then test ultimately succeeded.
-    !(last_same_testcase_node.elements['failure'] || last_same_testcase_node.elements['error'])
-  end
-
-  def ==(other)
-    @classname == other.classname && @name == other.name && @message == other.message && @details == other.details
-  end
-end
-
-# Add a test_failure into a given array, or increment its count if it already exists
+# Notes:
+#   rbenv resolves a script's Ruby from the script's own folder, which would pick this plugin's `.ruby-version`
+#   instead of the calling repo's. Exporting `RBENV_VERSION`, resolved from the caller's working directory,
+#   takes precedence over any `.ruby-version`. A caller's own `RBENV_VERSION` is kept.
+#   Without rbenv, the script runs on whatever `ruby` is on the `PATH`.
 #
-def record(test_failure, into:)
-  existing = into.find { |f| f == test_failure }
-  if existing.nil?
-    into.append(test_failure)
-  else
-    existing.count += 1
-  end
-end
-
-# Given a list of failures for a given step and state, update the corresponding annotation
+# Returns:
+#   The exit status of `lib/annotate_test_failures.rb`.
 #
-def update_annotation(title, module_name, list, style, state)
-  ctx_components = [
-    'test-summary',
-    module_name || 'default-module',
-    ENV.fetch('BUILDKITE_STEP_ID', title),
-    ENV.fetch('BUILDKITE_PARALLEL_JOB', nil),
-    state
-  ]
-  annotation_context = ctx_components.compact.join('-').downcase.gsub(/\W/, '-')
-  if list.empty?
-    puts "No test #{state}. Removing any previous `#{annotation_context}` Buildkite annotation if any.\n\n"
-    system("buildkite-agent annotation remove --context #{annotation_context.shellescape} 2>/dev/null || true")
-  else
-    tests_count = list.map(&:key).uniq.count # Count the number of tests that failed, even if some tests might have multiple assertion failures
-    puts "#{tests_count} test(s) #{state} (#{list.count} distinct assertion failures in total). Reporting them as a `#{annotation_context}` Buildkite #{style} annotation.\n\n"
-    module_title = module_name ? " (#{module_name})" : ''
-    markdown = "#### #{title}#{module_title}: #{tests_count} tests #{state} (#{list.count} distinct assertion failure(s) in total)\n\n" + list.map(&:to_s).join("\n")
-    puts markdown
-    system('buildkite-agent', 'annotate', markdown, '--style', style, '--context', annotation_context)
-  end
-end
+# Requirements:
+#   `ruby`; `rbenv` is optional.
 
-# Given a list of failures, parse list and send a slack notification with the test names in the payload
-#
-def send_slack_notification(slack_webhook, slack_channel, title, list)
-  failing_tests = list.map { |item| "`#{item.name}` in `#{item.classname}`" }
-  assertion_failures_count = list.count
-  test_text = assertion_failures_count == 1 ? 'Test' : 'Tests'
+if [[ -z "${RBENV_VERSION:-}" ]] && command -v rbenv > /dev/null; then
+  RBENV_VERSION="$(rbenv version-name)"
+  export RBENV_VERSION
+fi
 
-  slack_message_payload = {
-    channel: slack_channel,
-    username: "#{ENV.fetch('BUILDKITE_PIPELINE_NAME', nil)} Tests Failures",
-    icon_emoji: ':fire:',
-    blocks: [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: ":warning: *#{assertion_failures_count} #{test_text} Failed in #{ENV.fetch('BUILDKITE_PIPELINE_NAME', nil)} - #{title}*"
-        },
-        accessory: {
-          type: 'button',
-          text: {
-            type: 'plain_text',
-            text: 'Build',
-            emoji: true
-          },
-          value: 'build',
-          url: "#{ENV.fetch('BUILDKITE_BUILD_URL', nil)}##{ENV.fetch('BUILDKITE_JOB_ID', nil)}",
-          action_id: 'button-action'
-        }
-      },
-      {
-        type: 'divider'
-      },
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: "*Failing #{test_text}:*\n#{failing_tests.join("\n")}"
-        }
-      }
-    ]
-  }
-
-  json_payload = JSON.generate(slack_message_payload)
-
-  # Send message to Slack
-  uri = URI(slack_webhook)
-  response = Net::HTTP.post(uri, json_payload, 'Content-Type' => 'application/json')
-
-  # Check response status
-  if response.code == '200'
-    puts '✅ Notification Sent!'
-  else
-    puts "❌ Failed to send notification. Response code: #{response.code}"
-  end
-end
-
-###################
-# Main
-###################
-
-file = File.open(junit_path)
-xmldoc = REXML::Document.new(file)
-
-failures = []
-flakies = []
-REXML::XPath.each(xmldoc, '//testcase[failure|error]') do |node|
-  test_failure = TestFailure.new(node)
-
-  if test_failure.ultimately_succeeds?(parent_node: node.parent)
-    record(test_failure, into: flakies)
-  else
-    record(test_failure, into: failures)
-  end
-end
-
-update_annotation(title, module_name, failures, 'error', 'have failed')
-update_annotation(title, module_name, flakies, 'warning', 'were flaky')
-
-if slack_channel.nil?
-  if slack_webhook.nil?
-    puts '⏩ No `--slack` channel name nor `--slack-webhook`/`$SLACK_WEBHOOK` URL provided; skipping Slack notification.'
-  else
-    puts '⏩ No `--slack` channel name provided; skipping Slack notification.'
-  end
-else
-  send_slack_notification(slack_webhook, slack_channel, title, failures) unless failures.empty?
-end
+exec ruby "$(dirname "${BASH_SOURCE[0]}")/../lib/annotate_test_failures.rb" "$@"
