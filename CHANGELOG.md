@@ -42,7 +42,7 @@ _None._
 
 ### Bug Fixes
 
-_None._
+- `annotate_test_failures` now runs on the calling repo's Ruby instead of the plugin's own `.ruby-version`, so it works on CI images without Ruby 3.4.9. [#269]
 
 ### Internal Changes
 
