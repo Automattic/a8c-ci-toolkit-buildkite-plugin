@@ -44,6 +44,16 @@ setup() {
 	[ "${lines[0]}" = "RBENV_VERSION=1.2.3" ]
 }
 
+@test "Fails without running the script when rbenv can't resolve the caller's Ruby" {
+	printf '#!/usr/bin/env bash\necho "rbenv: version is not installed" >&2\nexit 1\n' > "$STUBS/rbenv"
+
+	run env -u RBENV_VERSION PATH="$STUBS:$PATH" "$BIN/annotate_test_failures"
+
+	[ "$status" -ne 0 ]
+	[[ "$output" == *"not installed"* ]]
+	[[ "$output" != *"script="* ]]
+}
+
 @test "Leaves RBENV_VERSION unset when rbenv is not installed" {
 	rm "$STUBS/rbenv"
 	ruby_dir="$(dirname "$(command -v bash)")"

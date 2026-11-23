@@ -23,6 +23,7 @@ set -euo pipefail
 #   instead of the calling repo's. Exporting `RBENV_VERSION`, resolved from the caller's working directory,
 #   takes precedence over any `.ruby-version`. A caller's own `RBENV_VERSION` is kept.
 #   Without rbenv, the script runs on whatever `ruby` is on the `PATH`.
+#   If rbenv can't resolve the caller's Ruby (e.g. it isn't installed), this fails loudly rather than falling back.
 #
 # Returns:
 #   The exit status of `lib/annotate_test_failures.rb`.
