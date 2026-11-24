@@ -2,15 +2,15 @@
 
 set -euo pipefail
 
-# Script: commit_changed_files
+# Script: check_changed_files
 #
 # Description:
 #   Checks the files changed by a commit, or between two explicitly chosen commits.
 #
 # Usage:
-#   commit_changed_files [--commit <ref>] [--base <ref>] [--stdout]
-#   commit_changed_files [options] --all-match <patterns...>
-#   commit_changed_files [options] --any-match <patterns...>
+#   check_changed_files [--commit <ref>] [--base <ref>] [--stdout]
+#   check_changed_files [options] --all-match <patterns...>
+#   check_changed_files [options] --any-match <patterns...>
 #
 # Options:
 #   --commit <ref>             Commit to inspect; defaults to `HEAD`.
@@ -26,9 +26,9 @@ set -euo pipefail
 # Renames include both the old and new path, regardless of Git's rename settings.
 #
 # Examples:
-#   commit_changed_files --all-match 'docs/*' 'README.md'
-#   commit_changed_files --commit abc123 --any-match '*.swift'
-#   commit_changed_files --base "$PUSH_BASE" --stdout --any-match 'src/*'
+#   check_changed_files --all-match 'docs/*' 'README.md'
+#   check_changed_files --commit abc123 --any-match '*.swift'
+#   check_changed_files --base "$PUSH_BASE" --stdout --any-match 'src/*'
 #
 # Notes:
 #   The first-parent default covers a normal merge or squash commit's full change,

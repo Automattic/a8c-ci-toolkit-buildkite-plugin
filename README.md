@@ -70,7 +70,7 @@ Only the commands whose dependencies the image provides will work, of course —
 ## Checking changed files
 
 [`pr_changed_files`](bin/pr_changed_files) checks a Buildkite PR against its merge base.
-[`commit_changed_files`](bin/commit_changed_files) checks `HEAD` against its first parent,
+[`check_changed_files`](bin/check_changed_files) checks `HEAD` against its first parent,
 or an explicit `--commit` / `--base`. See their script headers for options and matching rules.
 
 For trunk builds, the default does **not** cover earlier commits from a multi-commit push
@@ -85,7 +85,7 @@ expected result, so errors leave the job running:
 
 ```bash
 # Skip only when every changed path is known to be irrelevant to this job.
-if commit_changed_files --all-match 'docs/*' 'README.md'; then
+if check_changed_files --all-match 'docs/*' 'README.md'; then
   exit 0
 fi
 

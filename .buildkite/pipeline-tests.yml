@@ -104,16 +104,16 @@ steps:
           - github_commit_status:
               context: "install_swiftpm_dependencies Tests: Xcode Workspace and Project - Explicit"
 
-  - group: ":git: commit_changed_files Tests"
+  - group: ":git: check_changed_files Tests"
     if_changed:
-      - bin/commit_changed_files
-      - tests/commit_changed_files/**
+      - bin/check_changed_files
+      - tests/check_changed_files/**
       - tests/pr_changed_files/test_helpers.sh
       - .buildkite/pipeline-tests.yml
       - .buildkite/shared-pipeline-vars
     steps:
-      - label: ":git: commit_changed_files Tests - Commit Ranges ({{matrix}})"
-        command: tests/commit_changed_files/test_commit_ranges.sh
+      - label: ":git: check_changed_files Tests - Commit Ranges ({{matrix}})"
+        command: tests/check_changed_files/test_commit_ranges.sh
         agents:
           queue: "{{matrix}}"
         matrix:
@@ -123,11 +123,11 @@ steps:
           - tumblr-metal
         notify:
           - github_commit_status:
-              context: "commit_changed_files Tests: Commit Ranges"
+              context: "check_changed_files Tests: Commit Ranges"
 
   - group: ":github: pr_changed_files Tests"
     if_changed:
-      - bin/{pr_changed_files,commit_changed_files}
+      - bin/{pr_changed_files,check_changed_files}
       - tests/pr_changed_files/**
       - .buildkite/pipeline-tests.yml
       - .buildkite/shared-pipeline-vars
