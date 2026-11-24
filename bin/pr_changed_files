@@ -15,7 +15,7 @@ set -euo pipefail
 #  - If you use the `--stdout` flag, it will output "true" or "false" instead of using the exit code (and exit 0 in both cases). Useful to assign the result to an environment variable for example.
 #  - The script exits 255 on errors (bad parameters, invalid PR context, unavailable history, failed fetch/diff), without printing a boolean.
 #    Callers deciding whether to skip must treat errors as a reason to run the job.
-#  - Both paths of a rename are checked. Matching is shared with `commit_changed_files`.
+#  - Both paths of a rename are checked. Matching is shared with `check_changed_files`.
 #
 # Format used for patterns:
 #  - The `<file-patterns>` are expected to be *bash* patterns, i.e. strings that can contain `*` to match any string, `?` to match a single character, or `[…]` to match any character in the provided set.
@@ -79,7 +79,7 @@ if [[ ! "${BUILDKITE_PULL_REQUEST:-invalid}" =~ ^[0-9]+$ ]]; then
     exit 255
 fi
 
-# Keep PR range selection fixed; these options belong to `commit_changed_files`.
+# Keep PR range selection fixed; these options belong to `check_changed_files`.
 for argument in "$@"; do
     case "$argument" in
         --base | --commit)
@@ -109,7 +109,7 @@ if [[ "$base_commit" == *$'\n'* ]]; then
     exit 255
 fi
 
-helper="$(dirname "${BASH_SOURCE[0]}")/commit_changed_files"
+helper="$(dirname "${BASH_SOURCE[0]}")/check_changed_files"
 if [[ ! -x "$helper" ]]; then
     echo "Error: cannot execute '$helper'" >&2
     exit 255
