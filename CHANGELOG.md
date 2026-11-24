@@ -34,7 +34,7 @@ _None._
 
 ### Breaking Changes
 
-- Rename `commit_changed_files` (new in 8.0.0) to `check_changed_files`, so the name doesn't suggest that it makes commits. [#272]
+_None._
 
 ### New Features
 
@@ -47,6 +47,12 @@ _None._
 ### Internal Changes
 
 _None._
+
+## 8.1.0
+
+### Breaking Changes
+
+- Rename `commit_changed_files` (new in 8.0.0) to `check_changed_files`, so the name doesn't suggest that it makes commits. [#272]
 
 ## 8.0.1
 
